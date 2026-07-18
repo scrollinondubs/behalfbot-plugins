@@ -1,0 +1,82 @@
+{
+  "id": "behalfbot-loom-vision",
+  "name": "Behalf.bot - Loom Vision",
+  "description": "Process a Loom share URL into multimodal context: downloads the video, samples key frames at 1 frame per 5 seconds, and pairs them with the auto-generated transcript. Lets the agent see what's happening on screen during a walkthrough, code review, or bug repro - not just what was said. Token-cheap visual context for any Loom link.",
+  "version": "0.2.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Top-level toggle. When false the skill won't trigger.",
+        "default": true
+      },
+      "frame_interval_seconds": {
+        "type": "number",
+        "description": "How often to sample a frame from the source video. Lower = more visual detail but more frames to process. 5s is a sensible default for code walkthroughs and demos.",
+        "default": 5,
+        "minimum": 1,
+        "maximum": 60
+      },
+      "frame_max_width_px": {
+        "type": "integer",
+        "description": "Max width in pixels for sampled frames. 1280 is enough for code legibility on most screens.",
+        "default": 1280,
+        "minimum": 640,
+        "maximum": 3840
+      },
+      "frame_quality": {
+        "type": "integer",
+        "description": "ffmpeg JPEG quality (lower = better quality, 1-31 scale). 3 is a good balance of legibility vs. file size for code screenshots.",
+        "default": 3,
+        "minimum": 1,
+        "maximum": 31
+      },
+      "output_root": {
+        "type": "string",
+        "description": "Directory where per-video output folders are written. Each Loom video gets a subdir named loom-<video_id> containing video.mp4, transcript.vtt, transcript.txt, transcript.json, and frame_NNN.jpg files.",
+        "default": "${CHASSIS_HOME}/temp"
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": [],
+    "skills": ["loom-vision"],
+    "hooks": [],
+    "env": {
+      "LOOM_VISION_SKILL_DIR": "${PLUGIN_DIR}/skills/loom-vision"
+    },
+    "triggers": [
+      {
+        "name": "loom-url",
+        "keyword_regex": "loom\\.com/share/[a-f0-9]{32}",
+        "handler": "${PLUGIN_DIR}/skills/loom-vision/process-loom.sh"
+      }
+    ]
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "Skill is invoked on-demand when the user pastes a Loom URL or asks the agent to process Loom video content. No scheduled jobs."
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "node",
+        "install": "apt-get install nodejs npm (Debian) / your platform's package manager",
+        "_explanation": "Runs the transcript JSON to VTT/plaintext conversion embedded in process-loom.sh. Also required transitively by loom-dl (it is an npm CLI)."
+      },
+      {
+        "name": "loom-dl",
+        "install": "npm install -g loom-dl@1.1.1",
+        "_explanation": "loom-dl is a small Node CLI that handles the Loom share URL to mp4 + transcript download. Pinned to 1.1.1: it writes the transcript as <basename>.transcript.json (schemaVersion 1.1.x), which the embedded converter expects. Bump the pin deliberately, with a converter re-test."
+      },
+      {
+        "name": "ffmpeg",
+        "install": "apt-get install ffmpeg (Debian) / your platform's package manager",
+        "_explanation": "Frame sampling, plus ffprobe (bundled) to read video duration for bounding the final transcript cue. Any recent ffmpeg works."
+      }
+    ]
+  }
+}
