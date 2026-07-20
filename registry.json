@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "repo": "scrollinondubs/behalfbot-plugins",
+  "plugins": [
+    {
+      "name": "loom-vision",
+      "path": "loom-vision",
+      "description": "Process a Loom share URL into multimodal context: downloaded video, sampled frames, and the auto-generated transcript converted to WebVTT + plaintext.",
+      "min_chassis_version": "0.2.0"
+    }
+  ]
+}
