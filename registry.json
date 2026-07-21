@@ -3,9 +3,45 @@
   "repo": "scrollinondubs/behalfbot-plugins",
   "plugins": [
     {
+      "name": "angel-protocol",
+      "path": "angel-protocol",
+      "description": "Welfare-check escalation for a solo operator: watches ambient proof-of-life signals (movement, wearable sync, chat activity) and walks a staged cascade from a soft chat nudge to direct SMS to emergency-contact notification when the principal goes quiet. Pluggable SMS providers (Twilio, Telnyx, Plivo, AWS SNS), dry-run mode, and pause controls.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
+      "name": "bfl",
+      "path": "bfl",
+      "description": "Quantified-self food and training pipeline: ingests meal photos and captions via vision extraction into the chassis Postgres, enriches entries against USDA FoodData Central, and reconciles daily logs on a heartbeat. Ships its DB migration, a chat backfill trigger, and model benchmarking tooling.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
+      "name": "dating",
+      "path": "dating",
+      "description": "Dating-app automation for a sandboxed subagent: emulator-driven swipe sessions, CLIP photo scoring against installer-tuned prompts, reverse-image catfish screening, conversation state and directives in Postgres, and hard safety rails (photo verification, scheduling blocks, pause flags, welfare-check integration). Regional gating ships disabled with an empty country list.",
+      "min_chassis_version": "0.3.0"
+    },
+    {
       "name": "loom-vision",
       "path": "loom-vision",
       "description": "Process a Loom share URL into multimodal context: downloaded video, sampled frames, and the auto-generated transcript converted to WebVTT + plaintext.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
+      "name": "remarkable",
+      "path": "remarkable",
+      "description": "reMarkable tablet integration over the cloud API (ddvk rmapi): deliver briefings and documents OTA, read and write a shared collab notebook page by page, ingest full notebooks to searchable text, plus a health heartbeat that alerts when sync auth breaks.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
+      "name": "restaurant-booking",
+      "path": "restaurant-booking",
+      "description": "Book a restaurant table from a chat message: parses natural-language intent, drives TheFork via Playwright, soft-confirms with the installer through a Discord reaction before submitting, and can create the matching Google Calendar event. Strongest coverage where TheFork is strong (Lisbon and wider Europe).",
+      "min_chassis_version": "0.2.0"
+    },
+    {
+      "name": "whatsapp",
+      "path": "whatsapp",
+      "description": "Privacy-enforced WhatsApp group reading via wacli: a wrapper that only permits reads of explicitly allowlisted group JIDs, blocks every DM and send path, and supports digest and lead-scan workflows without touching private conversations.",
       "min_chassis_version": "0.2.0"
     }
   ]
