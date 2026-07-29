@@ -1,0 +1,73 @@
+name: PR safety
+
+# Two checks aimed squarely at contributions from strangers. This repo is
+# public, MIT, and full of executable plugin code, so it is the easiest of the
+# three Behalf.bot repos to contribute to and was until now the only one with no
+# CI at all.
+#
+# Runs on `pull_request`, never `pull_request_target`. That is deliberate and
+# load-bearing: `pull_request` builds the merge commit with a read-only token
+# and no access to repo secrets, so a hostile fork cannot exfiltrate anything by
+# editing a workflow. `pull_request_target` would hand it a writable token.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scanner-self-test:
+    # The scanner is only worth trusting if it has been watched failing. This
+    # runs its negative AND positive controls before the scan itself, so a
+    # regression that makes the scanner blind fails the build rather than
+    # quietly passing every PR from then on.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prove the credential scanner still fires and still stays quiet
+        run: bash scripts/test-scan-added-lines.sh
+
+  credential-scan:
+    needs: scanner-self-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan added lines for credential-shaped strings
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: git diff "$BASE" "$HEAD" | python3 scripts/scan-added-lines.py
+
+  fork-touches-sensitive-paths:
+    # A maintainer editing CI is routine. A stranger's first PR editing CI, git
+    # hooks or the plugin registry is the thing to stop and look at, so this
+    # fails only for pull requests opened from a fork. It is a "come and read
+    # this properly" signal, not an accusation - a legitimate CI contribution
+    # from an outsider is expected to trip it and be merged anyway.
+    if: github.event.pull_request.head.repo.fork == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Flag sensitive paths for maintainer review
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          changed=$(git diff --name-only "$BASE" "$HEAD")
+          sensitive=$(printf '%s\n' "$changed" | grep -E '^(\.github/|scripts/|registry\.json$)|hooks?/|\.githooks/' || true)
+          if [ -n "$sensitive" ]; then
+            echo "This fork PR touches paths that change how CI or plugin discovery behaves:"
+            printf '%s\n' "$sensitive" | sed 's/^/  - /'
+            echo ""
+            echo "Not necessarily wrong - CI contributions are welcome and will trip this."
+            echo "It means a maintainer reads the diff by hand before merging."
+            exit 1
+          fi
+          echo "OK: no CI, hook, script or registry paths touched by this fork PR"
