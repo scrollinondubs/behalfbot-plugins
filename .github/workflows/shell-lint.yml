@@ -5,12 +5,23 @@ name: Shell scripts lint
 # takes plugin code from outside contributors, and the bar for a first PR should
 # be "does not contain a real bug", not "matches our style".
 
+# NO `paths:` filter on pull_request, and that is deliberate.
+#
+# `shellcheck` is a REQUIRED status check on main. A required check that is
+# path-filtered never reports on a PR outside those paths, and GitHub then
+# blocks that PR forever on "Expected — Waiting for status to be reported".
+# Not a failure - a deadlock with no explanation, which a first-time
+# contributor has no way to diagnose. The most likely first outside PR to this
+# repo is a README or docs fix, which touches no `.sh` at all.
+#
+# The job takes about 7 seconds and finds nothing to do when no shell changed.
+# That is a cheap price for a check that always reports.
+#
+# The `push` trigger keeps its filter: nothing is gated on it, so there is no
+# reason to burn minutes re-linting main on a docs commit.
 on:
   pull_request:
     branches: [main]
-    paths:
-      - '**/*.sh'
-      - '.github/workflows/shell-lint.yml'
   push:
     branches: [main]
     paths:
