@@ -1,0 +1,25 @@
+name: Registry and manifests
+
+# registry.json is how the chassis discovers what lives in this repo. A plugin
+# directory that is not listed is invisible; a listed path that does not exist
+# is a broken install. Neither shows up until someone tries to install, which is
+# the exact bug an outside contributor introduces by adding a directory and
+# forgetting the registry entry.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate registry.json against the plugin manifests
+        run: python3 scripts/validate-registry.py
