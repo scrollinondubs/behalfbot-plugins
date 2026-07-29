@@ -65,3 +65,5 @@ published.
    class this repo exists to kill, one layer down.
 3. Add the plugin to `registry.json`.
 4. PR, review, merge, tag. Chassis installs pick it up at their next pin bump.
+
+<!-- deadlock verification 2026-07-29 - never merged -->
