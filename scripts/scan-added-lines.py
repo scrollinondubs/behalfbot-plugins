@@ -45,6 +45,22 @@ PATTERNS: list[tuple[str, re.Pattern]] = [
     ),
 ]
 
+# The only two files exempt from the scan, and the reason is structural rather
+# than convenient: this scanner holds the detection patterns, and its test holds
+# deliberately realistic fake credentials as fixtures. Scanning either one makes
+# the check fail on every PR that touches it, which is what happened the first
+# time this ran in CI - seven "hits", all of them the test's own fixtures.
+#
+# The cost is real and worth naming: a genuine secret committed inside one of
+# these two files would not be caught here. Both are kept tiny, both are named
+# explicitly rather than matched by a glob, and adding to this set should feel
+# like a decision. A pattern like `test_*` or `**/fixtures/**` would be an easy
+# place for someone to park a real key later.
+SKIP_PATHS = frozenset({
+    "scripts/scan-added-lines.py",
+    "scripts/test-scan-added-lines.sh",
+})
+
 # Lines that legitimately look like the above. A placeholder in an example file
 # or a schema default is not a leak, and flagging them trains people to ignore
 # the check.
@@ -71,12 +87,17 @@ def main() -> int:
     diff = sys.stdin.read()
     hits: list[tuple[str, str, str]] = []
     current_file = "?"
+    skipped: set[str] = set()
 
     for raw in diff.splitlines():
         if raw.startswith("+++ b/"):
             current_file = raw[6:]
             continue
         if not raw.startswith("+") or raw.startswith("+++"):
+            continue
+
+        if current_file in SKIP_PATHS:
+            skipped.add(current_file)
             continue
 
         line = raw[1:]
@@ -99,6 +120,11 @@ def main() -> int:
         print("If this is a placeholder, make it obviously one (YOUR_API_KEY, <token>, $VAR).")
         print("If it is a real credential, it is already compromised - rotate it, do not just amend the commit.")
         return 1
+
+    # Announce the exemption every run. A silent skip-list is how a scan quietly
+    # stops covering the thing everyone assumes it covers.
+    for path in sorted(skipped):
+        print(f"note: {path} is exempt from this scan (holds the detection patterns or their fixtures)")
 
     print("OK: no credential-shaped strings in added lines")
     return 0
