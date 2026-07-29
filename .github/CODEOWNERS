@@ -1,0 +1,23 @@
+# Every path in this repo is owned by the maintainer.
+#
+# CODEOWNERS here is a review-routing convenience, NOT an access control. It
+# requests a review on a PR touching a path; it does not block a merge. Branch
+# protection on main is what actually gates merges - see the ruleset, which
+# requires status checks, restricts deletions and blocks force pushes.
+#
+# Deliberately not paired with "Require review from Code Owners" in the ruleset:
+# this is a single-maintainer project, so requiring an approval would mean
+# nobody can ever merge, including the owner.
+
+*                     @scrollinondubs
+
+# Paths where a wrong change reaches every install rather than one plugin.
+# registry.json decides what each chassis fetches; tools/ is the fetcher itself;
+# scripts/ and .github/ are the CI that reads inbound contributions.
+
+/registry.json        @scrollinondubs
+/tools/               @scrollinondubs
+/scripts/             @scrollinondubs
+/.github/             @scrollinondubs
+/LICENSE              @scrollinondubs
+/SECURITY.md          @scrollinondubs
