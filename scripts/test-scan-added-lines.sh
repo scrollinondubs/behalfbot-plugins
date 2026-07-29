@@ -63,6 +63,19 @@ expect_exit 0 "removed line only"   '+++ b/a.sh
 -API_KEY="sk-ant-api03-QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"'
 
 echo
+echo "Skip-list - exempt only where intended, nowhere else:"
+expect_exit 0 "own test file is exempt"   '+++ b/scripts/test-scan-added-lines.sh
++API_KEY="sk-ant-api03-QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"'
+expect_exit 0 "own source is exempt"      '+++ b/scripts/scan-added-lines.py
++API_KEY="sk-ant-api03-QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"'
+# The exemption must be exact-path, never a prefix or a glob. If this one ever
+# starts passing, someone widened SKIP_PATHS into a place to hide a real key.
+expect_exit 1 "sibling script is NOT exempt" '+++ b/scripts/validate-registry.py
++API_KEY="sk-ant-api03-QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"'
+expect_exit 1 "lookalike path is NOT exempt" '+++ b/plugins/scripts/test-scan-added-lines.sh
++API_KEY="sk-ant-api03-QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"'
+
+echo
 if [[ "$fail" -gt 0 ]]; then
     echo "FAIL: $fail of $((pass + fail)) checks failed"
     exit 1
