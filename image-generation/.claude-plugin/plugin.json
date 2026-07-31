@@ -1,0 +1,8 @@
+{
+  "id": "behalfbot-image-generation",
+  "name": "Behalf.bot - Image generation",
+  "description": "Generate an image from a text prompt via local ComfyUI + FLUX.1 or a hosted image API. One CLI, a flag to switch.",
+  "version": "0.1.0",
+  "skills": ["./skills"],
+  "scripts": ["./scripts"]
+}

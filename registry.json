@@ -15,15 +15,45 @@
       "min_chassis_version": "0.2.0"
     },
     {
+      "name": "chef",
+      "path": "chef",
+      "description": "Weekly observational variety report over a photo-logged meal history: distinct plant species against the American Gut 30-per-week finding, protein rotation and monotony, and a gap board of food groups absent from the window. Hard refusals against deficiency claims, supplement advice, calorie targets and micronutrient quantification are encoded in the skill rather than left to judgement. Reads the meal tables written by a companion food-logging plugin and writes nothing back.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
+      "name": "content-research",
+      "path": "content-research",
+      "description": "Research a topic and produce a blog-post stub - headline, angle, hook, section skeleton, anchor examples, sources, tone notes - then file it into a staged content pipeline. Checks memory before spending a search, finds the dominant narrative and then the contrarian read underneath it. Ships a filesystem pipeline that works with no external system, plus an optional notes-app adapter. Deliberately produces architecture, never prose.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
       "name": "dating",
       "path": "dating",
       "description": "Dating-app automation for a sandboxed subagent: emulator-driven swipe sessions, CLIP photo scoring against installer-tuned prompts, reverse-image catfish screening, conversation state and directives in Postgres, and hard safety rails (photo verification, scheduling blocks, pause flags, welfare-check integration). Regional gating ships disabled with an empty country list.",
       "min_chassis_version": "0.3.0"
     },
     {
+      "name": "image-generation",
+      "path": "image-generation",
+      "description": "Generate images from a text prompt through either a local ComfyUI running FLUX.1 (free, private, minutes) or a hosted image API (paid, seconds, better at text inside the image). One CLI, a flag to switch. Ships the ComfyUI workflow graph with a three-node-id contract so the graph can be swapped without touching the script. Credentials come from the environment only; the script never reads a secret off disk.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
       "name": "loom-vision",
       "path": "loom-vision",
       "description": "Process a Loom share URL into multimodal context: downloaded video, sampled frames, and the auto-generated transcript converted to WebVTT + plaintext.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
+      "name": "parse-youtube",
+      "path": "parse-youtube",
+      "description": "Turn any public YouTube URL into a timestamped transcript plus metadata. Resolves the video id from every URL shape, pulls manual or auto-generated captions with a configurable language fallback chain, and layers title, channel, duration, description and chapters on top via yt-dlp. Emits JSON for code or timestamp-anchored markdown for a draft. No API key needed.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
+      "name": "perplexity-research",
+      "path": "perplexity-research",
+      "description": "Turn a research question into a citation-solid .epub brief: designed scholar-filtered queries through a browser-driven research UI, real citation URLs harvested from the expanded sources panel, a sectioned brief with an inline DOI on every claim and a source-summary table, built with pandoc. Optional deep path appends the full text of every cited article behind a five-rung fallback chain. Delivery targets are pluggable - file, chat, or e-reader.",
       "min_chassis_version": "0.2.0"
     },
     {
