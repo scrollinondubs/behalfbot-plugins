@@ -1,0 +1,42 @@
+name: Plugin tests
+
+# The plugin test suites in this repo were never run here. behalfbot's
+# shell-tests.yml runs plugins/dating/tests/test-emulator-state.sh against its
+# VENDORED copy, so the downstream consumer tested the code and the source of
+# truth did not. A contributor changing emulator-state.sh in this repo got no
+# signal at all.
+#
+# NO `paths:` filter, deliberately - same reasoning as dco.yml. A path-filtered
+# check that is later made required deadlocks every PR outside its paths on
+# "Expected - Waiting for status to be reported". It also means a new plugin's
+# tests run from the moment they exist, with no list to remember to update.
+#
+# `pull_request`, never `pull_request_target`: read-only token, no repo
+# secrets, so a fork cannot exfiltrate anything by editing this file.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  plugin-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # No pip install step. Plugin suites must be self-contained - stdlib
+      # only, no network, no emulator, no docker. Both current suites already
+      # meet that bar: the python one mocks the Haiku API, the shell one stubs
+      # adb on PATH. A suite that needs a dependency is a suite that will rot.
+      - name: Run every plugin's test suite
+        run: bash .github/scripts/run-plugin-tests.sh
