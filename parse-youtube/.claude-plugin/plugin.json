@@ -1,0 +1,8 @@
+{
+  "id": "behalfbot-parse-youtube",
+  "name": "Behalf.bot - Parse YouTube",
+  "description": "Extract a timestamped transcript plus title, channel, duration and chapters from any public YouTube URL. JSON or markdown output.",
+  "version": "0.1.0",
+  "skills": ["./skills"],
+  "scripts": ["./scripts"]
+}

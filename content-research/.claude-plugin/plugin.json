@@ -1,0 +1,7 @@
+{
+  "id": "behalfbot-content-research",
+  "name": "Behalf.bot - Content research",
+  "description": "Research a topic and produce a blog-post stub - headline, angle, hook, section skeleton, sources - filed into a staged content pipeline. Architecture, not prose.",
+  "version": "0.1.0",
+  "skills": ["./skills"]
+}

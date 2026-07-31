@@ -1,0 +1,127 @@
+{
+  "id": "behalfbot-image-generation",
+  "name": "Behalf.bot - Image generation",
+  "description": "Generate images from a text prompt through one of two backends: a local ComfyUI running FLUX.1 (free, slow, private, nothing leaves the machine) or a hosted image API (fast, paid, better at text inside the image). One script, one CLI, a per-invocation flag to switch. Ships the ComfyUI workflow graph and a documented node-id contract so the graph can be swapped for a different one.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Master switch. Off by default: the local backend needs a ComfyUI install with several GB of model weights, and the hosted backend costs money per image.",
+        "default": false
+      },
+      "default_backend": {
+        "type": "string",
+        "enum": ["comfyui", "openai"],
+        "description": "Backend used when the caller does not pass --comfyui or --openai. 'comfyui' is free and private but takes minutes; 'openai' takes seconds and bills per image. Consumed as IMAGEGEN_DEFAULT_BACKEND.",
+        "default": "comfyui"
+      },
+      "output_dir": {
+        "type": "string",
+        "description": "Directory that receives generated PNGs, named generated-<timestamp>.png unless an explicit output path is passed. Consumed as IMAGEGEN_OUTPUT_DIR.",
+        "default": "${CHASSIS_HOME}/temp"
+      },
+      "comfyui_url": {
+        "type": "string",
+        "format": "uri",
+        "description": "Base URL of the ComfyUI HTTP API. Localhost is the normal case; point it at another host on the LAN if the GPU lives somewhere else. Consumed as COMFYUI_URL.",
+        "default": "http://localhost:8188"
+      },
+      "comfyui_output_dir": {
+        "type": "string",
+        "description": "ComfyUI's own output directory, where it writes finished renders before this plugin copies them to output_dir. Must be readable by the chassis. Required when default_backend is 'comfyui' - there is no sensible default because it depends where ComfyUI was installed. Consumed as COMFYUI_OUTPUT_DIR."
+      },
+      "comfyui_workflow_path": {
+        "type": "string",
+        "description": "Path to the ComfyUI API-format workflow JSON. Defaults to the FLUX.1 graph shipped in this plugin. Swap it for your own graph, and set the node ids below to match.",
+        "default": "${PLUGIN_DIR}/config/comfyui-flux-workflow.json"
+      },
+      "comfyui_prompt_node": {
+        "type": "string",
+        "description": "Node id in the workflow graph whose inputs.text receives the prompt. Matches the shipped FLUX.1 graph. Change it if you swap the workflow. Consumed as COMFYUI_PROMPT_NODE.",
+        "default": "6"
+      },
+      "comfyui_seed_node": {
+        "type": "string",
+        "description": "Node id whose inputs.noise_seed receives the random seed. Matches the shipped FLUX.1 graph. Consumed as COMFYUI_SEED_NODE.",
+        "default": "25"
+      },
+      "comfyui_output_node": {
+        "type": "string",
+        "description": "Node id of the SaveImage node whose output filename is read back from the history endpoint. Matches the shipped FLUX.1 graph. Consumed as COMFYUI_OUTPUT_NODE.",
+        "default": "9"
+      },
+      "comfyui_timeout_seconds": {
+        "type": "integer",
+        "minimum": 60,
+        "maximum": 7200,
+        "description": "How long to poll ComfyUI before giving up. FLUX.1 Q6_K on consumer hardware runs to roughly 11 minutes per image, so the default leaves headroom. Consumed as COMFYUI_TIMEOUT_SECONDS.",
+        "default": 900
+      },
+      "openai_model": {
+        "type": "string",
+        "description": "Model id for the hosted backend. Consumed as IMAGEGEN_OPENAI_MODEL.",
+        "default": "gpt-image-1"
+      },
+      "openai_size": {
+        "type": "string",
+        "description": "Requested image dimensions for the hosted backend, e.g. '1024x1024', '1536x1024'. Consumed as IMAGEGEN_OPENAI_SIZE.",
+        "default": "1024x1024"
+      },
+      "openai_quality": {
+        "type": "string",
+        "enum": ["low", "medium", "high", "auto"],
+        "description": "Quality tier for the hosted backend. Higher tiers cost more per image. Consumed as IMAGEGEN_OPENAI_QUALITY.",
+        "default": "high"
+      },
+      "openai_base_url": {
+        "type": "string",
+        "format": "uri",
+        "description": "API base for the hosted backend. Override to route through a compatible proxy or a self-hosted gateway. Consumed as IMAGEGEN_OPENAI_BASE_URL.",
+        "default": "https://api.openai.com/v1"
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": ["generate-image"],
+    "skills": ["image-generation"],
+    "heartbeats": [],
+    "triggers": [],
+    "hooks": [],
+    "env": {
+      "IMAGEGEN_SCRIPT": "${PLUGIN_DIR}/scripts/generate-image.sh",
+      "COMFYUI_WORKFLOW_PATH": "${PLUGIN_DIR}/config/comfyui-flux-workflow.json"
+    }
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "On-demand only. Invoked when a task needs a generated visual. Dormant by default - the local backend needs model weights the chassis does not ship, and the hosted backend spends money on every call."
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "curl",
+        "install": "apt-get install curl (Debian) / your platform's package manager",
+        "_explanation": "Both backends are plain HTTP."
+      },
+      {
+        "name": "jq",
+        "install": "apt-get install jq (Debian) / your platform's package manager",
+        "_explanation": "Injects the prompt and seed into the ComfyUI workflow graph and parses both backends' responses."
+      },
+      {
+        "name": "ComfyUI",
+        "install": "https://github.com/comfyanonymous/ComfyUI - plus FLUX.1 Dev GGUF, T5 XXL, CLIP-L and VAE weights in its models directory",
+        "_explanation": "Soft dependency, required only for the local backend. Roughly 20GB of weights and a GPU or Apple Silicon with equivalent unified memory. setup.sh reports its absence as a WARN, not a failure - the hosted backend still works without it."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "install": "set in the chassis secret store",
+        "_explanation": "Soft dependency, required only for the hosted backend. Never read from a file by this plugin - it comes from the process environment the chassis provides."
+      }
+    ]
+  }
+}
