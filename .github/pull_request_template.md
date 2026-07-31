@@ -28,9 +28,10 @@ twice on a clean Linux box and confirm the second run is a no-op? -->
 
 ## Checklist
 
-<!-- No sign-off requirement here - this repo is MIT, unlike the two chassis
-repos. -->
+<!-- The sign-off is one line, not a CLA. `git commit -s` adds it; for a branch
+that already exists, `git rebase --signoff origin/main`. See CONTRIBUTING.md. -->
 
+- [ ] Every commit is signed off (`git commit -s`) - CI checks this
 - [ ] `registry.json` has an entry for this plugin (CI enforces it; it is the most common miss)
 - [ ] `setup.sh` is idempotent and Linux-first, no Homebrew fallback
 - [ ] Everything the plugin touches is declared in the manifest's config schema
