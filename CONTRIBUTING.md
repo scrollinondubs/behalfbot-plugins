@@ -4,15 +4,36 @@ Thanks for looking. This is the most contributable of the three Behalf.bot repos
 and it is the one where a new plugin is genuinely welcome, not merely tolerated.
 This document exists so you know the bar before you spend a weekend on something.
 
-## Licence
+## Licence and the sign-off
 
 This repo is **MIT** (see [`LICENSE`](LICENSE)), so the usual convention applies:
 your contribution arrives under the same licence the project ships under. You
-keep your copyright. There is no CLA and no sign-off requirement here.
+keep your copyright.
 
-(The two chassis repos use a custom source-available licence and do require a
-DCO sign-off. This one does not. If you contribute to all three, that difference
-is deliberate.)
+We also ask for a [Developer Certificate of Origin](https://developercertificate.org/)
+sign-off, the same as the two chassis repos. **This is not a CLA.** There is no
+form, no signing ceremony, and no copyright assignment. It is one line in your
+commit message:
+
+```
+Signed-off-by: Your Name <your@email.com>
+```
+
+`git commit -s` adds it for you. It records that you wrote the change, or have
+the right to submit it, and are submitting it under this project's licence.
+
+MIT does not strictly need it - the licence convention already answers the legal
+question on its own. We ask anyway because this repo ships executable code that
+runs with real access on other people's machines, and provenance is the one
+thing worth having on record for every commit that gets there.
+
+CI checks it. If you forget:
+
+```bash
+git commit --amend -s --no-edit        # most recent commit
+git rebase --signoff origin/main       # every commit on your branch
+git push --force-with-lease
+```
 
 ## What a plugin is
 
@@ -64,6 +85,8 @@ Every PR, regardless of what it touches:
 | `validate` | `registry.json` and the plugin manifests agree, both directions |
 | `scanner-self-test` | The credential scanner itself still works |
 | `credential-scan` | No credential-shaped strings in your added lines |
+| `dco-self-test` | The sign-off checker itself still fails on an unsigned commit |
+| `dco` | Every non-merge commit has a `Signed-off-by` line |
 
 One more runs **only on pull requests from a fork**:
 `fork-touches-sensitive-paths`. It fails if the PR touches `.github/`,
