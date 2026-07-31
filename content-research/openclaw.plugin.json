@@ -1,0 +1,105 @@
+{
+  "id": "behalfbot-content-research",
+  "name": "Behalf.bot - Content research",
+  "description": "Research a topic and produce a blog-post stub - a structured outline the writer expands, never a finished draft. Checks memory before spending a search, finds the dominant narrative and then the contrarian angle underneath it, anchors the argument in concrete examples, and files the stub into a staged content pipeline. Ships a filesystem pipeline that works out of the box and an optional adapter for a notes app.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Master switch. When false the skill does not trigger.",
+        "default": true
+      },
+      "pipeline_backend": {
+        "type": "string",
+        "enum": ["files", "siyuan"],
+        "description": "Where stubs live and how they move between stages. 'files' uses one directory per stage under pipeline_root and needs no external system. 'siyuan' files them as sub-documents under the stage block ids below. Consumed as CONTENT_PIPELINE_BACKEND.",
+        "default": "files"
+      },
+      "pipeline_root": {
+        "type": "string",
+        "description": "Root directory for the 'files' backend. One subdirectory per stage, created on first use. Consumed as CONTENT_PIPELINE_ROOT.",
+        "default": "${CHASSIS_HOME}/content-pipeline"
+      },
+      "pipeline_stages": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Ordered stage names. Content moves forward one stage at a time. Rename or reorder these to match how the install actually works - the skill reads the list rather than assuming five stages.",
+        "default": [
+          "1-researching",
+          "2-writing",
+          "3-published",
+          "4-socials-drafted",
+          "5-promoted"
+        ]
+      },
+      "siyuan_notebook_id": {
+        "type": "string",
+        "description": "Notebook id containing the pipeline, for the 'siyuan' backend. No default - it is install-specific and a wrong id files content somewhere nobody looks. Query it at runtime from the first stage block rather than hardcoding it, so the pipeline survives being moved."
+      },
+      "siyuan_stage_ids": {
+        "type": "object",
+        "additionalProperties": { "type": "string" },
+        "description": "Map of stage name to SiYuan parent block id, for the 'siyuan' backend. Block ids are the stable contract - folder names and paths above them get renamed and moved, ids do not. Identify stages by id, never by hardcoded path. No defaults; required when pipeline_backend is 'siyuan'."
+      },
+      "publication_url": {
+        "type": "string",
+        "description": "The writer's own publication, checked during research so a stub does not restate something already published there. Empty disables that check. Consumed as CONTENT_PUBLICATION_URL."
+      },
+      "voice_guide_path": {
+        "type": "string",
+        "description": "Path to the install's brand-voice or style guide, read before writing headlines and hooks. Voice guides are personal and stay install-local, so this plugin ships none and only knows where to look. Consumed as CONTENT_VOICE_GUIDE_PATH.",
+        "default": "${CHASSIS_HOME}/skills/brand-voice.md"
+      },
+      "cta_target": {
+        "type": "string",
+        "description": "What the stub's closing section bridges to - a product, a newsletter, a community. Left empty the stub ends on the takeaway with no CTA, which is the honest default for an install that is not selling anything. Consumed as CONTENT_CTA_TARGET."
+      },
+      "priority_topics": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Themes to prefer when choosing a topic autonomously. Empty means no steer and the skill picks on merit alone.",
+        "default": []
+      },
+      "stubs_per_session": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 10,
+        "description": "How many stubs an unattended session produces before stopping. One is deliberate: research quality falls off a cliff when the same session grinds out a fourth outline.",
+        "default": 1
+      },
+      "task_label": {
+        "type": "string",
+        "description": "Issue label that marks an issue tracker item as a content request for this skill. Empty means the skill is never triggered from an issue tracker. Consumed as CONTENT_TASK_LABEL."
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": [],
+    "skills": ["content-research"],
+    "heartbeats": [],
+    "triggers": [],
+    "hooks": []
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "On-demand, or as the default task for an unattended session with nothing else queued. No scheduled job of its own - an install that wants a weekly stub registers a heartbeat that invokes this skill."
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "web search",
+        "install": "provided by the chassis search tooling",
+        "_explanation": "Any search tool the chassis exposes works. The skill describes what to search for and what to do with the results; it does not bind to one provider."
+      },
+      {
+        "name": "memory store",
+        "install": "provided by the chassis memory layer",
+        "_explanation": "Soft dependency. Without it the skill still researches, it just re-researches topics it has already covered - which is the specific waste step 1 exists to prevent."
+      }
+    ]
+  }
+}

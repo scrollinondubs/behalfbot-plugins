@@ -1,0 +1,880 @@
+{
+  "meta": {
+    "purpose": "Maps free-text food-log item names (from bfl_meals.vision_items_json and .description) onto canonical plant species, so the chef-weekly skill can count DISTINCT plants eaten in a trailing 7-day window against the American Gut 30-plants/week finding (McDonald 2018, mSystems).",
+    "why_a_count": "A plant count is immune to the portion-estimation problem that makes photo-derived micronutrient math indefensible. You either ate a leek or you did not - grams are irrelevant. This file is the only genuinely new data work v1 needs.",
+    "canonicalization_rules": [
+      "Same botanical species eaten in the same culinary form collapses to one key: 'scallion' and 'spring onion' and 'green onion' -> one plant; 'red bell pepper' and 'bell pepper' -> one plant.",
+      "Refined-grain forms of the same grain collapse: all wheat products (bread, pasta, couscous, tortilla, bagel, panini, flatbread) count as ONE plant (wheat). Rice forms count as ONE plant (rice).",
+      "Err toward NOT double-counting near-identical strings. A count that overstates variety is worse than one that understates it - understating is honest, overstating is theatre.",
+      "Distinct varieties that are eaten distinctly and that the American Gut protocol would treat as different plant types stay separate (e.g. jalapeno vs bell pepper, green beans vs black beans, kale vs cabbage).",
+      "Composite dishes ('pizza with mushrooms and ham', 'bolognese sauce') are NOT resolved here - the free-text mapper only catches ingredients it can see as tokens. The prompt (Claude) decomposes composites and adds the plants it can identify. This file handles the deterministic single-ingredient case.",
+      "Composite catch-alls that name no species ('mixed vegetables', 'grilled vegetables', 'salad', 'garnish') are listed under non_plants, NOT as a plant. They resolve to None and score zero. Counting them as one plant inflates the score with a token that identifies nothing - the same reason 'mixed leafy greens' was collapsed into lettuce."
+    ],
+    "definition_of_plant": "Per the American Gut protocol, a 'plant' includes vegetables, fruits, whole grains, legumes, nuts, seeds, herbs, and spices. Herbs and spices count - that is why 30 is achievable rather than punishing.",
+    "not_medical": "This map supports an observational variety count, not any nutritional-status claim. See the skill prompt's medical framing.",
+    "source": "American Gut Project: McDonald D et al. 2018. 'American Gut: an Open Platform for Citizen Science Microbiome Research.' mSystems 3(3):e00031-18. Finding: participants eating >30 distinct plant types/week had greater microbial diversity than those eating <=10. Association, not causation.",
+    "last_reviewed": "2026-07-29",
+    "honest_count_note": "The count must not be allowed to inflate. Three corrections in the 2026-07-29 pass each removed inflation: 'green onion' collapsed into 'onion' (both Allium cepa); 'mixed leafy greens' collapsed into 'lettuce'; 'mixed vegetables (unspecified)' demoted to non_plants. The trigger was a run reporting 35/30 and 29/30 on consecutive weeks against a target the log showed being reached once in four months. An inflated counter is a participation trophy, not a target. Extend the plants map from unresolved_tokens, and re-read this rule before adding a synonym that would split one species into two."
+  },
+  "plants": {
+    "almond": [
+      "almond",
+      "almonds"
+    ],
+    "apple": [
+      "apple",
+      "apples"
+    ],
+    "artichoke": [
+      "artichoke",
+      "artichokes",
+      "artichoke hearts"
+    ],
+    "arugula": [
+      "arugula",
+      "rocket"
+    ],
+    "asparagus": [
+      "asparagus"
+    ],
+    "avocado": [
+      "avocado",
+      "sliced avocado",
+      "guacamole"
+    ],
+    "bamboo shoots": [
+      "bamboo shoots",
+      "bamboo shoot",
+      "menma"
+    ],
+    "banana": [
+      "banana",
+      "bananas"
+    ],
+    "barley": [
+      "barley",
+      "pearl barley"
+    ],
+    "bean sprouts": [
+      "bean sprouts",
+      "beansprouts",
+      "sprouts"
+    ],
+    "beetroot": [
+      "beetroot",
+      "beet",
+      "beets"
+    ],
+    "bell pepper": [
+      "bell pepper",
+      "bell peppers",
+      "red bell pepper",
+      "red bell peppers",
+      "green bell pepper",
+      "green bell peppers",
+      "diced bell peppers",
+      "green pepper",
+      "red pepper",
+      "sweet pepper",
+      "capsicum",
+      "diced peppers",
+      "red peppers",
+      "roasted red peppers",
+      "roasted peppers",
+      "peppers"
+    ],
+    "black beans": [
+      "black beans",
+      "black bean"
+    ],
+    "blackberry": [
+      "blackberry",
+      "blackberries"
+    ],
+    "blueberry": [
+      "blueberry",
+      "blueberries"
+    ],
+    "broccoli": [
+      "broccoli",
+      "broccolini"
+    ],
+    "brussels sprouts": [
+      "brussels sprouts",
+      "brussel sprouts",
+      "brussels sprout"
+    ],
+    "buckwheat": [
+      "buckwheat",
+      "soba",
+      "soba noodles"
+    ],
+    "cabbage": [
+      "cabbage",
+      "red cabbage",
+      "white cabbage",
+      "green cabbage"
+    ],
+    "cantaloupe": [
+      "cantaloupe",
+      "rockmelon"
+    ],
+    "carrot": [
+      "carrot",
+      "carrots",
+      "roasted carrots",
+      "shredded carrots",
+      "grated carrot",
+      "baby carrots"
+    ],
+    "cashew": [
+      "cashew",
+      "cashews"
+    ],
+    "cauliflower": [
+      "cauliflower"
+    ],
+    "celery": [
+      "celery"
+    ],
+    "chard": [
+      "chard",
+      "swiss chard",
+      "silverbeet"
+    ],
+    "chickpea": [
+      "chickpea",
+      "chickpeas",
+      "garbanzo",
+      "garbanzo beans",
+      "hummus",
+      "falafel"
+    ],
+    "chili pepper": [
+      "jalapeno",
+      "jalapenos",
+      "sliced jalapenos",
+      "chili pepper",
+      "chilli pepper",
+      "chili",
+      "chilli",
+      "serrano",
+      "habanero",
+      "piri piri",
+      "hot pepper"
+    ],
+    "coconut": [
+      "coconut",
+      "coconut milk",
+      "shredded coconut"
+    ],
+    "collard greens": [
+      "collard greens",
+      "collards"
+    ],
+    "coriander": [
+      "coriander",
+      "cilantro"
+    ],
+    "corn": [
+      "corn",
+      "sweetcorn",
+      "sweet corn",
+      "corn kernels",
+      "tortilla chips",
+      "yellow tortilla chips",
+      "corn tortilla",
+      "corn tortillas",
+      "polenta",
+      "grits"
+    ],
+    "cranberry": [
+      "cranberry",
+      "cranberries"
+    ],
+    "cucumber": [
+      "cucumber",
+      "cucumbers",
+      "sliced cucumber",
+      "sliced cucumbers",
+      "pickled cucumber",
+      "gherkin",
+      "pickle",
+      "pickles",
+      "dill pickle",
+      "dill pickles"
+    ],
+    "date": [
+      "date",
+      "dates",
+      "medjool date",
+      "medjool dates"
+    ],
+    "edamame / soy": [
+      "edamame",
+      "seasoned soybeans",
+      "soybeans",
+      "soybean",
+      "soy",
+      "tofu",
+      "tempeh",
+      "soy sauce",
+      "miso-glazed tofu"
+    ],
+    "eggplant": [
+      "eggplant",
+      "aubergine"
+    ],
+    "endive": [
+      "endive",
+      "chicory",
+      "radicchio"
+    ],
+    "fennel": [
+      "fennel",
+      "fennel bulb"
+    ],
+    "fig": [
+      "fig",
+      "figs"
+    ],
+    "flaxseed": [
+      "flaxseed",
+      "flax seed",
+      "ground flaxseed",
+      "linseed"
+    ],
+    "garlic": [
+      "garlic",
+      "garlic soup"
+    ],
+    "ginger": [
+      "ginger"
+    ],
+    "grapes": [
+      "grapes",
+      "grape"
+    ],
+    "green beans": [
+      "green beans",
+      "green bean",
+      "string beans",
+      "haricot vert"
+    ],
+    "hazelnut": [
+      "hazelnut",
+      "hazelnuts"
+    ],
+    "herbs (mixed)": [
+      "chopped herbs",
+      "mixed herbs",
+      "fresh herbs",
+      "parsley",
+      "basil",
+      "mint",
+      "dill",
+      "chives",
+      "oregano",
+      "thyme",
+      "rosemary",
+      "herbs",
+      "herb garnish",
+      "herb",
+      "coriander leaves",
+      "sage",
+      "tarragon"
+    ],
+    "honeydew": [
+      "honeydew",
+      "honeydew melon"
+    ],
+    "kale": [
+      "kale"
+    ],
+    "kimchi": [
+      "kimchi"
+    ],
+    "kiwi": [
+      "kiwi",
+      "kiwifruit"
+    ],
+    "leek": [
+      "leek",
+      "leeks"
+    ],
+    "lemon": [
+      "lemon",
+      "lemon wedge",
+      "lemon wedges"
+    ],
+    "lentil": [
+      "lentil",
+      "lentils",
+      "dal",
+      "dahl"
+    ],
+    "lettuce": [
+      "lettuce",
+      "romaine lettuce",
+      "romaine",
+      "shredded lettuce",
+      "iceberg lettuce",
+      "butter lettuce",
+      "mixed greens",
+      "mixed salad greens",
+      "mixed salad",
+      "salad greens",
+      "mixed leaf",
+      "leafy greens",
+      "green salad",
+      "side salad"
+    ],
+    "lime": [
+      "lime",
+      "lime wedge",
+      "lime wedges"
+    ],
+    "mango": [
+      "mango"
+    ],
+    "microgreens": [
+      "microgreens",
+      "micro greens"
+    ],
+    "miso": [
+      "miso",
+      "miso soup",
+      "miso paste"
+    ],
+    "mushroom": [
+      "mushroom",
+      "mushrooms",
+      "shiitake",
+      "portobello",
+      "cremini",
+      "button mushrooms",
+      "black fungus",
+      "wood ear",
+      "enoki",
+      "oyster mushroom"
+    ],
+    "oats": [
+      "oats",
+      "oatmeal",
+      "porridge",
+      "granola",
+      "muesli",
+      "oat milk",
+      "oatly barista edition oat milk",
+      "overnight oats"
+    ],
+    "okra": [
+      "okra"
+    ],
+    "olive": [
+      "olive",
+      "olives",
+      "black olive",
+      "black olives",
+      "green olive",
+      "green olives",
+      "kalamata"
+    ],
+    "onion": [
+      "onion",
+      "onions",
+      "red onion",
+      "red onions",
+      "sliced onions",
+      "fried onions",
+      "crispy onions",
+      "pickled red onions",
+      "caramelized onions",
+      "white onion",
+      "yellow onion",
+      "green onion",
+      "green onions",
+      "scallion",
+      "scallions",
+      "spring onion",
+      "spring onions"
+    ],
+    "orange": [
+      "orange",
+      "oranges",
+      "mandarin",
+      "clementine"
+    ],
+    "parsnip": [
+      "parsnip",
+      "parsnips"
+    ],
+    "peach": [
+      "peach",
+      "peaches",
+      "nectarine"
+    ],
+    "peanut": [
+      "peanut",
+      "peanuts",
+      "peanut topping",
+      "peanut butter"
+    ],
+    "pear": [
+      "pear",
+      "pears"
+    ],
+    "peas": [
+      "peas",
+      "pea",
+      "snap peas",
+      "snow peas",
+      "green peas"
+    ],
+    "pecan": [
+      "pecan",
+      "pecans"
+    ],
+    "pine nut": [
+      "pine nut",
+      "pine nuts"
+    ],
+    "pineapple": [
+      "pineapple"
+    ],
+    "pinto beans": [
+      "pinto beans",
+      "pinto bean",
+      "refried beans"
+    ],
+    "pistachio": [
+      "pistachio",
+      "pistachios"
+    ],
+    "plantain": [
+      "plantain",
+      "fried plantain"
+    ],
+    "potato": [
+      "potato",
+      "potatoes",
+      "mashed potatoes",
+      "seasoned potato wedges",
+      "potato wedges",
+      "potato chips",
+      "roast potatoes",
+      "boiled potatoes",
+      "fries",
+      "french fries",
+      "potato fries"
+    ],
+    "pumpkin": [
+      "pumpkin",
+      "butternut squash",
+      "squash"
+    ],
+    "pumpkin seed": [
+      "pumpkin seed",
+      "pumpkin seeds",
+      "pepita",
+      "pepitas"
+    ],
+    "quinoa": [
+      "quinoa"
+    ],
+    "radish": [
+      "radish",
+      "radishes"
+    ],
+    "raspberry": [
+      "raspberry",
+      "raspberries"
+    ],
+    "red beans": [
+      "red beans",
+      "red bean",
+      "kidney beans",
+      "kidney bean"
+    ],
+    "rice": [
+      "rice",
+      "brown rice",
+      "white rice",
+      "basmati rice",
+      "jasmine rice",
+      "wild rice",
+      "fried rice"
+    ],
+    "rye": [
+      "rye",
+      "rye bread"
+    ],
+    "sauerkraut": [
+      "sauerkraut"
+    ],
+    "seaweed": [
+      "seaweed",
+      "seaweed salad",
+      "nori",
+      "wakame",
+      "kombu"
+    ],
+    "sesame": [
+      "sesame",
+      "sesame seeds",
+      "tahini"
+    ],
+    "spinach": [
+      "spinach",
+      "baby spinach"
+    ],
+    "strawberry": [
+      "strawberry",
+      "strawberries"
+    ],
+    "sunflower seed": [
+      "sunflower seed",
+      "sunflower seeds"
+    ],
+    "sweet potato": [
+      "sweet potato",
+      "sweet potatoes",
+      "mashed sweet potatoes",
+      "sweet potato fries",
+      "yam"
+    ],
+    "tomato": [
+      "tomato",
+      "tomatoes",
+      "cherry tomato",
+      "cherry tomatoes",
+      "diced tomatoes",
+      "sun-dried tomatoes",
+      "roma tomato",
+      "grape tomatoes",
+      "marinara sauce",
+      "marinara",
+      "tomato sauce",
+      "passata"
+    ],
+    "turnip": [
+      "turnip",
+      "turnips"
+    ],
+    "walnut": [
+      "walnut",
+      "walnuts"
+    ],
+    "wasabi": [
+      "wasabi"
+    ],
+    "watercress": [
+      "watercress"
+    ],
+    "watermelon": [
+      "watermelon"
+    ],
+    "wheat": [
+      "bread",
+      "brown bread",
+      "whole grain bread",
+      "whole grain sandwich bread",
+      "bagel",
+      "flatbread",
+      "panini bread",
+      "tortilla wrap",
+      "wrap",
+      "couscous",
+      "pasta",
+      "spaghetti",
+      "spiral pasta",
+      "fettuccine",
+      "fettuccine pasta",
+      "ramen noodles",
+      "stir-fried noodles",
+      "noodles",
+      "sourdough",
+      "pita",
+      "naan",
+      "roll",
+      "sandwich bread",
+      "lasagna",
+      "lasagne",
+      "quiche",
+      "empanada",
+      "samosa",
+      "pastry",
+      "croissant",
+      "english muffin",
+      "pastel de nata",
+      "brioche",
+      "baguette",
+      "tortilla",
+      "tortillas",
+      "fried tortilla",
+      "black tortilla",
+      "seitan",
+      "bulgur",
+      "farro",
+      "crackers"
+    ],
+    "white beans": [
+      "white beans",
+      "white bean",
+      "cannellini",
+      "cannellini beans",
+      "butter beans"
+    ],
+    "zucchini": [
+      "zucchini",
+      "courgette"
+    ]
+  },
+  "non_plants": [
+    "assorted vegetables",
+    "bacon",
+    "beef",
+    "beef slices",
+    "bifana",
+    "bolognese sauce",
+    "brownie",
+    "butter",
+    "candy",
+    "carnitas",
+    "chashu pork",
+    "cheddar cheese",
+    "cheese",
+    "cheese slice",
+    "cheesecake",
+    "chicken",
+    "chicken pieces",
+    "chocolate",
+    "chocolate cake",
+    "chocolate dessert",
+    "chocolate ice cream",
+    "cod fish a bras",
+    "cooked vegetables",
+    "cottage cheese",
+    "crab",
+    "cream",
+    "danish pastry",
+    "deviled eggs",
+    "diced vegetables",
+    "egg",
+    "eggs",
+    "emmental cheese",
+    "feta cheese",
+    "fish roe",
+    "fried chicken",
+    "fried chicken sandwich",
+    "garden salad",
+    "garnish",
+    "gelato",
+    "grated cheese",
+    "gravy",
+    "greek yogurt",
+    "green sauce",
+    "grilled beef",
+    "grilled chicken",
+    "grilled chicken breast",
+    "grilled fish",
+    "grilled meat",
+    "grilled steak",
+    "grilled vegetables",
+    "ground beef",
+    "guac sauce",
+    "ham",
+    "hard boiled egg",
+    "hard-boiled egg",
+    "hardboiled egg",
+    "hot sauce",
+    "iberico peito de peru",
+    "ice cream",
+    "lamb",
+    "lobster pate",
+    "mayo",
+    "milk",
+    "mixed roasted vegetables",
+    "mixed veg",
+    "mixed vegetables",
+    "mixed veggies",
+    "mochi",
+    "mochi ice cream",
+    "muffin with peanut topping",
+    "mussels in sauce",
+    "octopus",
+    "parmesan cheese",
+    "pesto sauce",
+    "pickled vegetables",
+    "pork",
+    "pork cheeks",
+    "prawns",
+    "prosciutto",
+    "protein shake",
+    "raw tuna",
+    "roast beef carpaccio",
+    "roasted vegetables",
+    "robalo fillet",
+    "salad",
+    "salad dressing",
+    "salami",
+    "salmon",
+    "salsa",
+    "sauce",
+    "sausage",
+    "sauteed vegetables",
+    "scrambled eggs",
+    "seasonal vegetables",
+    "shredded beef",
+    "shredded cheese",
+    "shredded chicken",
+    "shrimp",
+    "sliced turkey",
+    "sliced turkey breast",
+    "smoked salmon",
+    "sour cream",
+    "spicy mayo",
+    "steamed vegetables",
+    "stir-fried vegetables",
+    "tuna",
+    "turkey",
+    "turkey breast",
+    "turkey sausage",
+    "vegetable garnish",
+    "vegetable garnishes",
+    "vegetable medley",
+    "vegetable mix",
+    "vegetables",
+    "yogurt",
+    "zuger bio cottage cheese",
+    "zuger bio-cottage cheese"
+  ],
+  "high_mercury_fish": {
+    "note": "FDA/EPA 'Choices to Avoid' plus high-end 'Good Choices'. Flag ONLY these when they recur (3+ times/week), with the real ppm attached. Do NOT flag salmon, cod, shrimp, tilapia, sardines, or other low-mercury species on a mercury theory - the plan documents that salmon (~0.022 ppm) is 7x below the 0.15 ppm FDA Best-Choices threshold. Monotony of a low-mercury fish is a VARIETY point, never a toxin point.",
+    "avoid_species": {
+      "swordfish": {
+        "ppm": 0.995,
+        "fda_tier": "avoid"
+      },
+      "king mackerel": {
+        "ppm": 0.73,
+        "fda_tier": "avoid"
+      },
+      "shark": {
+        "ppm": 0.979,
+        "fda_tier": "avoid"
+      },
+      "tilefish (gulf of mexico)": {
+        "ppm": 1.123,
+        "fda_tier": "avoid"
+      },
+      "marlin": {
+        "ppm": 0.485,
+        "fda_tier": "avoid"
+      },
+      "orange roughy": {
+        "ppm": 0.571,
+        "fda_tier": "avoid"
+      },
+      "bigeye tuna": {
+        "ppm": 0.689,
+        "fda_tier": "avoid"
+      }
+    },
+    "good_choice_but_watch": {
+      "tuna (albacore/white, canned)": {
+        "ppm": 0.35,
+        "fda_tier": "good choice - 1 serving/week max per FDA"
+      },
+      "tuna (yellowfin)": {
+        "ppm": 0.354,
+        "fda_tier": "good choice"
+      },
+      "tuna steak (fresh/frozen)": {
+        "ppm": 0.39,
+        "fda_tier": "good choice"
+      },
+      "raw tuna": {
+        "ppm": 0.39,
+        "fda_tier": "good choice"
+      },
+      "halibut": {
+        "ppm": 0.241,
+        "fda_tier": "good choice"
+      },
+      "sea bass (chilean)": {
+        "ppm": 0.354,
+        "fda_tier": "good choice"
+      }
+    },
+    "match_tokens": {
+      "swordfish": [
+        "swordfish"
+      ],
+      "king mackerel": [
+        "king mackerel"
+      ],
+      "shark": [
+        "shark"
+      ],
+      "tilefish (gulf of mexico)": [
+        "tilefish"
+      ],
+      "marlin": [
+        "marlin"
+      ],
+      "orange roughy": [
+        "orange roughy"
+      ],
+      "bigeye tuna": [
+        "bigeye tuna",
+        "ahi",
+        "bigeye"
+      ],
+      "tuna (albacore/white, canned)": [
+        "albacore",
+        "white tuna"
+      ],
+      "tuna (yellowfin)": [
+        "yellowfin"
+      ],
+      "tuna steak (fresh/frozen)": [
+        "tuna steak"
+      ],
+      "raw tuna": [
+        "raw tuna",
+        "tuna sashimi",
+        "tuna tartare"
+      ],
+      "halibut": [
+        "halibut"
+      ],
+      "sea bass (chilean)": [
+        "chilean sea bass"
+      ]
+    }
+  },
+  "low_mercury_do_not_flag": [
+    "salmon",
+    "smoked salmon",
+    "cod",
+    "cod fish a bras",
+    "shrimp",
+    "prawns",
+    "tilapia",
+    "sardines",
+    "anchovy",
+    "trout",
+    "pollock",
+    "catfish",
+    "haddock",
+    "mackerel (atlantic)",
+    "mussels",
+    "clams",
+    "oysters",
+    "scallops",
+    "crab",
+    "robalo",
+    "sea bass (european/robalo)"
+  ]
+}

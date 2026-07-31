@@ -1,0 +1,124 @@
+{
+  "id": "behalfbot-chef",
+  "name": "Behalf.bot - Chef (weekly variety advisory)",
+  "description": "Weekly observational variety report built from a photo-logged meal history. Counts distinct plant species over a trailing window against the American Gut 30-plants-per-week finding, flags protein monotony, and boards the food groups absent from the window. Encodes hard refusals against deficiency claims, supplement advice, calorie targets and micronutrient quantification - it reports what was logged, never what a body is doing. Reads the meal tables written by the companion food-logging plugin and writes nothing back.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Master switch. Off by default - the plugin is useless without a populated meal log, and a variety report against three logged meals is noise.",
+        "default": false
+      },
+      "plant_target": {
+        "type": "integer",
+        "minimum": 5,
+        "maximum": 100,
+        "description": "Weekly distinct-plant target the count is reported against. 30 is the American Gut Project figure (McDonald 2018, mSystems) and changing it detaches the number from its citation, so change it only deliberately. Consumed as CHEF_PLANT_TARGET.",
+        "default": 30
+      },
+      "window_days": {
+        "type": "integer",
+        "minimum": 3,
+        "maximum": 90,
+        "description": "Trailing window in days. 7 matches the American Gut per-week framing. Consumed as CHEF_WINDOW_DAYS.",
+        "default": 7
+      },
+      "min_logged_days": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 30,
+        "description": "Minimum distinct logged days in the window before a report is generated at all. Below this the heartbeat stays silent, because a report built off two logged days is noise pretending to be signal. Consumed as CHEF_MIN_DAYS.",
+        "default": 4
+      },
+      "report_day_of_week": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 7,
+        "description": "Day the weekly report runs, 1 = Monday through 7 = Sunday, matching date +%u. Consumed as CHEF_REPORT_DOW.",
+        "default": 7
+      },
+      "output_mode": {
+        "type": "string",
+        "enum": ["file", "siyuan"],
+        "description": "Where the weekly report is written. 'file' writes markdown to output_dir and needs nothing external. 'siyuan' creates a document under the configured notebook and parent. Consumed as CHEF_OUTPUT_MODE.",
+        "default": "file"
+      },
+      "output_dir": {
+        "type": "string",
+        "description": "Directory for the weekly report in 'file' mode. Consumed as CHEF_OUTPUT_DIR.",
+        "default": "${CHASSIS_HOME}/briefings/chef"
+      },
+      "siyuan_notebook_id": {
+        "type": "string",
+        "description": "Notebook id receiving the report in 'siyuan' mode. No default - it is install-specific, and a wrong id files the report where nobody looks."
+      },
+      "siyuan_parent_block_id": {
+        "type": "string",
+        "description": "Parent block id under which the report document is created in 'siyuan' mode. Block ids are the stable contract; resolve the human-readable path from the id at runtime rather than hardcoding it, so the report survives the parent being renamed or moved."
+      },
+      "state_dir": {
+        "type": "string",
+        "description": "Directory holding chef-weekly-state.json, which carries the ISO-week dedup marker. Must persist across restarts or the report will run more than once a week. Consumed as CHEF_STATE_DIR.",
+        "default": "${CHASSIS_HOME}/scheduled-tasks"
+      },
+      "taxonomy_path": {
+        "type": "string",
+        "description": "Plant taxonomy JSON. Defaults to the file shipped with the plugin. Point it at a copy to add local species and aliases without diverging from the plugin - extend the 'plants' map from the analyzer's unresolved_tokens output. Consumed as CHEF_TAXONOMY_PATH.",
+        "default": "${PLUGIN_DIR}/data/plant-taxonomy.json"
+      },
+      "meals_table": {
+        "type": "string",
+        "description": "Table holding logged meals, written by the companion food-logging plugin. Needs date, description, vision_items_json, meal_num and day_id columns. Consumed as CHEF_MEALS_TABLE.",
+        "default": "bfl_meals"
+      },
+      "days_table": {
+        "type": "string",
+        "description": "Table holding logged days, joined to meals_table on day_id. Consumed as CHEF_DAYS_TABLE.",
+        "default": "bfl_days"
+      },
+      "market_note": {
+        "type": "string",
+        "description": "One phrase describing what 'available' means where the operator shops, used when the report suggests next week's additions. Left generic by default; set it to something local and seasonal so the suggestions are actionable rather than aspirational. Consumed as CHEF_MARKET_NOTE.",
+        "default": "locally available and in season"
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": ["chef-plant-count"],
+    "skills": ["chef"],
+    "heartbeats": ["chef-weekly"],
+    "triggers": [],
+    "hooks": [],
+    "env": {
+      "CHEF_PLUGIN_DIR": "${PLUGIN_DIR}",
+      "CHEF_GATHER_SCRIPT": "${PLUGIN_DIR}/scripts/gather-chef-weekly.sh"
+    }
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "Dormant by default. The chef-weekly heartbeat entry must be added to the install's heartbeat config at activation time, pointed at scripts/gather-chef-weekly.sh with the prompt template in scheduled-tasks/. The gate is free: it exits count=0 without touching the model on every day that is not the report day, and on report days with too few logged meals."
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "python3",
+        "install": "apt-get install python3 python3-pip (Debian) / your platform's package manager",
+        "_explanation": "Runs the analyzer and the state-file writes in the gate."
+      },
+      {
+        "name": "psycopg",
+        "install": "pip install 'psycopg[binary]==3.2.3'",
+        "_explanation": "Postgres driver for the meal-log read. Pinned: psycopg 3 and psycopg2 differ in connection API and the analyzer targets 3.x."
+      },
+      {
+        "name": "companion food-logging plugin",
+        "install": "enable the bfl plugin, or provide an equivalent schema",
+        "_explanation": "Hard data dependency. This plugin only reads - it owns no schema and writes nothing back. Without a populated meals table there is nothing to count, which setup.sh reports rather than discovering at 13:30 on a Sunday."
+      }
+    ]
+  }
+}

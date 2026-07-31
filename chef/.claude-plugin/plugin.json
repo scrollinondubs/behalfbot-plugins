@@ -1,0 +1,8 @@
+{
+  "id": "behalfbot-chef",
+  "name": "Behalf.bot - Chef (weekly variety advisory)",
+  "description": "Weekly observational variety report from a photo-logged meal history: distinct plant count, protein rotation, absent food groups. Reports what was logged, never a physiological state.",
+  "version": "0.1.0",
+  "skills": ["./skills"],
+  "scripts": ["./scripts"]
+}
