@@ -1,0 +1,88 @@
+# =========================================================================
+# behalfbot-plugins repository hygiene.
+#
+# This repo is the canonical source for plugins that get fetched onto other
+# people's machines. Two things must never be tracked here:
+#
+#   1. Secrets. Every plugin's install-specific values belong in its
+#      configSchema, resolved from the operator's environment at runtime.
+#      A committed .env in this repo would ship a contributor's credentials
+#      to every install that fetches the tree.
+#   2. Build and tool output. Seven plugins ship Python and Node code, so a
+#      first-time contributor running `git add -A` after a local test run is
+#      one command away from committing node_modules/ or __pycache__/.
+#
+# The credential-scan CI check catches credential-SHAPED strings on added
+# lines. It does not catch a committed node_modules/, and it is not a reason
+# to skip this file - the scan is the second layer, this is the first.
+#
+# Plugin-local .gitignore files (e.g. restaurant-booking/.gitignore) still
+# apply and are not superseded by this one.
+# =========================================================================
+
+# Secrets - never commit
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+secrets/
+credentials.json
+service-account*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+dist/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.pnpm-store/
+
+# Local runtime output. Plugins write these on the operator's machine, never
+# into this tree - but a contributor testing a plugin in place will produce
+# them here.
+logs/
+temp/
+tmp/
+*.log
+
+# Local DBs and dumps. Several plugins talk to Postgres; a dump captured
+# while debugging is both large and likely to contain real operator data.
+#
+# Deliberately NOT `*.sql`: bfl/db/migrations/001_bfl.sql and
+# dating/db/migrations/001_dating_state.sql are tracked schema, and a blanket
+# *.sql would silently drop the next migration a contributor adds. Already
+# tracked files stay tracked, so the breakage would only appear on the commit
+# that mattered. Match dumps by their own extensions instead.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sql.gz
+*.dump
+*.dump.gz
+
+# OS / editor
+.DS_Store
+.AppleDouble
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
