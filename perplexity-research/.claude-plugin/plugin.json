@@ -1,0 +1,8 @@
+{
+  "id": "behalfbot-perplexity-research",
+  "name": "Behalf.bot - Perplexity research briefs",
+  "description": "Research question to citation-solid .epub brief. Scholar-filtered queries, harvested citation URLs, pandoc build, pluggable delivery. Optional full-text appendix.",
+  "version": "0.1.0",
+  "skills": ["./skills"],
+  "scripts": ["./scripts"]
+}

@@ -1,0 +1,81 @@
+{
+  "id": "behalfbot-parse-youtube",
+  "name": "Behalf.bot - Parse YouTube",
+  "description": "Turn any public YouTube URL into a timestamped transcript plus metadata. Resolves the video id from every URL shape, pulls manual or auto-generated captions through youtube-transcript-api with a configurable language fallback chain, and layers title, channel, duration, description and chapters on top via yt-dlp. Emits JSON for programmatic use, or timestamp-anchored markdown that drops straight into a draft. No API key needed for public videos.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Master switch. When false the skill does not trigger and setup.sh is not run.",
+        "default": true
+      },
+      "default_language": {
+        "type": "string",
+        "description": "Preferred caption language code tried first, e.g. 'en', 'pt', 'de'. Overridable per invocation with --lang. Consumed by the script as PARSE_YOUTUBE_DEFAULT_LANG.",
+        "default": "en"
+      },
+      "fallback_languages": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Caption languages appended after the preferred one, in order, when the preferred track does not exist. Set this to the languages the install actually reads. The default is English-only so the plugin makes no assumption about the operator's second language. Consumed as PARSE_YOUTUBE_FALLBACK_LANGS (comma-separated).",
+        "default": ["en"]
+      },
+      "metadata": {
+        "type": "boolean",
+        "description": "Fetch title, channel, duration, description and chapters via yt-dlp. Costs roughly 5 seconds per video. When false, or when yt-dlp is unavailable, those fields come back null and the transcript still works. Consumed as PARSE_YOUTUBE_METADATA.",
+        "default": true
+      },
+      "metadata_timeout_seconds": {
+        "type": "integer",
+        "minimum": 5,
+        "maximum": 300,
+        "description": "Hard timeout on the yt-dlp metadata call. On expiry the metadata fields are null rather than the whole run failing. Consumed as PARSE_YOUTUBE_METADATA_TIMEOUT.",
+        "default": 30
+      },
+      "description_max_chars": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 20000,
+        "description": "How much of the video description to carry into the output. Descriptions are frequently link dumps, so the default truncates. Consumed as PARSE_YOUTUBE_DESCRIPTION_MAX_CHARS.",
+        "default": 1000
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": ["parse-youtube"],
+    "skills": ["parse-youtube"],
+    "heartbeats": [],
+    "triggers": [],
+    "hooks": [],
+    "env": {
+      "PARSE_YOUTUBE_SCRIPT": "${PLUGIN_DIR}/scripts/parse-youtube.py"
+    }
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "On-demand only. Invoked when the operator pastes a YouTube URL or asks for a transcript. Deliberately ships no message trigger: a bare YouTube link in a chat channel is far too common a thing to hijack, so dispatch stays model-driven."
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "python3",
+        "install": "apt-get install python3 python3-pip (Debian) / your platform's package manager",
+        "_explanation": "The script is a single dependency-light Python file. Needs 3.10+ for the union type syntax it uses."
+      },
+      {
+        "name": "youtube-transcript-api",
+        "install": "pip install youtube-transcript-api==1.2.4",
+        "_explanation": "Pulls captions with no browser and no API key. Pinned to 1.2.4 because the 1.x API is instance-based (YouTubeTranscriptApi().list(video_id)) and yields FetchedTranscriptSnippet objects rather than dicts. A 0.x downgrade breaks the fetch path."
+      },
+      {
+        "name": "yt-dlp",
+        "install": "pip install 'yt-dlp>=2026.3.17'",
+        "_explanation": "Soft dependency, metadata only. YouTube changes its player often enough that yt-dlp ships near-weekly, so this is a floor rather than an exact pin - a stale yt-dlp fails against new videos. Missing or broken yt-dlp degrades to null metadata instead of failing the run."
+      }
+    ]
+  }
+}

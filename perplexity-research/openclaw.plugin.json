@@ -1,0 +1,133 @@
+{
+  "id": "behalfbot-perplexity-research",
+  "name": "Behalf.bot - Perplexity research briefs",
+  "description": "Turn a research question into a citation-solid .epub brief. Runs a designed set of scholar-filtered queries through a Perplexity session driven by Playwright, harvests the real citation URLs the accessibility tree hides, synthesizes a sectioned brief with an inline DOI on every claim and a source-summary table, and builds it to epub with pandoc. Optional deep path appends the full text of every cited article via a scrape-with-fallbacks chain. Delivery targets are pluggable: a file on disk, a chat message, or an e-reader.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Master switch. Off by default: the pipeline needs a signed-in Perplexity account driven through browser automation, which is an operator decision rather than a default.",
+        "default": false
+      },
+      "research_ui_url": {
+        "type": "string",
+        "format": "uri",
+        "description": "Base URL of the research interface driven by Playwright. Swappable for any search UI that renders an answer plus a sources panel; the harvest step keys on real anchor hrefs rather than a specific DOM.",
+        "default": "https://www.perplexity.ai"
+      },
+      "source_filter": {
+        "type": "string",
+        "description": "Query-string source filter appended to every search URL. 'scholar' restricts to peer-reviewed sources, which is the whole point for a science brief. Empty string disables filtering. Consumed as RESEARCH_SOURCE_FILTER.",
+        "default": "scholar"
+      },
+      "queries_per_brief": {
+        "type": "integer",
+        "minimum": 2,
+        "maximum": 12,
+        "description": "Target number of distinct queries per brief. Each becomes one section and has to carry a defensible citation on its own. Below 4 the brief is thin; above 6 the sections start restating each other.",
+        "default": 5
+      },
+      "output_dir": {
+        "type": "string",
+        "description": "Directory that receives the brief markdown and the built .epub. Consumed as RESEARCH_OUTPUT_DIR.",
+        "default": "${CHASSIS_HOME}/briefings"
+      },
+      "scratch_dir": {
+        "type": "string",
+        "description": "Directory for the per-query Playwright JSON dumps. Kept out of the repo root on purpose: the browser tool writes these wherever it is pointed, and a default of 'here' is how they end up committed. Cleaned at the end of a run. Consumed as RESEARCH_SCRATCH_DIR.",
+        "default": "${CHASSIS_HOME}/temp/research-scratch"
+      },
+      "author_line": {
+        "type": "string",
+        "description": "Author metadata stamped into the epub. Placeholders ${ASSISTANT_NAME} and ${PRINCIPAL_NAME} are expanded from the chassis identity config.",
+        "default": "${ASSISTANT_NAME} for ${PRINCIPAL_NAME}"
+      },
+      "language": {
+        "type": "string",
+        "description": "BCP 47 language tag written into the brief's frontmatter and the epub metadata.",
+        "default": "en-US"
+      },
+      "pandoc_bin": {
+        "type": "string",
+        "description": "Path to the pandoc binary. Left as a bare name so PATH resolution wins; set an absolute path where PATH is not reliable. Consumed as RESEARCH_PANDOC_BIN.",
+        "default": "pandoc"
+      },
+      "toc_depth": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 4,
+        "description": "Table-of-contents depth passed to pandoc. Consumed as RESEARCH_TOC_DEPTH.",
+        "default": 2
+      },
+      "delivery_targets": {
+        "type": "array",
+        "items": { "type": "string", "enum": ["file", "chat", "ereader"] },
+        "description": "Where a finished brief goes. 'file' leaves it in output_dir and reports the path. 'chat' posts it with the caveats summary. 'ereader' hands the epub to ereader_send_command. Multiple targets are delivered in order, and a failure in one does not abort the others.",
+        "default": ["file"]
+      },
+      "delivery_channel_id": {
+        "type": "string",
+        "description": "Chat channel id for the 'chat' delivery target. No default and no fallback: an unset value must fail loudly rather than post a research brief into whatever channel happens to be first. Sourced from the chassis surface config as DISCORD_PRIMARY_CHANNEL_ID unless overridden here."
+      },
+      "brief_base_url": {
+        "type": "string",
+        "description": "Optional HTTP base under which output_dir is served, e.g. an internal file host. When set, the chat delivery includes a direct link alongside the attachment so the brief survives a flaky mobile download. Empty by default because most installs serve nothing. Consumed as RESEARCH_BRIEF_BASE_URL."
+      },
+      "ereader_send_command": {
+        "type": "string",
+        "description": "Command invoked with the epub path as its single argument for the 'ereader' delivery target. Intentionally a command rather than a hardwired integration, so any e-reader with a CLI works. Installs running the companion reMarkable plugin point this at its send script. Consumed as RESEARCH_EREADER_SEND_COMMAND."
+      },
+      "deep_path_warn_mb": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 500,
+        "description": "Projected appendix size above which the operator is warned before the fetch loop starts. The estimate is roughly 300 KB per open-access paper. Consumed as RESEARCH_DEEP_WARN_MB.",
+        "default": 5
+      },
+      "deep_path_split_mb": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 1000,
+        "description": "Projected size above which the default action becomes splitting into two epubs (brief, appendix) rather than one. E-reader software tends to choke on very large single files. Consumed as RESEARCH_DEEP_SPLIT_MB.",
+        "default": 10
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": ["build-brief-epub"],
+    "skills": ["perplexity-research"],
+    "heartbeats": [],
+    "triggers": [],
+    "hooks": [],
+    "env": {
+      "RESEARCH_BUILD_SCRIPT": "${PLUGIN_DIR}/scripts/build-brief-epub.sh"
+    }
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "On-demand only. Invoked when the operator asks for research on a topic or a revision of a prior brief. No scheduled jobs - a research brief nobody asked for is a brief nobody reads."
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "pandoc",
+        "install": "apt-get install pandoc (Debian) / your platform's package manager",
+        "_explanation": "Builds the markdown brief into epub with a table of contents. Hard dependency: the epub IS the deliverable."
+      },
+      {
+        "name": "Playwright browser automation",
+        "install": "provided by the chassis browser tooling",
+        "_explanation": "Drives the research UI. The session must already be signed in - the plugin never handles credentials for it, and an unauthenticated session gets a degraded free-tier answer with fewer sources rather than an error."
+      },
+      {
+        "name": "poppler-utils",
+        "install": "apt-get install poppler-utils (Debian) / your platform's package manager",
+        "_explanation": "Soft dependency, deep path only. pdftotext rescues PDFs that the scraper returns garbled. Its absence loses one rung of the appendix fallback chain and nothing else."
+      }
+    ]
+  }
+}
