@@ -1,6 +1,6 @@
 {
   "id": "behalfbot-restaurant-booking",
-  "name": "Behalf.bot — Restaurant booking (TheFork)",
+  "name": "Behalf.bot - Restaurant booking (TheFork)",
   "description": "Book a restaurant table via TheFork (Lisbon-strong). Triggers on natural-language booking requests from Discord. Handles the full flow: parse intent via Claude Haiku, drive TheFork via Playwright, soft-confirm with the installer via Discord reaction, submit booking, optionally create a Google Calendar event. Built for a specific customer install as a productized feature; not enabled by default on the reference install.",
   "version": "0.1.0",
   "configSchema": {
@@ -19,7 +19,14 @@
       },
       "default_lang": {
         "type": "string",
-        "enum": ["en", "pt", "fr", "es", "it", "de"],
+        "enum": [
+          "en",
+          "pt",
+          "fr",
+          "es",
+          "it",
+          "de"
+        ],
         "description": "TheFork UI language preference when selecting time slots.",
         "default": "en"
       },
@@ -34,6 +41,11 @@
         "type": "string",
         "description": "Discord channel ID where the soft-confirm message is posted. Typically the installer's main working channel (e.g. #<primary>, #asimov-ops). Reaction polling watches this channel only."
       },
+      "confirm_user_id": {
+        "type": "string",
+        "description": "Discord user ID whose reaction is the only one that counts as approval or cancellation. Leave empty and any non-bot member of the channel can approve a booking made in the operator's name. Bot reactions never count either way, including the plugin's own tap-target reactions.",
+        "default": ""
+      },
       "confirm_timeout_seconds": {
         "type": "integer",
         "minimum": 60,
@@ -46,6 +58,12 @@
         "format": "uri",
         "description": "TheFork base URL. Use https://www.thefork.com for the default EN locale, https://www.thefork.pt for native PT, etc. The booking script appends locale-specific paths.",
         "default": "https://www.thefork.com"
+      },
+      "thefork_login_url": {
+        "type": "string",
+        "format": "uri",
+        "description": "TheFork sign-in URL. Separate from the base URL because the sign-in route moves independently of the rest of the site and is the first thing to check when login fails.",
+        "default": "https://www.thefork.com/signin"
       },
       "vaultwarden_item_name": {
         "type": "string",
@@ -61,7 +79,7 @@
         "type": "integer",
         "minimum": 0,
         "maximum": 240,
-        "description": "Search window (±N minutes) around the requested booking time. TheFork rarely has exact-minute slots; 30 min default gives a reasonable spread without surfacing wildly-different alternatives.",
+        "description": "Search window (\u00b1N minutes) around the requested booking time. TheFork rarely has exact-minute slots; 30 min default gives a reasonable spread without surfacing wildly-different alternatives.",
         "default": 30
       },
       "gcal_calendar_id": {
@@ -70,7 +88,9 @@
         "default": "primary"
       }
     },
-    "required": ["enabled"]
+    "required": [
+      "enabled"
+    ]
   },
   "contracts": {
     "tools": [
@@ -79,20 +99,24 @@
       "confirm-via-discord",
       "create-calendar-event"
     ],
-    "skills": ["restaurant-booking"],
+    "skills": [
+      "restaurant-booking"
+    ],
     "heartbeats": [],
     "triggers": [],
     "hooks": []
   },
   "activation": {
     "onStartup": false,
-    "_note": "Dormant by default. Activation gated on installer setting modules.restaurant-booking.enabled: true in chassis.config.yaml AND populating the Vaultwarden TheFork-credentials item. The plugin is invoked by the main session when an installer's Discord message matches a booking intent — there's no continuous heartbeat watching for these."
+    "_note": "Dormant by default. Activation gated on installer setting modules.restaurant-booking.enabled: true in chassis.config.yaml AND populating the Vaultwarden TheFork-credentials item. The plugin is invoked by the main session when an installer's Discord message matches a booking intent \u2014 there's no continuous heartbeat watching for these."
   },
   "_chassis_v1_notes": {
     "trigger_invocation": "Currently invoked via the main session's intent detection rather than a regex-matched chassis trigger. The skill at skills/restaurant-booking.md describes the conversational flow; the four scripts under scripts/ implement each pipeline stage. If/when a chassis-level trigger registry lands, this plugin can register a 'book a table for ...' pattern but for V1 the model-driven dispatch is sufficient.",
-    "external_deps": "scripts use the playwright npm package (declared in package.json) for the TheFork browser-automation flow. Installers must `npm install` inside plugins/restaurant-booking/ before first use OR the chassis Dockerfile must pre-install playwright + chromium at the image-baked layer (deferred — most installs won't enable this plugin).",
+    "external_deps": "scripts use the playwright npm package, pinned to an exact version in package.json with package-lock.json committed. setup.sh runs `npm ci` and installs the Chromium browser via the local playwright binary. The full Chromium build is required, not the headless shell: the shell advertises HeadlessChrome in its user agent and TheFork refuses it.",
     "credentials": "TheFork credentials live in Vaultwarden under modules.restaurant-booking.vaultwarden_item_name (default 'thefork-credentials'). Username + password fields; pulled at booking time via the chassis bw-CLI hydration path. NEVER stored in .env.",
-    "soft_confirm_pattern": "Per the skill, the plugin sends a Discord message describing the proposed booking with two buttons (✅/❌). Reaction polling waits up to confirm_timeout_seconds for the installer's response before submitting OR aborting. This is the 'soft-confirm' gate installer-2's install spec calls for — no auto-submission without explicit reaction.",
-    "installer_target": "Built for a specific customer install (per <v1-reference-install>#618 umbrella). Not actively used on the reference install — restaurant booking isn't part of its daily flow. The OpenClaw port lands the wrapping so the plugin can ship as a discoverable chassis module once the target install reaches the relevant phase."
+    "soft_confirm_pattern": "The plugin posts a Discord message describing the proposed booking and adds a checkmark and a cross as tap targets. Reaction polling waits up to confirm_timeout_seconds before submitting or aborting, and every failure to establish consent aborts. Only confirm_user_id counts when it is set; bot reactions never count. No auto-submission without an explicit reaction from a human.",
+    "installer_target": "Built for a specific customer install (per <v1-reference-install>#618 umbrella). Not actively used on the reference install \u2014 restaurant booking isn't part of its daily flow. The OpenClaw port lands the wrapping so the plugin can ship as a discoverable chassis module once the target install reaches the relevant phase.",
+    "access_status_2026_08_10": "TheFork now serves an HTTP 403 bot-detection interstitial to automated browsers, with IP-level escalation. The plugin detects this and exits 4 rather than misreporting it as no availability, but the booking flow itself cannot complete until an anti-bot posture is decided. No fingerprint patching is implemented anywhere in this plugin. Keep enabled: false.",
+    "network_egress": "Outbound hosts this plugin reaches: https://www.thefork.com, https://www.thefork.pt, https://discord.com/api/v10, https://api.anthropic.com, https://oauth2.googleapis.com, https://www.googleapis.com. No other egress. contracts has no network key in the manifest schema, so this is recorded here rather than invented as one."
   }
 }
