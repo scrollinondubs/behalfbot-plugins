@@ -189,28 +189,55 @@ Run against the live site through a real browser.
 | Query | Plugin | Browser | Verdict |
 |---|---|---|---|
 | One-way LIS to PHX, 21 Dec | 487.0 EUR, 1 stop, American, dep 11:05 | 487 EUR, 1 stop, American, 11:05 | **Exact match** |
+| One-way PHX to SFO, 26 Dec | 126.0 EUR | 126 EUR | **Exact match** |
 | Round trip LIS to PHX, 21 Dec to 6 Jan | 889.0 EUR, American, dep 11:05 | 825 EUR, same American 11:05 outbound | **64 EUR high, 7.8%** |
 | Multi-city LIS-PHX-SFO-LAX-LIS, 21 Dec to 6 Jan | 1520.0 EUR, American 11:05 outbound | 1484 EUR standard economy, 1003 EUR basic economy, same 11:05 outbound | **36 EUR high vs standard, 517 high vs cheapest** |
 
-**One-way matches to the euro, the flight and the minute. Multi-leg trips read
-high.** The direction is consistent and it is not a staging artifact: the
-plugin's own outbound-step ladder for the multi-city trip was 1565 and 1580,
-which does not contain the browser's rows at all, so it is not "projected total
-versus realized total".
+**One-way matches the site exactly. Multi-leg reads high, and the gap is not
+small.** On the multi-city trip the site offered a bookable 1003 EUR fare while
+this tool reported 1520 - a third higher, in the direction that costs the
+traveller money.
 
-Ruled out as causes: expansion breadth (identical at `top_n` 2 and 5), locale
-(identical with `gl`/`hl` unset, PT, and US), sort order and outbound choice
-(both sides pick the same flight), and timing (stable across repeated runs, and
-a settled page was read rather than one still showing "Fetching results").
+### Where the multi-leg gap comes from
 
-One concrete lead: the browser surfaced a 1003 EUR **basic economy** fare that
-the plugin's results never contain, even though basic economy is not excluded in
-the filters. That points at the shopping endpoint returning a narrower set of
-fare families than the web UI renders, which would explain both multi-leg gaps.
-Unproven, so it is a lead and not a conclusion.
+Not from this plugin. Calling `fli` directly, with the plugin layer entirely out
+of the way, returns the same narrow set the plugin reports:
 
-**Treat any multi-leg number as indicative and hand over the check.** One-way is
-trustworthy as measured. Re-measuring on any route is the procedure above.
+```
+raw fli first fetch:  [1565, 1580, 2192, 6780, 7120]
+google flights web:   [1003, 1484, 1530, 1693, 2192]
+```
+
+Only one price is common to both. The shopping endpoint `fli` calls returns a
+materially different set of itineraries for a multi-leg query than the website
+renders - it is not that a cheap fare family is being filtered out downstream,
+because the mid-priced 1484 and 1530 rows are missing too.
+
+**No parameter changes it.** `exclude_basic_economy=False` is already the
+permissive setting and makes no difference; `show_all_results` on and off, and
+`sort_by` set to cheapest, best and top flights, all return the identical price
+set. The only fare-family surface upstream exposes is `fare_name` on the booking
+endpoint, and that endpoint returned zero options for the itinerary tested. That
+holds on the pinned 0.9.0 and on the upstream git HEAD.
+
+So this is an upstream limitation, not a bug in this plugin, and it cannot be
+configured away. If multi-leg prices need to be trustworthy, that is a case for
+a different data source - a paid flight-offers API such as Amadeus - not for
+more work here.
+
+Ruled out along the way: expansion breadth (`top_n` 2 and 5), locale (`gl`/`hl`
+unset, PT, US), sort order, outbound choice, timing, projected-versus-realized
+staging, and this plugin's own filtering.
+
+**Multi-leg numbers are indicative and must never be quoted as a fare.** Results
+carry `price_confidence` and a `price_warning` in the payload itself, so a model
+consuming this tool sees the caveat rather than relying on someone having read
+this file. One-way carries `price_confidence: matches_site`.
+
+One honest limit on the one-way claim: it matched exactly on both routes tested,
+and **neither of those routes had a basic-economy fare on the site**. A one-way
+route that does offer one has not been tested, so "one-way matches the site" is
+two data points, not a guarantee.
 
 ## When it says `scraper_error`
 
