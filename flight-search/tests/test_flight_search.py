@@ -402,6 +402,100 @@ class TestItineraryPrice(Base):
 
 
 # ---------------------------------------------------------------------------
+# Links back to Google, so a human can check any number
+# ---------------------------------------------------------------------------
+
+
+class TestLinks(Base):
+    def test_a_one_way_link_says_one_way(self):
+        """Without the trip type Google renders a round trip and invents a return
+        date, so the link would disagree with the one-way price beside it.
+        Confirmed in a browser on 2026-08-10."""
+        legs = flight_tools.normalize_legs(
+            {"origin": "LIS", "destination": "PHX", "date": "2026-12-21"}
+        )
+        url = flight_tools.search_url(legs, "EUR")
+        self.assertIn("One%20way%20flights", url)
+        self.assertNotIn("through", url)
+
+    def test_a_one_way_search_carries_a_search_link(self):
+        out = flight_tools.search_flights(
+            self.a_query(), currency="EUR", searcher=searcher_for([flight(442.0)])
+        )
+        url = out["query"]["search_url"]
+        self.assertIn("from%20LIS%20to%20JFK", url)
+        self.assertIn("curr=EUR", url)
+
+    def test_a_round_trip_link_carries_both_dates(self):
+        legs = flight_tools.normalize_legs(
+            {"origin": "LIS", "destination": "JFK", "date": "2026-12-20", "return_date": "2027-01-06"}
+        )
+        url = flight_tools.search_url(legs, "EUR")
+        self.assertIn("on%202026-12-20", url)
+        self.assertIn("through%202027-01-06", url)
+
+    def test_multi_city_has_no_search_link_and_says_why(self):
+        legs = flight_tools.normalize_legs(
+            {
+                "legs": [
+                    {"origin": "LIS", "destination": "PHX", "date": "2026-12-20"},
+                    {"origin": "PHX", "destination": "SFO", "date": "2026-12-27"},
+                    {"origin": "SFO", "destination": "LIS", "date": "2027-01-06"},
+                ]
+            }
+        )
+        self.assertIsNone(flight_tools.search_url(legs, "EUR"))
+        self.assertIn("cannot be expressed as a Google Flights link", flight_tools.link_note(legs, []))
+
+    def test_a_multi_airport_query_has_no_search_link(self):
+        """A link that searches LIS when the query said LIS or OPO invites a false check."""
+        legs = flight_tools.normalize_legs(
+            {"origin": "LIS,OPO", "destination": "JFK", "date": "2026-12-20"}
+        )
+        self.assertIsNone(flight_tools.search_url(legs, "EUR"))
+        self.assertIn("several airports at once", flight_tools.link_note(legs, []))
+
+    def test_filters_the_link_cannot_carry_are_listed(self):
+        caveats = flight_tools.url_caveats(
+            {"cabin": "business", "max_stops": "nonstop", "depart_after": 6, "adults": 2}
+        )
+        self.assertIn("cabin class", caveats)
+        self.assertIn("stop limit", caveats)
+        self.assertIn("earliest departure hour", caveats)
+        self.assertIn("passenger count", caveats)
+
+    def test_a_plain_query_has_no_caveats(self):
+        self.assertEqual(flight_tools.url_caveats({"cabin": "economy", "max_stops": "any", "adults": 1}), [])
+
+    def test_the_note_spells_out_what_the_link_drops(self):
+        legs = flight_tools.normalize_legs(self.a_query())
+        note = flight_tools.link_note(legs, ["cabin class", "stop limit"])
+        self.assertIn("does not carry: cabin class, stop limit", note)
+
+    def test_an_alert_carries_the_link_that_re_runs_the_query(self):
+        flight_tools.track_flight(self.a_query(), 500.0, currency="EUR", path=self.store)
+        result = flight_tools.check_prices(path=self.store, searcher=searcher_for([flight(442.0)]))
+        self.assertIn("from%20LIS%20to%20JFK", result["alerts"][0]["search_url"])
+
+    def test_a_flexible_option_carries_a_link_for_that_date_pair(self):
+        def calendar(query, currency, duration):
+            return [pair_price("2026-12-22", "2027-01-06", 889.0)]
+
+        out = flight_tools.search_flexible(
+            {
+                "origin": "LIS",
+                "destination": "PHX",
+                "out_window": "2026-12-20:2026-12-23",
+                "back_window": "2027-01-05:2027-01-08",
+            },
+            currency="EUR", calendar=calendar, flight_searcher=searcher_for([]),
+        )
+        url = out["options"][0]["search_url"]
+        self.assertIn("on%202026-12-22", url)
+        self.assertIn("through%202027-01-06", url)
+
+
+# ---------------------------------------------------------------------------
 # Filter construction against the fake fli
 # ---------------------------------------------------------------------------
 

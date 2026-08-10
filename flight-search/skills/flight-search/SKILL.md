@@ -124,6 +124,27 @@ The daily heartbeat runs `check_prices` for you. Run it by hand only when
 someone asks right now, and expect the run to have polled Google once already
 that day.
 
+## Always hand over the link
+
+One-way and round-trip results carry `query.search_url`, which re-runs the same
+query on Google Flights. **Include it whenever you report a price.** It turns
+"trust the scraper" into something the reader can settle in ten seconds, and it
+is the difference between a number and a claim.
+
+Also read `query.url_caveats`. It lists the filters the link cannot carry - cabin
+class, passenger count, stop limits, hour windows and the rest. If it is
+non-empty, say so when you hand over the link, because the browser page will not
+be running the same filtered query and the numbers are allowed to differ.
+
+Multi-city and multi-airport searches get no link, by design. For those, tell the
+reader to open Google Flights, switch to Multi-city and enter the legs listed in
+the result.
+
+**Round-trip prices currently read high.** Measured on 2026-08-10, a LIS to PHX
+round trip came back 64 EUR above what the browser showed for the same outbound
+flight, while one-way matched exactly. Quote round-trip numbers as indicative and
+point at the link. Do not present one as a firm fare.
+
 ## Reporting a price to a human
 
 Lead with the number and the currency. The currency is asserted against the

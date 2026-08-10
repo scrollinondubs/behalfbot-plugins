@@ -1,9 +1,11 @@
 # flight-search
 
-Search Google Flights and watch fares on routes you care about. Six tools over
+Search Google Flights and watch fares on routes you care about. Eight tools over
 the MIT-licensed [`flights`](https://pypi.org/project/flights/) package
 ([punitarani/fli](https://github.com/punitarani/fli)), exposed over MCP and as a
 CLI, plus a daily heartbeat that only speaks up when a fare crosses its target.
+Every one-way and round-trip result carries a link back to the same query on
+Google Flights, so any number here can be checked by hand.
 
 No account, no API key, no credentials anywhere in this plugin. It searches and
 watches. It never books, holds or pays for anything.
@@ -139,6 +141,67 @@ combination fails you get an error, not an empty list.
 `plan` is slow by construction: `max_searches` full searches, tens of seconds
 each. It is a planning question you ask once, not something to schedule.
 
+## Checking a price against the browser
+
+A price nobody can check is a claim. Every one-way and round-trip result carries
+a `search_url` that re-runs the same query on google.com/travel/flights, so any
+number here can be checked by hand in about ten seconds.
+
+### The procedure
+
+1. Run a search:
+   ```bash
+   python3 scripts/flight_tools.py --currency EUR search --from LIS --to PHX --date 2026-12-21 --limit 3
+   ```
+2. Copy `query.search_url` from the output and open it.
+3. Wait for the page to finish loading - Google shows a stale "Cheapest from"
+   figure while it says "Fetching results", and reading it early gives a number
+   that belongs to a different query.
+4. Compare the plugin's `cheapest_price` with the cheapest fare on the page, and
+   check the trip type, both airports and both dates match what you asked for.
+5. Read `query.url_caveats` before concluding anything. If it lists a filter, the
+   browser page is NOT running your filtered query and the numbers are allowed to
+   differ.
+
+### What the link cannot carry
+
+The link reproduces the route, the dates and the trip type. It does not carry
+cabin class, passenger counts, stop limits, airline restrictions, price ceiling,
+duration or layover limits, or hour windows. Those are listed in `url_caveats`
+on every result, so a mismatch is never a mystery.
+
+Two cases get no link at all, deliberately, because a link to a different
+question is worse than none:
+
+- **Multi-city.** It cannot be expressed in this link form. A protobuf `tfs`
+  token was tried and tested in a browser on 2026-08-10: a four-segment token
+  rendered as a plain one-way LIS to PHX search, silently dropping three legs.
+  To check a multi-city result by hand, open Google Flights, switch the trip type
+  to Multi-city, and enter the legs the result lists.
+- **Multi-airport queries** (`--from LIS,OPO`), which a link takes one airport
+  for.
+
+### Parity as measured, 2026-08-10
+
+Run against the live site through a real browser.
+
+| Query | Plugin | Browser | Verdict |
+|---|---|---|---|
+| One-way LIS to PHX, 21 Dec | 487.0 EUR, 1 stop, American, dep 11:05 | €487, 1 stop, American, 11:05 | **Exact match** |
+| Round trip LIS to PHX, 21 Dec to 6 Jan | 889.0 EUR, American, dep 11:05 | €825 for the same American 11:05 outbound | **64 EUR apart** |
+
+The one-way case matches to the euro, the flight and the minute. The round-trip
+case does not, and it is not explained by any of the obvious causes: the gap
+survives `top_n` 2 and 5, survives `curr`/`gl`/`hl` set to PT and to US, is
+stable across repeated runs, and both sides pick the same outbound flight. The
+remaining likely explanation is that the shopping endpoint `fli` calls returns a
+different round-trip fare set than the web UI renders, which would mean round
+trips read high by roughly eight percent on this route.
+
+**Treat a round-trip number as indicative until this is closed out.** One-way is
+trustworthy as measured. This is tracked as the next thing to investigate, and
+the check above is the way to re-measure it on any route.
+
 ## When it says `scraper_error`
 
 Two different things produce it, and they need different responses.
@@ -258,7 +321,21 @@ The first prints `{"count": 0, ...}` and costs nothing. The second prints
 `{"count": 1, "alert_kinds": ["target_met"], ...}`, which is what wakes the
 model.
 
-**9. The trip that is actually worth demoing.** A round trip, then the real
+**9. Check the number against the real site.** The step worth recording: take the
+`search_url` from step 1 and open it next to the terminal.
+
+```bash
+python3 scripts/flight_tools.py --currency EUR search --from LIS --to PHX --date 2026-12-21 --limit 3 \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['cheapest_price'], d['currency']); print(d['query']['search_url'])"
+```
+
+Open the URL, let it finish loading, and compare. On 2026-08-10 this printed
+487.0 EUR and the browser showed €487 on the same American flight at 11:05. Say
+out loud that this is a one-way check, and that round trips currently read high -
+see "Parity as measured" above. An audience that sees a caveat stated up front
+trusts the numbers that come with no caveat.
+
+**10. The trip that is actually worth demoing.** A round trip, then the real
 multi-city planning question. Both live; the plan step takes a couple of minutes,
 so start it and talk over it.
 
@@ -268,14 +345,17 @@ python3 scripts/flight_tools.py plan --from LIS --visit PHX,SFO,LAX \
   --out-window 2026-12-20:2026-12-23 --back-window 2027-01-05:2027-01-08 --max-searches 2
 ```
 
-**10. Clean up.**
+Step 10 is the one that lands: a trip nobody would assemble by hand, priced in a
+couple of minutes.
+
+**11. Clean up.**
 
 ```bash
 python3 scripts/flight_tools.py remove "$RID"
 unset FLIGHT_SEARCH_STORE
 ```
 
-Steps 1, 2, 4 and 9 need network. Steps 5 to 8 are deterministic and work
+Steps 1, 2, 4, 9 and 10 need network. Steps 5 to 8 are deterministic and work
 offline, so the part of the recording that shows the alert and failure paths is
 safe even on conference wifi.
 

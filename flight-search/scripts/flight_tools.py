@@ -59,6 +59,7 @@ import pathlib
 import re
 import sys
 import tempfile
+import urllib.parse
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Iterable
 
@@ -499,6 +500,120 @@ def _call_upstream(fn: Callable, *args, **kwargs):
 
 
 # ---------------------------------------------------------------------------
+# Google Flights links, so every number can be checked by hand
+# ---------------------------------------------------------------------------
+#
+# The acceptance bar for this plugin is that its numbers match what a person
+# sees in a browser. A price nobody can check is a claim, so a result carries a
+# link back to the same query on Google Flights.
+#
+# The link is the `q=` natural-language form, which Google's own frontend
+# accepts. It reproduces the route and the dates. It does NOT carry the filters,
+# which is why url_caveats() exists and why the caveats are printed next to it.
+#
+# What is deliberately NOT here, having been tried and rejected:
+#
+#   A `tfs=` protobuf deep link, which is what Google's own UI produces and
+#   would pin an exact itinerary or a multi-city query. Two blockers. The
+#   builders for it (`SearchFlights.build_flight_booking_url`, `build_tfs_token`,
+#   `fli.core.links.google_flights_url`) exist upstream on git HEAD but are NOT
+#   in the pinned 0.9.0 release - checked against the installed package, not the
+#   repo. And a hand-built search-flavour token was tested in a real browser on
+#   2026-08-10: a four-segment token rendered as a plain one-way LIS to PHX
+#   search, silently dropping three legs. A link that answers a different
+#   question than the one asked is worse than no link, so multi-city gets no
+#   link and says so instead. This turns on by itself when a release ships the
+#   builders; see "Verifying a bump" in the README.
+
+# Filters that a Google Flights link cannot carry. A URL that silently drops
+# half the query is worse than no URL, so these are reported next to it.
+URL_CAVEATS = {
+    "cabin": "cabin class",
+    "max_stops": "stop limit",
+    "airlines": "airline restriction",
+    "max_price": "price ceiling",
+    "max_duration_minutes": "max total duration",
+    "max_layover_minutes": "max layover",
+    "depart_after": "earliest departure hour",
+    "depart_before": "latest departure hour",
+    "arrive_after": "earliest arrival hour",
+    "arrive_before": "latest arrival hour",
+    "adults": "passenger count",
+    "children": "passenger count",
+}
+
+
+GOOGLE_FLIGHTS_URL = "https://www.google.com/travel/flights"
+
+
+def search_url(legs: list[dict], currency: str) -> str | None:
+    """A link that re-runs the same route and dates as a fresh search.
+
+    None for the two cases this link form cannot express: a multi-city
+    itinerary, and a multi-airport origin or destination. Returning None is the
+    point - a URL that quietly searches LIS when the query said LIS or OPO would
+    invite someone to "verify" a number against a different question.
+
+    Verified in a browser on 2026-08-10: the emitted link lands on the same
+    search, with the same route and dates, in the requested currency.
+    """
+    if not legs:
+        return None
+    if any("," in leg["origin"] or "," in leg["destination"] for leg in legs):
+        return None
+    shape = trip_shape(legs)
+    if shape == "multi_city":
+        return None
+    # The trip type is stated explicitly. Without it Google defaults the page to
+    # a round trip and invents a return date: "Flights from LIS to PHX on
+    # 2026-12-21" rendered as a round trip returning 25 December, priced as a
+    # round trip, which would make the link disagree with the one-way number it
+    # was emitted next to. Checked in a browser on 2026-08-10, both forms.
+    prefix = "One way flights" if shape == "one_way" else "Round trip flights"
+    query = f"{prefix} from {legs[0]['origin']} to {legs[0]['destination']} on {legs[0]['date']}"
+    if shape == "round_trip":
+        query += f" through {legs[1]['date']}"
+    url = f"{GOOGLE_FLIGHTS_URL}?q={urllib.parse.quote(query)}"
+    if currency:
+        url += f"&curr={urllib.parse.quote(currency.upper(), safe='')}"
+    return url
+
+
+def url_caveats(query: dict) -> list[str]:
+    """Which parts of this query the search link does NOT carry."""
+    caveats = []
+    for key, description in URL_CAVEATS.items():
+        value = query.get(key)
+        if value in (None, "", "any", "economy"):
+            continue
+        if key in ("adults", "children") and int(value) == (1 if key == "adults" else 0):
+            continue
+        if description not in caveats:
+            caveats.append(description)
+    return caveats
+
+
+def link_note(legs: list[dict], caveats: list[str]) -> str:
+    if trip_shape(legs) == "multi_city":
+        base = (
+            "No search_url: a multi-city query cannot be expressed as a Google Flights link with the "
+            "pinned dependency, and a link that silently searches only the first leg would be worse "
+            "than none. To check by hand, open google.com/travel/flights, switch the trip type to "
+            "Multi-city, and enter the legs listed above."
+        )
+    elif any("," in leg["origin"] or "," in leg["destination"] for leg in legs):
+        base = (
+            "No search_url: this query searches several airports at once and a Google Flights link "
+            "takes one. Check a single airport pair at a time."
+        )
+    else:
+        base = "Open search_url to re-run this route and dates in a browser."
+    if caveats:
+        base += " The link does not carry: " + ", ".join(caveats) + "."
+    return base
+
+
+# ---------------------------------------------------------------------------
 # Normalization and the empty/broken distinction
 # ---------------------------------------------------------------------------
 
@@ -531,7 +646,7 @@ def _normalize_segment(result: Any) -> dict:
     }
 
 
-def normalize_itinerary(result: Any) -> dict:
+def normalize_itinerary(result: Any, currency: str | None = None) -> dict:
     """One search result to a plain dict, whatever the trip shape.
 
     `fli` returns a bare FlightResult for a one-way trip and a tuple of them for a
@@ -625,7 +740,7 @@ def interpret_results(
             )
         return {"status": "empty", "flights": [], "currency": currency, "canary": detail}
 
-    flights = [normalize_itinerary(r) for r in rows]
+    flights = [normalize_itinerary(r, currency) for r in rows]
     priced = [f for f in flights if f["price"] is not None]
     if not priced:
         raise FlightSearchError(
@@ -693,13 +808,17 @@ def live_date_searcher(query: dict, currency: str) -> list:
 # ---------------------------------------------------------------------------
 
 
-def describe_query(query: dict) -> dict:
+def describe_query(query: dict, currency: str) -> dict:
     legs = normalize_legs(query)
+    caveats = url_caveats(query)
     return {
         "trip_shape": trip_shape(legs),
         "legs": legs,
         "cabin": query.get("cabin", "economy"),
         "adults": int(query.get("adults", 1)),
+        "search_url": search_url(legs, currency),
+        "url_caveats": caveats,
+        "verify": link_note(legs, caveats),
     }
 
 
@@ -710,7 +829,7 @@ def search_flights(query: dict, currency: str | None = None, limit: int = 5, sea
     normalize_legs(query)  # fail on a bad query before spending a request
     raw = searcher(query, currency, limit)
     out = interpret_results(raw, currency, searcher, limit=limit)
-    out["query"] = describe_query(query)
+    out["query"] = describe_query(query, currency)
     return out
 
 
@@ -769,6 +888,17 @@ def search_dates(query: dict, currency: str | None = None, searcher=None, flight
             "destination": query["destination"].upper(),
             "from_date": query["from_date"],
             "to_date": query["to_date"],
+            "search_url": search_url(
+                [
+                    {
+                        "origin": query["origin"].upper(),
+                        "destination": query["destination"].upper(),
+                        "date": cheapest["date"],
+                    }
+                ],
+                currency,
+            ),
+            "verify": "search_url opens the cheapest day found - Google's own date grid is on that page.",
         },
     }
 
@@ -911,6 +1041,15 @@ def search_flexible(query: dict, currency: str | None = None, calendar=None, fli
                     "nights": duration,
                     "price": point.price,
                     "currency": point.currency,
+                    "search_url": search_url(
+                        [
+                            {"origin": query["origin"].upper(), "destination": query["destination"].upper(),
+                             "date": dates[0]},
+                            {"origin": query["destination"].upper(), "destination": query["origin"].upper(),
+                             "date": dates[1]},
+                        ],
+                        currency,
+                    ),
                 }
             )
 
@@ -960,6 +1099,10 @@ def search_flexible(query: dict, currency: str | None = None, calendar=None, fli
         "spread": round(unique[-1]["price"] - unique[0]["price"], 2),
         "searched_nights": [shortest, longest],
         "failures": failures,
+        "verify": (
+            "Each option carries a search_url for that exact date pair. These are Google's calendar "
+            "prices, so the browser page shows the same figure before you pick flights."
+        ),
         "query": {
             "origin": query["origin"].upper(),
             "destination": query["destination"].upper(),
@@ -1325,6 +1468,10 @@ def list_tracked(path: pathlib.Path | None = None) -> dict:
                 "history": history,
                 "last_error": route.get("last_error"),
                 "last_alert": route.get("last_alert"),
+                "search_url": search_url(
+                    normalize_legs(route.get("query", {})),
+                    (route.get("currency") or default_currency()).upper(),
+                ),
             }
         )
     broken = [r for r in routes if r["status"] == "error"]
@@ -1492,6 +1639,10 @@ def check_prices(path: pathlib.Path | None = None, searcher=None, simulate_drop:
         if alert:
             if simulated:
                 alert["simulated"] = True
+            # The alert carries the link that re-runs the same query, so the
+            # first thing anyone does with a price claim - check it - is one
+            # click rather than a search rebuilt by hand.
+            alert["search_url"] = search_url(normalize_legs(route["query"]), currency)
             alerts.append(alert)
             route["last_alert"] = alert
 
