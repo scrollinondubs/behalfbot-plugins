@@ -21,12 +21,22 @@ max_party_size: 20
 # neither is set, rather than posting to a channel baked in at ship time.
 discord_channel_id: ""
 
+# Discord user ID allowed to approve or cancel a booking with a reaction.
+# Leave empty and ANY non-bot member of the channel can approve a booking made
+# in the operator's name. Set it. The scripts warn loudly when it is empty.
+confirm_user_id: ""
+
 # Soft-confirm timeout in seconds. After this, the booking is aborted.
 # 600 = 10 minutes (V1 default per spec).
+# --timeout on confirm-via-discord.py overrides this.
 confirm_timeout_seconds: 600
 
 # TheFork base URL. Switch to thefork.pt if you want PT locale by default.
 thefork_base_url: "https://www.thefork.com"
+
+# Login page URL. Kept separate from the base URL because TheFork's sign-in
+# route has moved before and is the first thing to check when login fails.
+thefork_login_url: "https://www.thefork.com/signin"
 
 # Vaultwarden item name holding TheFork credentials.
 # The booking script pulls username + password from VW at invocation time.
