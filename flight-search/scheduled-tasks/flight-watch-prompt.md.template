@@ -69,6 +69,10 @@ dropped mid-word.
 
 One post per run, covering every alert in the file. Not one post per route.
 
+**Always include the alert's `search_url`.** It re-runs the same query on Google
+Flights, so the first thing anyone does with a price - check it - is one click.
+An alert without its link is a claim.
+
 Shape for a price alert:
 
 ```
@@ -77,7 +81,7 @@ Flight watch - LIS to JFK, 9 Sep
 429 EUR, target was 450. Was 512 at the last check.
 TAP, one stop, 12h05.
 
-Google Flights: https://www.google.com/travel/flights
+Check it: <the alert's search_url>
 ```
 
 Shape for a failure:
