@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "type": "hotelSentiment",
+      "hotelId": "MCLONGHM",
+      "overallRating": 88,
+      "numberOfRatings": 1421,
+      "numberOfReviews": 1102,
+      "sentiments": {
+        "sleepQuality": 91,
+        "service": 93,
+        "facilities": 86,
+        "roomComforts": 89,
+        "valueForMoney": 74,
+        "catering": 84,
+        "location": 96,
+        "pointsOfInterest": 94,
+        "staff": 95
+      }
+    }
+  ],
+  "meta": {
+    "count": 1,
+    "links": {
+      "self": "https://test.api.amadeus.com/v2/e-reputation/hotel-sentiments?hotelIds=MCLONGHM"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "errors": [
+    {
+      "status": 400,
+      "code": 424,
+      "title": "NO HOTELS FOUND WHICH MATCH THIS INPUT"
+    }
+  ]
+}

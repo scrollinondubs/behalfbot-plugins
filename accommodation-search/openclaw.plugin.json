@@ -1,0 +1,111 @@
+{
+  "id": "behalfbot-accommodation-search",
+  "name": "Behalf.bot - Accommodation search (Amadeus)",
+  "description": "Search places to stay through the Amadeus Self-Service API: properties in a city or around a point, priced for a date range and a party size, with rates, cancellation policies and guest ratings. This is GDS and chain hotel inventory - hotels, not apartments. Short-let flats, Airbnb-style listings and non-chain properties are not carried by this supplier at all, so it does not replace what a home-rental site does and nothing here should be presented as a complete picture of a city's accommodation. Search only: there is no booking path and there is not meant to be one. The tool interface is supplier-neutral and designed for a second supplier (Booking.com's Demand API, reserved and not implemented) to slot in behind it without callers changing. An empty or failed search surfaces as an error rather than as 'nothing available', and an exhausted monthly quota is reported as a distinct failure from both a rate limit and a genuinely empty result.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Master switch. Off by default: it needs a free Amadeus Self-Service account, and the account's monthly call allowance is shared with anything else using the same credentials.",
+        "default": false
+      },
+      "amadeus_client_id": {
+        "type": "string",
+        "description": "The Amadeus API Key. Consumed as AMADEUS_CLIENT_ID from the process environment ONLY - this plugin never reads a credential from a file and never writes one. Set it in the chassis secret store, not here. Create one free at developers.amadeus.com; the same account also covers flight search.",
+        "_secret": true
+      },
+      "amadeus_client_secret": {
+        "type": "string",
+        "description": "The Amadeus API Secret, exchanged with the key for a 30-minute OAuth2 bearer token. Consumed as AMADEUS_CLIENT_SECRET from the process environment ONLY. Never written to disk, never logged, and scrubbed from any output on its way to a model.",
+        "_secret": true
+      },
+      "amadeus_environment": {
+        "type": "string",
+        "enum": ["test", "production"],
+        "description": "Which Amadeus environment the keys belong to. 'test' is free and returns cached rather than live data, restricted to a subset of hotel chains - correct for building and wrong for quoting a real price to a traveller. 'production' returns live inventory and bills above the free monthly allowance. Test and production keys are different keys and are not interchangeable. Consumed as AMADEUS_ENVIRONMENT.",
+        "default": "test"
+      },
+      "monthly_call_budget": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Local ceiling on supplier calls per UTC month. Past it, tools refuse locally without sending a request, and say plainly that this is the plugin's own limit rather than the supplier's. 2000 is a working assumption, not a published figure - Amadeus documents only that the free allowance 'varies from one API to another' and shows the number nowhere in its API. Raise it if the account's real allowance is higher. Consumed as ACCOMMODATION_MONTHLY_CALL_BUDGET.",
+        "default": 2000
+      },
+      "state_dir": {
+        "type": "string",
+        "description": "Directory holding call-ledger.json, the monthly count of supplier calls. Contains endpoint labels and integers - no credentials, no request parameters, no responses. Consumed as ACCOMMODATION_STATE_DIR.",
+        "default": "${PLUGIN_DIR}/var"
+      },
+      "fixture_dir": {
+        "type": "string",
+        "description": "When set, the plugin serves committed JSON fixtures instead of calling the supplier, so the tools can be exercised with no account. Every fixture-mode call prints a banner to stderr and every result carries data_source 'fixture', so it can never be mistaken for live data. Leave unset in normal operation. Consumed as ACCOMMODATION_FIXTURE_DIR."
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": [],
+    "skills": ["accommodation-search"],
+    "hooks": [],
+    "heartbeats": [],
+    "triggers": [],
+    "env": {
+      "ACCOMMODATION_SEARCH_PLUGIN_DIR": "${PLUGIN_DIR}",
+      "ACCOMMODATION_STATE_DIR": "${PLUGIN_DIR}/var"
+    },
+    "mcpServers": {
+      "accommodation-search": {
+        "command": "python3",
+        "args": ["${PLUGIN_DIR}/scripts/mcp_server.py"],
+        "env": {
+          "AMADEUS_CLIENT_ID": "${AMADEUS_CLIENT_ID}",
+          "AMADEUS_CLIENT_SECRET": "${AMADEUS_CLIENT_SECRET}",
+          "AMADEUS_ENVIRONMENT": "${AMADEUS_ENVIRONMENT}"
+        }
+      }
+    }
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "On-demand only. The MCP server starts when the harness starts it and makes no request until a tool is called. No polling and no price-monitoring heartbeat: a loop watching a rate would spend the account's monthly allowance on nobody's behalf, and that is a separate decision with its own issue."
+  },
+  "_inventory": {
+    "_note": "What this plugin can and cannot see, stated in the manifest because it is the single most misleading thing about it. Underscore-prefixed because docs/MANIFEST.md has no schema field for it yet.",
+    "covers": "Hotels distributed through the Amadeus GDS and its chain and bedbank connections. Chain properties, GDS-connected independents, aparthotels operated by chains.",
+    "does_not_cover": "Apartments and short lets. Airbnb, Vrbo and equivalent inventory is not in this supplier in any form. Booking.com's own inventory is not here either - that arrives, if it arrives, through the reserved 'booking' supplier once affiliate approval lands.",
+    "consequence": "An empty result from this plugin is evidence about Amadeus's inventory and nothing more. It is never evidence that a city has nowhere to stay."
+  },
+  "_network_egress": {
+    "_note": "Every host this plugin can reach. One supplier, two hosts, and which one is used depends on whether the credentials are test or production credentials.",
+    "hosts": [
+      {
+        "host": "test.api.amadeus.com",
+        "purpose": "Amadeus Self-Service test environment: OAuth2 token, Hotel List, Hotel Search v3, Hotel Ratings. Cached data, restricted to a subset of chains.",
+        "data_sent": "The API key and secret to the token endpoint. Then, per search: a city code or a latitude/longitude pair, a radius, dates, guest and room counts, an optional price ceiling and currency, and property codes. No traveller name, no contact detail, no payment detail - none of those exist anywhere in this plugin."
+      },
+      {
+        "host": "api.amadeus.com",
+        "purpose": "The same endpoints against the production environment. Used only when amadeus_environment is 'production'.",
+        "data_sent": "Identical to the above."
+      }
+    ]
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "python3",
+        "install": "apt-get install python3 (Debian) / your platform's package manager",
+        "_explanation": "Python 3.9 or newer. Runs the MCP server, the supplier client and the demo. Standard library only."
+      },
+      {
+        "name": "AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET",
+        "install": "register free at developers.amadeus.com, create an app, set both in the chassis secret store",
+        "_explanation": "Read from the process environment and nowhere else. Without them the tools refuse with a named CREDENTIALS_MISSING error rather than failing obscurely; the committed fixtures still exercise every path offline."
+      }
+    ],
+    "_third_party_packages": "None. See requirements.txt for why zero dependencies is the pin rather than a gap, and scripts/check_stdlib_only.py, which fails setup.sh and validate.sh if that ever stops being true."
+  }
+}

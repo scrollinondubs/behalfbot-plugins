@@ -1,0 +1,25 @@
+{
+  "data": [
+    {
+      "chainCode": "MC",
+      "iataCode": "LON",
+      "dupeId": 700031300,
+      "name": "JW MARRIOTT GROSVENOR HOUSE LONDON",
+      "hotelId": "MCLONGHM",
+      "geoCode": {
+        "latitude": 51.50988,
+        "longitude": -0.15509
+      },
+      "address": {
+        "countryCode": "GB"
+      },
+      "lastUpdate": "2026-06-14T09:12:41"
+    }
+  ],
+  "meta": {
+    "count": 1,
+    "links": {
+      "self": "https://test.api.amadeus.com/v1/reference-data/locations/hotels/by-hotels?hotelIds=MCLONGHM"
+    }
+  }
+}

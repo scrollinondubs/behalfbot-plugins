@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "status": 429,
+      "code": 38194,
+      "title": "Too many requests",
+      "detail": "The network rate limit is exceeded, please try again later"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "status": 429,
+      "code": 38195,
+      "title": "Quota limit exceeded",
+      "detail": "The quota limit is exceeded."
+    }
+  ]
+}
