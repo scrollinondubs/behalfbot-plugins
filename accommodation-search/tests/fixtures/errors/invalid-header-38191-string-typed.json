@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "status": "401",
+      "code": "38191",
+      "title": "Invalid HTTP header",
+      "detail": "Missing or invalid format for mandatory Authorization header"
+    }
+  ]
+}

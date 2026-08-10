@@ -1,0 +1,6 @@
+{
+  "error": "invalid_client",
+  "error_description": "Client credentials are invalid",
+  "code": 38187,
+  "title": "Invalid parameters"
+}
