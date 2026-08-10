@@ -1,7 +1,7 @@
 {
   "id": "behalfbot-accommodation-search",
   "name": "Behalf.bot - Accommodation search (Amadeus)",
-  "description": "Search places to stay through the Amadeus Self-Service API: properties in a city or around a point, priced for a date range and a party size, with rates, cancellation policies and guest ratings. This is GDS and chain hotel inventory - hotels, not apartments. Short-let flats, Airbnb-style listings and non-chain properties are not carried by this supplier at all, so it does not replace what a home-rental site does and nothing here should be presented as a complete picture of a city's accommodation. Search only: there is no booking path and there is not meant to be one. The tool interface is supplier-neutral and designed for a second supplier (Booking.com's Demand API, reserved and not implemented) to slot in behind it without callers changing. An empty or failed search surfaces as an error rather than as 'nothing available', and an exhausted monthly quota is reported as a distinct failure from both a rate limit and a genuinely empty result.",
+  "description": "DORMANT - SUPPLIER GONE: Amadeus decommissioned its Self-Service portal on 17 July 2026, so no credentials can be obtained and every call fails authentication. Disabled by default; do not enable. Kept for its supplier-neutral interface, which a replacement supplier slots into. Search places to stay through the Amadeus Self-Service API: properties in a city or around a point, priced for a date range and a party size, with rates, cancellation policies and guest ratings. This is GDS and chain hotel inventory - hotels, not apartments. Short-let flats, Airbnb-style listings and non-chain properties are not carried by this supplier at all, so it does not replace what a home-rental site does and nothing here should be presented as a complete picture of a city's accommodation. Search only: there is no booking path and there is not meant to be one. The tool interface is supplier-neutral and designed for a second supplier (Booking.com's Demand API, reserved and not implemented) to slot in behind it without callers changing. An empty or failed search surfaces as an error rather than as 'nothing available', and an exhausted monthly quota is reported as a distinct failure from both a rate limit and a genuinely empty result.",
   "version": "0.1.0",
   "configSchema": {
     "type": "object",
@@ -9,7 +9,7 @@
     "properties": {
       "enabled": {
         "type": "boolean",
-        "description": "Master switch. Off by default: it needs a free Amadeus Self-Service account, and the account's monthly call allowance is shared with anything else using the same credentials.",
+        "description": "SUPPLIER GONE - leave false. Amadeus Self-Service was decommissioned 17 July 2026 and issues no credentials, so enabling this yields authentication failures on every call. Master switch. Off by default: it needs a free Amadeus Self-Service account, and the account's monthly call allowance is shared with anything else using the same credentials.",
         "default": false
       },
       "amadeus_client_id": {
@@ -24,7 +24,10 @@
       },
       "amadeus_environment": {
         "type": "string",
-        "enum": ["test", "production"],
+        "enum": [
+          "test",
+          "production"
+        ],
         "description": "Which Amadeus environment the keys belong to. 'test' is free and returns cached rather than live data, restricted to a subset of hotel chains - correct for building and wrong for quoting a real price to a traveller. 'production' returns live inventory and bills above the free monthly allowance. Test and production keys are different keys and are not interchangeable. Consumed as AMADEUS_ENVIRONMENT.",
         "default": "test"
       },
@@ -44,11 +47,15 @@
         "description": "When set, the plugin serves committed JSON fixtures instead of calling the supplier, so the tools can be exercised with no account. Every fixture-mode call prints a banner to stderr and every result carries data_source 'fixture', so it can never be mistaken for live data. Leave unset in normal operation. Consumed as ACCOMMODATION_FIXTURE_DIR."
       }
     },
-    "required": ["enabled"]
+    "required": [
+      "enabled"
+    ]
   },
   "contracts": {
     "tools": [],
-    "skills": ["accommodation-search"],
+    "skills": [
+      "accommodation-search"
+    ],
     "hooks": [],
     "heartbeats": [],
     "triggers": [],
@@ -59,7 +66,9 @@
     "mcpServers": {
       "accommodation-search": {
         "command": "python3",
-        "args": ["${PLUGIN_DIR}/scripts/mcp_server.py"],
+        "args": [
+          "${PLUGIN_DIR}/scripts/mcp_server.py"
+        ],
         "env": {
           "AMADEUS_CLIENT_ID": "${AMADEUS_CLIENT_ID}",
           "AMADEUS_CLIENT_SECRET": "${AMADEUS_CLIENT_SECRET}",
