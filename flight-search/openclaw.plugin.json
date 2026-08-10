@@ -1,7 +1,7 @@
 {
   "id": "behalfbot-flight-search",
   "name": "Behalf.bot - Flight search and price tracking",
-  "description": "Search Google Flights and monitor fares on tracked routes. Six MCP tools over the MIT-licensed `flights` package: prices on a route for a date, cheapest day across a range, register a route with a target price, poll tracked routes, list them with their price history, stop tracking. A daily heartbeat speaks up only when a fare crosses its target - or when the scraper breaks, which it reports as a failure rather than as silence.",
+  "description": "Search Google Flights and monitor fares on tracked routes. Eight MCP tools over the MIT-licensed `flights` package: prices on a route for a date as one-way, round trip or multi-city; cheapest day across a range; cheapest round trips across flexible outbound and return windows; a multi-city trip planner that has to touch a list of cities; plus register, poll, list and remove for tracked routes. One-way and round-trip results carry a Google Flights link so any number can be checked by hand. A daily heartbeat speaks up only when a fare crosses its target - or when the scraper breaks, which it reports as a failure rather than as silence.",
   "version": "0.1.0",
   "configSchema": {
     "type": "object",
@@ -72,7 +72,9 @@
         "default": 4
       }
     },
-    "required": ["enabled"]
+    "required": [
+      "enabled"
+    ]
   },
   "contracts": {
     "tools": [
@@ -85,8 +87,12 @@
       "list_tracked",
       "remove_tracked"
     ],
-    "skills": ["flight-search"],
-    "heartbeats": ["flight-watch"],
+    "skills": [
+      "flight-search"
+    ],
+    "heartbeats": [
+      "flight-watch"
+    ],
     "triggers": [],
     "hooks": [],
     "env": {
@@ -105,7 +111,9 @@
     "mcpServers": {
       "flight-search": {
         "command": "python3",
-        "args": ["${PLUGIN_DIR}/scripts/flight_search_mcp.py"],
+        "args": [
+          "${PLUGIN_DIR}/scripts/flight_search_mcp.py"
+        ],
         "env": {
           "FLIGHT_SEARCH_STORE": "${CHASSIS_HOME}/data/flight-search/tracked-routes.json",
           "FLIGHT_SEARCH_CURRENCY": "EUR"
@@ -146,7 +154,7 @@
   },
   "_notes": {
     "trip_shapes": "One-way, round trip and multi-city up to six legs, all searchable and all trackable. Google prices the whole itinerary in one shopping session - the chosen outbound is sent back as the selected flight and Google is asked for the next leg in that context - so a fare here is a fare, never a sum of separate one-way searches. The itinerary price is the LAST element of the tuple `fli` returns: verified live on 2026-08-10, a LIS-JFK-LIS round trip came back as (490.0, 490.0) against a 442.0 one-way, and a four-leg LIS-PHX-SFO-LAX-LIS trip as (1577.0, 1577.0, 1577.0, 1595.0). `fli` agrees - get_booking_options builds its token from results[-1].price.",
-    "browser_parity": "Every one-way and round-trip result carries a search_url that re-runs the same query on google.com/travel/flights, plus url_caveats naming the filters a link cannot carry. Measured against a real browser on 2026-08-10: one-way LIS to PHX matched to the euro, the flight and the minute (487 EUR both sides). The round trip on the same route did NOT: the plugin reported 889 EUR against the browser's 825 for the same outbound, and the gap survived top_n 2 and 5, gl/hl set to PT and US, and repeated runs. Round-trip numbers are indicative until that is closed out. Multi-city and multi-airport queries get no link at all rather than a wrong one - a hand-built tfs protobuf token was tested in a browser and rendered a four-segment trip as a plain one-way, dropping three legs.",
+    "browser_parity": "Every one-way and round-trip result carries a search_url that re-runs the same query on google.com/travel/flights, plus url_caveats naming the filters a link cannot carry. Measured against a real browser on 2026-08-10. One-way LIS to PHX matched exactly: 487 EUR both sides, same American flight, same 11:05 departure. Multi-leg trips read HIGH: the LIS-PHX round trip reported 889 EUR against the browser's 825 for the same outbound, and the four-leg LIS-PHX-SFO-LAX-LIS trip reported 1520 EUR against 1484 standard economy and 1003 basic economy. Ruled out: expansion breadth, locale, sort order, outbound choice, timing, and projected-versus-realized staging. Open lead: the browser surfaces basic-economy fares the plugin's results never contain, so the shopping endpoint may return a narrower set of fare families than the web UI. Quote multi-leg numbers as indicative and hand over the check. Multi-city and multi-airport queries get no link rather than a wrong one.",
     "planning_cost": "A multi-leg search costs roughly top_n ** (legs - 1) requests. plan_trip ranks candidate date pairs with the cheap calendar grid and then prices only the best few for real, bounded by max_plan_searches. The ranking is a heuristic used to choose dates and never becomes a reported price.",
     "alert_policy": "A target price is required at track time and is the only alert condition, per the default in new-jaxity#499. Alerts fire on transitions rather than states: crossing the target, dropping further below an already-alerted target, breaking, and recovering. A fare sitting below its target for a week is one alert, not seven.",
     "failure_semantics": "The plugin never reports an empty result as an answer without proving the scraper is alive. See the module docstring in scripts/flight_tools.py."
