@@ -1,0 +1,11 @@
+{
+  "type": "amadeusOAuth2Token",
+  "username": "example@example.com",
+  "application_name": "behalfbot-accommodation-search",
+  "client_id": "YOUR_API_KEY",
+  "token_type": "Bearer",
+  "access_token": "YOUR_BEARER_TOKEN",
+  "expires_in": 1799,
+  "state": "approved",
+  "scope": ""
+}

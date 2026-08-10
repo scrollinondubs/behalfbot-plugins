@@ -1,0 +1,189 @@
+{
+  "data": [
+    {
+      "type": "hotel-offers",
+      "hotel": {
+        "type": "hotel",
+        "hotelId": "MCLONGHM",
+        "chainCode": "MC",
+        "dupeId": "700031300",
+        "name": "JW Marriott Grosvenor House London",
+        "cityCode": "LON",
+        "latitude": 51.50988,
+        "longitude": -0.15509
+      },
+      "available": true,
+      "offers": [
+        {
+          "id": "TSXOJ6LFQ2",
+          "checkInDate": "2026-09-14",
+          "checkOutDate": "2026-09-16",
+          "rateCode": "V  ",
+          "rateFamilyEstimated": {
+            "code": "PRO",
+            "type": "P"
+          },
+          "room": {
+            "type": "ELE",
+            "typeEstimated": {
+              "category": "EXECUTIVE_ROOM",
+              "beds": 1,
+              "bedType": "KING"
+            },
+            "description": {
+              "text": "Executive King Room\nPrepay non-refundable non-changeable\nLounge access",
+              "lang": "EN"
+            }
+          },
+          "guests": {
+            "adults": 2
+          },
+          "roomQuantity": "1",
+          "price": {
+            "currency": "GBP",
+            "base": "716.00",
+            "total": "716.00",
+            "variations": {
+              "average": {
+                "base": "358.00"
+              },
+              "changes": [
+                {
+                  "startDate": "2026-09-14",
+                  "endDate": "2026-09-16",
+                  "base": "358.00"
+                }
+              ]
+            }
+          },
+          "policies": {
+            "paymentType": "deposit",
+            "cancellation": {
+              "type": "FULL_STAY",
+              "amount": "716.00",
+              "description": {
+                "text": "NON-REFUNDABLE RATE",
+                "lang": "EN"
+              }
+            },
+            "deposit": {
+              "acceptedPayments": {
+                "creditCards": ["VI", "CA", "AX"],
+                "methods": ["CREDIT_CARD"]
+              }
+            }
+          },
+          "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/TSXOJ6LFQ2"
+        }
+      ],
+      "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers?hotelIds=MCLONGHM&adults=2&checkInDate=2026-09-14&checkOutDate=2026-09-16&roomQuantity=1"
+    },
+    {
+      "type": "hotel-offers",
+      "hotel": {
+        "type": "hotel",
+        "hotelId": "ACLON371",
+        "chainCode": "AC",
+        "dupeId": "700041012",
+        "name": "AC Hotel London Strand",
+        "cityCode": "LON",
+        "latitude": 51.51066,
+        "longitude": -0.12089
+      },
+      "available": true,
+      "offers": [
+        {
+          "id": "ZBC0IYFMFV",
+          "checkInDate": "2026-09-14",
+          "checkOutDate": "2026-09-16",
+          "rateCode": "RAC",
+          "rateFamilyEstimated": {
+            "code": "SRS",
+            "type": "S"
+          },
+          "boardType": "BREAKFAST",
+          "room": {
+            "type": "A07",
+            "typeEstimated": {
+              "category": "SUPERIOR_ROOM",
+              "beds": 2,
+              "bedType": "TWIN"
+            },
+            "description": {
+              "text": "SUPERIOR TWIN ROOM\nBREAKFAST INCLUDED\nFREE WIFI",
+              "lang": "EN"
+            }
+          },
+          "guests": {
+            "adults": 2
+          },
+          "roomQuantity": "1",
+          "price": {
+            "currency": "GBP",
+            "base": "312.00",
+            "total": "318.40",
+            "taxes": [
+              {
+                "code": "CITY_TAX",
+                "pricingFrequency": "PER_STAY",
+                "pricingMode": "PER_PRODUCT",
+                "amount": "6.40",
+                "currency": "GBP",
+                "included": true
+              }
+            ],
+            "variations": {
+              "average": {
+                "base": "156.00"
+              },
+              "changes": [
+                {
+                  "startDate": "2026-09-14",
+                  "endDate": "2026-09-16",
+                  "base": "156.00"
+                }
+              ]
+            }
+          },
+          "policies": {
+            "paymentType": "guarantee",
+            "cancellations": [
+              {
+                "type": "FULL_STAY",
+                "amount": "159.20",
+                "deadline": "2026-09-12T18:00:00"
+              }
+            ],
+            "checkInOut": {
+              "checkIn": "15:00",
+              "checkOut": "11:00"
+            },
+            "guarantee": {
+              "acceptedPayments": {
+                "creditCards": ["VI", "CA", "AX", "DC"],
+                "methods": ["CREDIT_CARD"]
+              }
+            }
+          },
+          "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/ZBC0IYFMFV"
+        }
+      ],
+      "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers?hotelIds=ACLON371&adults=2&checkInDate=2026-09-14&checkOutDate=2026-09-16&roomQuantity=1"
+    },
+    {
+      "type": "hotel-offers",
+      "hotel": {
+        "type": "hotel",
+        "hotelId": "HLLONPAD",
+        "chainCode": "HL",
+        "dupeId": "700028133",
+        "name": "Hilton London Paddington",
+        "cityCode": "LON",
+        "latitude": 51.51624,
+        "longitude": -0.17752
+      },
+      "available": false,
+      "offers": []
+    }
+  ]
+}

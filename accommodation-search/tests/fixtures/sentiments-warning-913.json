@@ -1,0 +1,17 @@
+{
+  "data": [],
+  "meta": {
+    "count": 0
+  },
+  "warnings": [
+    {
+      "code": 913,
+      "title": "PROPERTIES NOT FOUND",
+      "detail": "Some of the requested properties were not found in our database.",
+      "source": {
+        "parameter": "hotelIds",
+        "pointer": "RTLONBAY"
+      }
+    }
+  ]
+}

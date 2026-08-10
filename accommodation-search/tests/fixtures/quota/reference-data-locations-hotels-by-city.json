@@ -1,0 +1,86 @@
+{
+  "data": [
+    {
+      "chainCode": "AC",
+      "iataCode": "LON",
+      "dupeId": 700041012,
+      "name": "AC HOTEL LONDON STRAND",
+      "hotelId": "ACLON371",
+      "geoCode": {
+        "latitude": 51.51066,
+        "longitude": -0.12089
+      },
+      "address": {
+        "countryCode": "GB"
+      },
+      "distance": {
+        "value": 0.61,
+        "unit": "KM"
+      },
+      "lastUpdate": "2026-06-14T09:12:41"
+    },
+    {
+      "chainCode": "MC",
+      "iataCode": "LON",
+      "dupeId": 700031300,
+      "name": "JW MARRIOTT GROSVENOR HOUSE LONDON",
+      "hotelId": "MCLONGHM",
+      "geoCode": {
+        "latitude": 51.50988,
+        "longitude": -0.15509
+      },
+      "address": {
+        "countryCode": "GB"
+      },
+      "distance": {
+        "value": 1.24,
+        "unit": "KM"
+      },
+      "lastUpdate": "2026-06-14T09:12:41"
+    },
+    {
+      "chainCode": "HL",
+      "iataCode": "LON",
+      "dupeId": 700028133,
+      "name": "HILTON LONDON PADDINGTON",
+      "hotelId": "HLLONPAD",
+      "geoCode": {
+        "latitude": 51.51624,
+        "longitude": -0.17752
+      },
+      "address": {
+        "countryCode": "GB"
+      },
+      "distance": {
+        "value": 2.42,
+        "unit": "KM"
+      },
+      "lastUpdate": "2026-05-02T11:44:03"
+    },
+    {
+      "chainCode": "RT",
+      "iataCode": "LON",
+      "dupeId": 700055901,
+      "name": "THE ROYAL BAYSWATER",
+      "hotelId": "RTLONBAY",
+      "geoCode": {
+        "latitude": 51.51201,
+        "longitude": -0.18844
+      },
+      "address": {
+        "countryCode": "GB"
+      },
+      "distance": {
+        "value": 3.08,
+        "unit": "KM"
+      },
+      "lastUpdate": "2026-04-19T08:01:55"
+    }
+  ],
+  "meta": {
+    "count": 4,
+    "links": {
+      "self": "https://test.api.amadeus.com/v1/reference-data/locations/hotels/by-city?cityCode=LON&radius=5&radiusUnit=KM"
+    }
+  }
+}
