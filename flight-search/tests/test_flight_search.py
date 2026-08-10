@@ -477,6 +477,37 @@ class TestLinks(Base):
         result = flight_tools.check_prices(path=self.store, searcher=searcher_for([flight(442.0)]))
         self.assertIn("from%20LIS%20to%20JFK", result["alerts"][0]["search_url"])
 
+    def test_one_way_results_are_marked_as_matching_the_site(self):
+        out = flight_tools.search_flights(
+            self.a_query(), currency="EUR", searcher=searcher_for([flight(442.0)])
+        )
+        self.assertEqual(out["query"]["price_confidence"], "matches_site")
+        self.assertNotIn("price_warning", out["query"])
+
+    def test_multi_leg_results_carry_a_reads_high_warning_in_the_payload(self):
+        """The consumer is usually a model. A caveat that lives only in the README
+        never reaches the person who asked."""
+        query = self.a_query(return_date=(datetime.now() + timedelta(days=54)).strftime("%Y-%m-%d"))
+        combo = (segment("LIS", "JFK", "2026-09-19", price=490.0),
+                 segment("JFK", "LIS", "2026-09-26", price=490.0))
+        out = flight_tools.search_flights(query, currency="EUR", searcher=searcher_for([combo]))
+        self.assertEqual(out["query"]["price_confidence"], "indicative_reads_high")
+        self.assertIn("1003", out["query"]["price_warning"])
+        self.assertIn("Never present it as the price", out["query"]["price_warning"])
+
+    def test_multi_city_is_marked_indicative_too(self):
+        legs = flight_tools.normalize_legs(
+            {
+                "legs": [
+                    {"origin": "LIS", "destination": "PHX", "date": "2026-12-20"},
+                    {"origin": "PHX", "destination": "LIS", "date": "2027-01-06"},
+                ]
+            }
+        )
+        confidence, warning = flight_tools.price_confidence(legs)
+        self.assertEqual(confidence, "indicative_reads_high")
+        self.assertIsNotNone(warning)
+
     def test_a_flexible_option_carries_a_link_for_that_date_pair(self):
         def calendar(query, currency, duration):
             return [pair_price("2026-12-22", "2027-01-06", 889.0)]

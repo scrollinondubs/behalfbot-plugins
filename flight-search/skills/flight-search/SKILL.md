@@ -140,12 +140,16 @@ Multi-city and multi-airport searches get no link, by design. For those, tell th
 reader to open Google Flights, switch to Multi-city and enter the legs listed in
 the result.
 
-**Multi-leg prices currently read high.** Measured against a browser on
-2026-08-10: one-way matched exactly (487 EUR both sides), a LIS to PHX round trip
-came back 64 EUR high, and the four-leg LIS-PHX-SFO-LAX-LIS trip came back 1520
-EUR against the browser's 1484. Quote any multi-leg number as indicative, hand
-over the link or the manual steps, and never present one as a firm fare. One-way
-you can state plainly.
+**Multi-leg prices read high and you must say so.** Every result carries
+`price_confidence`. When it is `indicative_reads_high` there is also a
+`price_warning` - pass its substance on, do not swallow it. Measured on
+2026-08-10, a four-leg trip reported 1520 EUR while the site offered a bookable
+1003 EUR fare for the same trip, a third lower. The cause is upstream and cannot
+be configured away, so the right move is: give the number as a rough indication,
+say a cheaper fare probably exists, and point at Google Flights.
+
+When `price_confidence` is `matches_site` (one-way) you can state the number
+plainly. It matched the site to the euro on both routes tested.
 
 ## Reporting a price to a human
 
