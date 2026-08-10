@@ -1,5 +1,34 @@
 # accommodation-search
 
+> ## DORMANT: the supplier no longer exists
+>
+> **Amadeus decommissioned its Self-Service portal on 17 July 2026.** New
+> registration was paused months earlier and existing keys were disabled on that
+> date. There is no way to obtain credentials for this plugin, and there will not
+> be. What remains at `developers.amadeus.com` is the Enterprise portal, which
+> means a sales conversation and a contract, not a signup form.
+>
+> Amadeus confirmed the shutdown in a letter to developers, first reported by
+> [PhocusWire](https://www.phocuswire.com/amadeus-shut-down-self-service-apis-portal-developers)
+> in February 2026, and the notice sits on their developer homepage today.
+>
+> **This plugin was written after that date, against documentation that was still
+> published.** It was specified on the strength of third-party articles
+> describing a free self-service tier that had already been switched off. The
+> code was never wrong; the supplier was gone.
+>
+> **It stays here, dormant, deliberately.** It is disabled by default and every
+> tool call will fail authentication. It is kept because the work that survives a
+> supplier change is most of the work: a supplier-neutral tool interface with a
+> second supplier already reserved, a local call ledger, three test suites, and a
+> five-way distinction between an empty result and a broken integration. A
+> RateHawk, Duffel or Booking.com Demand API implementation slots in behind the
+> same three tools without changing a single caller.
+>
+> **Do not enable this plugin.** If you are here because you want accommodation
+> search, the live question is which supplier replaces Amadeus, not how to get
+> this one working.
+
 Search places to stay from an agent, through the
 [Amadeus Self-Service API](https://developers.amadeus.com/). Search only, no
 booking.
