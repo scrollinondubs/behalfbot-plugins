@@ -18,6 +18,24 @@ set -euo pipefail
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MIN_PYTHON_MINOR=9
 
+cat >&2 <<'DORMANT'
+[accommodation-search] ============================================================
+[accommodation-search] DORMANT PLUGIN - THE SUPPLIER NO LONGER EXISTS
+[accommodation-search]
+[accommodation-search] Amadeus decommissioned its Self-Service portal on 17 July
+[accommodation-search] 2026. Registration was paused before that and existing keys
+[accommodation-search] were disabled on the day. No credentials can be obtained, so
+[accommodation-search] every tool call in this plugin will fail authentication.
+[accommodation-search]
+[accommodation-search] Setup still runs and still passes - there is nothing to
+[accommodation-search] install and the checks below are honest. That is not an
+[accommodation-search] endorsement. Do not enable this plugin.
+[accommodation-search]
+[accommodation-search] It is kept for its supplier-neutral tool interface, which a
+[accommodation-search] replacement supplier slots into without changing callers.
+[accommodation-search] ============================================================
+DORMANT
+
 echo "[accommodation-search] checking deps..."
 
 if ! command -v python3 >/dev/null 2>&1; then
