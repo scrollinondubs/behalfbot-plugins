@@ -3,6 +3,12 @@
   "repo": "scrollinondubs/behalfbot-plugins",
   "plugins": [
     {
+      "name": "accommodation-search",
+      "path": "accommodation-search",
+      "description": "Search Airbnb listings by location, dates, guests and price ceiling, and pull amenities and house rules for a single listing. Airbnb only - Booking.com, VRBO and Expedia are not covered, since none has a programmatic path open to an install this size. Search only, with no booking path by design. Wraps the MIT-licensed openbnb Airbnb MCP server at an exact pinned version behind a proxy that flags an empty result set as suspicious rather than reporting it as nothing available, because the upstream is a scraper and a rotted selector is indistinguishable from a search that matched nothing. Ships with robots.txt compliance on, which currently means the search path is refused; the bundled preflight reads Airbnb's live robots.txt and says so.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
       "name": "angel-protocol",
       "path": "angel-protocol",
       "description": "Welfare-check escalation for a solo operator: watches ambient proof-of-life signals (movement, wearable sync, chat activity) and walks a staged cascade from a soft chat nudge to direct SMS to emergency-contact notification when the principal goes quiet. Pluggable SMS providers (Twilio, Telnyx, Plivo, AWS SNS), dry-run mode, and pause controls.",

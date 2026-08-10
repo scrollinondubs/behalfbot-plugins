@@ -1,0 +1,20 @@
+# Trimmed copy of https://www.airbnb.com/robots.txt as fetched 2026-08-10.
+# Only the rules this plugin's two paths can match are kept. The full file is
+# ~889 lines of per-crawler groups that all repeat the same shape.
+
+User-agent: Googlebot
+Disallow: /rooms/*/amenities
+Disallow: /s/*/*
+
+User-agent: *
+Allow: /calendar/ical/
+Disallow: /book/
+Disallow: /reservation
+Disallow: /rooms/*/amenities
+Disallow: /rooms/*/house-rules
+Disallow: /rooms/*?viralityEntryPoint
+Disallow: /s/guidebooks
+Disallow: /s/*/*
+Disallow: /things-to-do/places
+
+Sitemap: https://www.airbnb.com/sitemap-master-index.xml.gz

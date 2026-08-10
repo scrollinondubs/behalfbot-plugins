@@ -1,0 +1,10 @@
+{
+  "name": "behalfbot-accommodation-search",
+  "version": "0.1.0",
+  "description": "Pinned dependency wrapper for the openbnb Airbnb MCP server. Search only, no booking.",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "@openbnb/mcp-server-airbnb": "0.3.0"
+  }
+}

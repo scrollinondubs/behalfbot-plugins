@@ -1,0 +1,93 @@
+{
+  "id": "behalfbot-accommodation-search",
+  "name": "Behalf.bot - Accommodation search (Airbnb)",
+  "description": "Search Airbnb listings by location, dates, guests and price ceiling, and pull amenities and house rules for one listing. Airbnb only: Booking.com and VRBO are not covered, because neither has a programmatic path open to an install this size. Search only - there is no booking path here and there is not meant to be one. Wraps the MIT-licensed openbnb Airbnb MCP server at a pinned version behind a proxy that flags an empty result set as suspicious rather than reporting it as 'nothing available', because the upstream is a scraper and a rotted selector looks exactly like a search that matched nothing.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Top-level toggle. When false the MCP server is not registered and the skill will not trigger.",
+        "default": false
+      },
+      "ignore_robots_txt": {
+        "type": "boolean",
+        "description": "Off, and shipped off deliberately. Airbnb's robots.txt disallows the search path (Disallow: /s/*/* under User-agent: *) so with this off the search tool refuses before it makes a request - run scripts/robots_preflight.py to see the current answer from the source. Turning it on means fetching paths Airbnb asks crawlers not to fetch, which is a terms-of-service decision for the person who owns the install, not a default a plugin gets to make. It maps to the upstream server's own IGNORE_ROBOTS_TXT env var; nothing in this plugin passes --ignore-robots-txt.",
+        "default": false
+      },
+      "disable_geocoding": {
+        "type": "boolean",
+        "description": "Off, and shipped off deliberately. With geocoding on, the location string from each search goes to Photon and, if Photon returns no bounding box, to Nominatim. Turning it on stops that outbound traffic and hands the raw location string to Airbnb's own geocoder, which mishandles non-US queries - it places 'Copenhagen, Denmark' in Wisconsin. Zero third-party egress at the cost of wrong answers outside the US. The proxy clears this variable on startup so the default cannot drift.",
+        "default": false
+      },
+      "default_location": {
+        "type": "string",
+        "description": "Location string the demo script uses when none is given. Free text, e.g. 'Lisbon, Portugal'. This is the string that reaches the geocoder.",
+        "default": "Lisbon, Portugal"
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": [],
+    "skills": ["accommodation-search"],
+    "hooks": [],
+    "heartbeats": [],
+    "triggers": [],
+    "env": {
+      "ACCOMMODATION_SEARCH_PLUGIN_DIR": "${PLUGIN_DIR}"
+    },
+    "mcpServers": {
+      "accommodation-search": {
+        "command": "python3",
+        "args": ["${PLUGIN_DIR}/scripts/airbnb_mcp_proxy.py"],
+        "env": {}
+      }
+    }
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "On-demand only. The MCP server starts when the harness starts it and does nothing until a tool is called. No polling, no price-monitoring heartbeat - Airbnb rate-limits and Nominatim's usage policy caps at roughly one request per second, so a monitoring loop is a separate decision with its own issue."
+  },
+  "_network_egress": {
+    "_note": "Every host this plugin can reach. Two of the three are third parties that see the location string on every search, which is why they are listed here and not left implied by the dependency. Underscore-prefixed because docs/MANIFEST.md has no schema field for egress yet; the CONTRIBUTING rule that everything touched must be declared does not wait for one.",
+    "hosts": [
+      {
+        "host": "www.airbnb.com",
+        "purpose": "The listings themselves, scraped from the public search and listing pages. Also /robots.txt, fetched before every request so compliance is decided against the live file.",
+        "data_sent": "The search parameters as URL query string: location bounding box, dates, guest counts, price range, property type."
+      },
+      {
+        "host": "photon.komoot.io",
+        "purpose": "Primary geocoder. Turns the location string into a map bounding box, because Airbnb's own geocoder gets non-US locations wrong.",
+        "data_sent": "The location string from the request, and nothing else. One request per search that does not supply a placeId."
+      },
+      {
+        "host": "nominatim.openstreetmap.org",
+        "purpose": "Fallback geocoder, called only when Photon returns no bounding box.",
+        "data_sent": "The location string from the request, and nothing else. Subject to the OSMF usage policy, roughly one request per second."
+      }
+    ]
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "node",
+        "install": "apt-get install nodejs npm (Debian) / your platform's package manager",
+        "_explanation": "Runs the upstream MCP server. Node 18+ is required by the upstream package."
+      },
+      {
+        "name": "python3",
+        "install": "apt-get install python3 (Debian) / your platform's package manager",
+        "_explanation": "Runs the stdio proxy that flags empty result sets, and the robots preflight. Stdlib only, no pip install."
+      },
+      {
+        "name": "@openbnb/mcp-server-airbnb",
+        "install": "npm ci (from this plugin's committed package-lock.json)",
+        "_explanation": "MIT-licensed Airbnb MCP server, pinned to 0.3.0 in package.json with the lockfile committed. Never invoked through npx: setup.sh installs it into this plugin's node_modules and the proxy runs that copy by absolute path, so the code that executes on an install is the code a human pinned."
+      }
+    ]
+  }
+}
