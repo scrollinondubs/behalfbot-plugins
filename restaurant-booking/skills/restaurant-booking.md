@@ -77,11 +77,22 @@ This script:
 On success, report back to the installer in Discord:
 > "Booked! Contrabando Saldanha on Thursday 15 May at 13:00, party of 4. Confirmation: #ABC123."
 
-On abort:
-> "Booking aborted. No reservation made."
+Branch on the exit code. Do not paraphrase these into each other.
 
-On TheFork error (restaurant not found, no slots available):
-> "TheFork couldn't complete the booking: [reason]. You can book directly at [URL]."
+| Exit | Say |
+|---|---|
+| 0 | "Booked! Contrabando Saldanha on Thursday 15 May at 13:00, party of 4. Confirmation: #ABC123." |
+| 2 | "Booking aborted. No reservation made." |
+| 3 | "Dry run only. Nothing was submitted. Screenshot: [path]" |
+| 4 | "TheFork blocked the automated browser, so I could not read the page at all. Nothing was submitted. This says nothing about whether tables are free - book directly at [URL] if you need it today." |
+| 5 | "I reached the booking form and could not fill it (reason: [reason], missing: [fields]). I do NOT know whether the restaurant has availability - the form is either full or broken and I cannot tell which from here. Screenshot: [path]" |
+| 1 with `submitted_outcome_unknown` | "I clicked reserve and could not read a confirmation back. A reservation may exist. Check the TheFork account before I retry." |
+
+**Never turn exit 4 or exit 5 into "no availability" or "the restaurant is
+full".** The script does not know that and neither do you. A moved selector and
+a fully booked Saturday produce the same result here, and the operator's next
+move is opposite in each case. Report what was observed, then say the screenshot
+is the way to tell.
 
 ## Dry-run smoke test (before real use)
 
@@ -97,7 +108,12 @@ python3 $CHASSIS_HOME/plugins/restaurant-booking/scripts/book-restaurant.py \
 ```
 
 Exit code 3 = dry run complete. Check the screenshot saved to
-`plugins/restaurant-booking/logs/booking-*-preconfirm.png`.
+`logs/booking-*-preconfirm.png`.
+
+**As of 2026-08-10 this returns exit 4, not 3.** TheFork serves a bot-detection
+interstitial to automated browsers and the plugin stays `enabled: false` until an
+anti-bot posture is decided. See the status section in the plugin README before
+telling anyone this flow works.
 
 ## Google Calendar setup (one-time, optional)
 
@@ -125,12 +141,17 @@ The installer adds this item themselves in Vaultwarden. The plugin never stores 
 
 ## Known limitations (V1)
 
-- TheFork UI changes can break Playwright selectors. If the booking fails with a
-  Playwright error, check `logs/booking-*-error.png` for a screenshot of what
-  went wrong.
-- Exact time slot availability depends on TheFork's widget. If the requested time
-  is not available, the script finds the nearest slot within 30 minutes and surfaces
-  both options in the soft-confirm message.
+- **TheFork blocks automated browsers.** HTTP 403 plus an interstitial, escalating
+  per IP. Detected and reported as exit 4. The flow cannot complete until this is
+  resolved, and retrying in a loop makes it worse for the operator's own browsing.
+- TheFork UI changes break Playwright selectors, and the current selectors were
+  written against a form that no longer exists. Check `logs/booking-*-error.png`
+  or the screenshot named in the exit-5 payload.
+- If the requested time is not available, the script takes the nearest slot within
+  `time_slot_tolerance_minutes` and shows it in the soft-confirm message. If
+  nothing is within tolerance it exits 5 rather than guessing why.
+- With `confirm_user_id` unset, any non-bot member of the confirm channel can
+  approve a booking made in the operator's name.
 - The `--dry-run` screenshot shows the form state BEFORE time/date/party-size are
   submitted (depends on TheFork's SPA update cycle). The screenshot may look different
   from the final confirmed form.
