@@ -1,8 +1,12 @@
 {
   "id": "behalfbot-restaurant-booking",
-  "name": "Behalf.bot — Restaurant booking (TheFork)",
-  "description": "Book a restaurant table via TheFork. Parse intent → drive booking flow → soft-confirm via Discord → optionally add Google Calendar event.",
+  "name": "Behalf.bot - Restaurant booking (TheFork)",
+  "description": "Book a restaurant table via TheFork. Parse intent, drive the booking flow, soft-confirm via Discord, optionally add a Google Calendar event.",
   "version": "0.1.0",
-  "skills": ["./skills"],
-  "scripts": ["./scripts"]
+  "skills": [
+    "./skills"
+  ],
+  "scripts": [
+    "./scripts"
+  ]
 }
