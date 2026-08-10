@@ -120,14 +120,15 @@ from flight_tools import FlightSearchError  # noqa: E402
 # ---------------------------------------------------------------------------
 
 
-def leg(airline="TP", number="201", origin="LIS", destination="JFK"):
+def leg(airline="TP", number="201", origin="LIS", destination="JFK", date="2026-09-09"):
+    day = datetime.strptime(date, "%Y-%m-%d")
     return types.SimpleNamespace(
         airline=_Member(airline, "TAP Portugal"),
         flight_number=number,
         departure_airport=_Member(origin),
         arrival_airport=_Member(destination),
-        departure_datetime=datetime(2026, 9, 9, 10, 0),
-        arrival_datetime=datetime(2026, 9, 9, 18, 30),
+        departure_datetime=day.replace(hour=10),
+        arrival_datetime=day.replace(hour=18, minute=30),
         duration=510,
     )
 
@@ -142,7 +143,34 @@ def day_price(date="2026-09-09", price=442.0, currency="EUR"):
     return types.SimpleNamespace(date=(datetime.strptime(date, "%Y-%m-%d"),), price=price, currency=currency)
 
 
+def pair_price(out_date, back_date, price=889.0, currency="EUR"):
+    return types.SimpleNamespace(
+        date=(datetime.strptime(out_date, "%Y-%m-%d"), datetime.strptime(back_date, "%Y-%m-%d")),
+        price=price,
+        currency=currency,
+    )
+
+
+def segment(origin="LIS", destination="JFK", date="2026-09-19", price=490.0, currency="EUR",
+            stops=1, duration=510):
+    """One element of the tuple `fli` returns for a multi-leg itinerary."""
+    return types.SimpleNamespace(
+        price=price, currency=currency, stops=stops, duration=duration,
+        legs=[leg(origin=origin, destination=destination, date=date)],
+    )
+
+
 CANARY_ORIGIN, CANARY_DESTINATION = "JFK", "LAX"
+
+
+def endpoints(query):
+    """(origin, destination) of the first leg, whichever shorthand the query used."""
+    legs = flight_tools.normalize_legs(query)
+    return legs[0]["origin"].upper(), legs[0]["destination"].upper()
+
+
+def is_canary(query):
+    return endpoints(query) == (CANARY_ORIGIN, CANARY_DESTINATION)
 
 
 def searcher_for(route_results, canary_results=None, canary_raises=None):
@@ -151,7 +179,7 @@ def searcher_for(route_results, canary_results=None, canary_raises=None):
     canary_results = [flight(199.0)] if canary_results is None else canary_results
 
     def _search(query, currency, limit=5):
-        if query["origin"].upper() == CANARY_ORIGIN and query["destination"].upper() == CANARY_DESTINATION:
+        if is_canary(query):
             if canary_raises:
                 raise canary_raises
             return list(canary_results)
@@ -250,6 +278,130 @@ class TestEmptyVersusBroken(Base):
 
 
 # ---------------------------------------------------------------------------
+# Trip shapes: one-way, round trip, multi-city
+# ---------------------------------------------------------------------------
+
+
+class TestLegs(Base):
+    def test_shorthand_is_one_leg(self):
+        legs = flight_tools.normalize_legs({"origin": "lis", "destination": "jfk", "date": "2026-09-09"})
+        self.assertEqual(legs, [{"origin": "LIS", "destination": "JFK", "date": "2026-09-09"}])
+        self.assertEqual(flight_tools.trip_shape(legs), "one_way")
+
+    def test_return_date_mirrors_the_outbound(self):
+        legs = flight_tools.normalize_legs(
+            {"origin": "LIS", "destination": "JFK", "date": "2026-09-09", "return_date": "2026-09-16"}
+        )
+        self.assertEqual(len(legs), 2)
+        self.assertEqual(legs[1], {"origin": "JFK", "destination": "LIS", "date": "2026-09-16"})
+        self.assertEqual(flight_tools.trip_shape(legs), "round_trip")
+
+    def test_a_return_before_the_outbound_is_rejected(self):
+        with self.assertRaises(FlightSearchError) as ctx:
+            flight_tools.normalize_legs(
+                {"origin": "LIS", "destination": "JFK", "date": "2026-09-16", "return_date": "2026-09-09"}
+            )
+        self.assertEqual(ctx.exception.kind, "bad_request")
+
+    def test_explicit_legs_make_a_multi_city_trip(self):
+        legs = flight_tools.normalize_legs(
+            {
+                "legs": [
+                    {"origin": "LIS", "destination": "PHX", "date": "2026-12-20"},
+                    {"origin": "PHX", "destination": "LAX", "date": "2026-12-27"},
+                    {"origin": "LAX", "destination": "LIS", "date": "2027-01-06"},
+                ]
+            }
+        )
+        self.assertEqual(len(legs), 3)
+        self.assertEqual(flight_tools.trip_shape(legs), "multi_city")
+
+    def test_two_legs_that_do_not_mirror_are_multi_city(self):
+        legs = flight_tools.normalize_legs(
+            {
+                "legs": [
+                    {"origin": "LIS", "destination": "PHX", "date": "2026-12-20"},
+                    {"origin": "LAX", "destination": "LIS", "date": "2027-01-06"},
+                ]
+            }
+        )
+        self.assertEqual(flight_tools.trip_shape(legs), "multi_city")
+
+    def test_legs_must_run_forwards_in_time(self):
+        with self.assertRaises(FlightSearchError) as ctx:
+            flight_tools.normalize_legs(
+                {
+                    "legs": [
+                        {"origin": "LIS", "destination": "PHX", "date": "2026-12-27"},
+                        {"origin": "PHX", "destination": "LIS", "date": "2026-12-20"},
+                    ]
+                }
+            )
+        self.assertEqual(ctx.exception.kind, "bad_request")
+
+    def test_a_leg_missing_a_date_is_rejected(self):
+        with self.assertRaises(FlightSearchError):
+            flight_tools.normalize_legs({"legs": [{"origin": "LIS", "destination": "PHX"}]})
+
+    def test_an_empty_query_is_rejected(self):
+        with self.assertRaises(FlightSearchError):
+            flight_tools.normalize_legs({"adults": 2})
+
+
+class TestItineraryPrice(Base):
+    """The price semantics verified live on 2026-08-10 - see normalize_itinerary."""
+
+    def test_one_way_price_is_the_only_price(self):
+        out = flight_tools.normalize_itinerary(flight(442.0))
+        self.assertEqual(out["price"], 442.0)
+        self.assertEqual(out["trip_shape"], "one_way")
+        self.assertEqual(len(out["segments"]), 1)
+
+    def test_round_trip_price_is_the_itinerary_total_not_the_sum(self):
+        combo = (
+            segment("LIS", "JFK", "2026-09-19", price=490.0),
+            segment("JFK", "LIS", "2026-09-26", price=490.0),
+        )
+        out = flight_tools.normalize_itinerary(combo)
+        self.assertEqual(out["price"], 490.0)  # not 980.0
+        self.assertEqual(out["trip_shape"], "round_trip")
+
+    def test_multi_city_price_comes_off_the_last_segment(self):
+        """Live shape: (1577, 1577, 1577, 1595) - only the last moves with the final leg."""
+        combo = (
+            segment("LIS", "PHX", "2026-12-20", price=1577.0),
+            segment("PHX", "SFO", "2026-12-27", price=1577.0),
+            segment("SFO", "LAX", "2027-01-02", price=1577.0),
+            segment("LAX", "LIS", "2027-01-06", price=1595.0),
+        )
+        out = flight_tools.normalize_itinerary(combo)
+        self.assertEqual(out["price"], 1595.0)
+        self.assertEqual(out["trip_shape"], "multi_city")
+        self.assertEqual(len(out["segments"]), 4)
+
+    def test_stops_and_duration_are_summed_across_segments(self):
+        combo = (
+            segment("LIS", "JFK", "2026-09-19", stops=1, duration=600),
+            segment("JFK", "LIS", "2026-09-26", stops=0, duration=500),
+        )
+        out = flight_tools.normalize_itinerary(combo)
+        self.assertEqual(out["stops"], 1)
+        self.assertEqual(out["duration_minutes"], 1100)
+
+    def test_cheapest_of_a_multi_leg_set_uses_the_itinerary_total(self):
+        dear = (segment(price=1577.0), segment("JFK", "LIS", "2026-09-26", price=1595.0))
+        cheap = (segment(price=1500.0), segment("JFK", "LIS", "2026-09-26", price=1400.0))
+        out = flight_tools.interpret_results([dear, cheap], "EUR", searcher_for([]))
+        self.assertEqual(out["cheapest_price"], 1400.0)
+
+    def test_a_wrong_currency_on_any_segment_is_an_error(self):
+        combo = (segment(price=490.0, currency="EUR"), segment(price=490.0, currency="USD"))
+        with self.assertRaises(FlightSearchError) as ctx:
+            flight_tools.interpret_results([combo], "EUR", searcher_for([]))
+        self.assertEqual(ctx.exception.kind, "currency_mismatch")
+
+
+# ---------------------------------------------------------------------------
 # Filter construction against the fake fli
 # ---------------------------------------------------------------------------
 
@@ -303,6 +455,41 @@ class TestFilters(Base):
         with self.assertRaises(FlightSearchError):
             flight_tools.build_flight_filters(fli, self.a_query(date="09/09/2026"), "EUR")
 
+    def test_one_segment_per_leg_and_the_trip_type_follows(self):
+        fli = flight_tools._load_fli()
+        one_way = flight_tools.build_flight_filters(fli, self.a_query(), "EUR")
+        self.assertEqual(len(one_way.flight_segments), 1)
+        self.assertEqual(one_way.trip_type.name, "ONE_WAY")
+
+        rt = flight_tools.build_flight_filters(
+            fli, self.a_query(return_date=(datetime.now() + timedelta(days=54)).strftime("%Y-%m-%d")), "EUR"
+        )
+        self.assertEqual(len(rt.flight_segments), 2)
+        self.assertEqual(rt.trip_type.name, "ROUND_TRIP")
+
+        multi = flight_tools.build_flight_filters(
+            fli,
+            {
+                "legs": [
+                    {"origin": "LIS", "destination": "JFK", "date": "2026-12-20"},
+                    {"origin": "JFK", "destination": "LAX", "date": "2026-12-27"},
+                    {"origin": "LAX", "destination": "LIS", "date": "2027-01-06"},
+                ]
+            },
+            "EUR",
+        )
+        self.assertEqual(len(multi.flight_segments), 3)
+        self.assertEqual(multi.trip_type.name, "MULTI_CITY")
+
+    def test_hour_windows_apply_to_the_first_leg_only(self):
+        fli = flight_tools._load_fli()
+        query = self.a_query(
+            return_date=(datetime.now() + timedelta(days=54)).strftime("%Y-%m-%d"), depart_after=6
+        )
+        filters = flight_tools.build_flight_filters(fli, query, "EUR")
+        self.assertEqual(filters.flight_segments[0].time_restrictions.earliest_departure, 6)
+        self.assertIsNone(filters.flight_segments[1].time_restrictions)
+
     def test_max_layover_and_duration_reach_the_filters(self):
         fli = flight_tools._load_fli()
         query = self.a_query(max_layover_minutes=180, max_duration_minutes=900)
@@ -347,6 +534,45 @@ class TestStore(Base):
         self.assertEqual(second["action"], "updated")
         self.assertEqual(flight_tools.list_tracked(self.store)["count"], 1)
         self.assertEqual(second["route"]["target_price"], 250.0)
+
+    def test_a_round_trip_can_be_tracked_and_stores_both_legs(self):
+        query = self.a_query(return_date=(datetime.now() + timedelta(days=54)).strftime("%Y-%m-%d"))
+        created = flight_tools.track_flight(query, 700.0, currency="EUR", path=self.store)
+        route = created["route"]
+        self.assertEqual(route["trip_shape"], "round_trip")
+        self.assertEqual(len(route["query"]["legs"]), 2)
+        self.assertNotIn("return_date", route["query"])
+        self.assertIn("back", route["label"])
+
+    def test_a_multi_city_trip_can_be_tracked(self):
+        query = {
+            "legs": [
+                {"origin": "LIS", "destination": "PHX", "date": "2026-12-20"},
+                {"origin": "PHX", "destination": "LAX", "date": "2026-12-27"},
+                {"origin": "LAX", "destination": "LIS", "date": "2027-01-06"},
+            ]
+        }
+        route = flight_tools.track_flight(query, 1500.0, currency="EUR", path=self.store)["route"]
+        self.assertEqual(route["trip_shape"], "multi_city")
+        self.assertTrue(route["id"].startswith("LIS-PHX-LAX-LIS-2026-12-20"))
+        self.assertIn("LIS - PHX - LAX - LIS", route["label"])
+
+    def test_the_same_trip_written_two_ways_is_one_route(self):
+        date = (datetime.now() + timedelta(days=40)).strftime("%Y-%m-%d")
+        back = (datetime.now() + timedelta(days=54)).strftime("%Y-%m-%d")
+        shorthand = {"origin": "LIS", "destination": "JFK", "date": date, "return_date": back}
+        spelled_out = {
+            "legs": [
+                {"origin": "LIS", "destination": "JFK", "date": date},
+                {"origin": "JFK", "destination": "LIS", "date": back},
+            ]
+        }
+        self.assertEqual(flight_tools.route_id(shorthand), flight_tools.route_id(spelled_out))
+
+    def test_a_round_trip_is_a_different_route_from_the_one_way(self):
+        one_way = self.a_query()
+        round_trip = self.a_query(return_date=(datetime.now() + timedelta(days=54)).strftime("%Y-%m-%d"))
+        self.assertNotEqual(flight_tools.route_id(one_way), flight_tools.route_id(round_trip))
 
     def test_route_id_separates_different_cabins(self):
         economy = flight_tools.route_id(self.a_query())
@@ -536,9 +762,9 @@ class TestCheckPrices(Base):
         flight_tools.track_flight(other, 300.0, currency="EUR", path=self.store)
 
         def mixed(query, currency, limit=5):
-            if query["origin"].upper() == CANARY_ORIGIN:
+            if is_canary(query):
                 return [flight(199.0)]
-            if query["destination"].upper() == "EWR":
+            if endpoints(query)[1] == "EWR":
                 raise FlightSearchError("http_error", "503 from Google")
             return [flight(442.0)]
 
@@ -593,6 +819,271 @@ class TestSearchDates(Base):
 
 
 # ---------------------------------------------------------------------------
+# Flexible windows
+# ---------------------------------------------------------------------------
+
+
+class TestSearchFlexible(Base):
+    def _query(self, **overrides):
+        query = {
+            "origin": "LIS",
+            "destination": "PHX",
+            "out_window": "2026-12-20:2026-12-23",
+            "back_window": "2027-01-05:2027-01-08",
+        }
+        query.update(overrides)
+        return query
+
+    def _calendar(self, table):
+        """table: {nights: (out, back, price)} or {nights: None} for an empty answer."""
+
+        def _call(query, currency, duration):
+            entry = table.get(duration)
+            if entry is None:
+                return []
+            return [pair_price(entry[0], entry[1], entry[2])]
+
+        return _call
+
+    def test_it_sweeps_trip_lengths_and_ranks_by_price(self):
+        table = {
+            15: ("2026-12-22", "2027-01-06", 889.0),
+            16: ("2026-12-21", "2027-01-06", 850.0),
+            17: ("2026-12-20", "2027-01-06", 910.0),
+        }
+        out = flight_tools.search_flexible(
+            self._query(), currency="EUR", calendar=self._calendar(table),
+            flight_searcher=searcher_for([]),
+        )
+        self.assertEqual(out["status"], "ok")
+        self.assertEqual(out["cheapest"]["price"], 850.0)
+        self.assertEqual(out["cheapest"]["out_date"], "2026-12-21")
+        self.assertEqual([o["price"] for o in out["options"]], [850.0, 889.0, 910.0])
+
+    def test_pairs_outside_the_windows_are_dropped(self):
+        table = {13: ("2026-12-19", "2027-01-01", 700.0), 14: ("2026-12-22", "2027-01-05", 900.0)}
+        out = flight_tools.search_flexible(
+            self._query(), currency="EUR", calendar=self._calendar(table),
+            flight_searcher=searcher_for([]),
+        )
+        self.assertEqual([o["out_date"] for o in out["options"]], ["2026-12-22"])
+
+    def test_the_same_pair_from_two_lengths_appears_once(self):
+        table = {15: ("2026-12-22", "2027-01-06", 889.0), 16: ("2026-12-22", "2027-01-06", 889.0)}
+        out = flight_tools.search_flexible(
+            self._query(), currency="EUR", calendar=self._calendar(table),
+            flight_searcher=searcher_for([]),
+        )
+        self.assertEqual(len(out["options"]), 1)
+
+    def test_nothing_anywhere_with_a_dead_canary_is_a_scraper_error(self):
+        with self.assertRaises(FlightSearchError) as ctx:
+            flight_tools.search_flexible(
+                self._query(), currency="EUR", calendar=self._calendar({}),
+                flight_searcher=searcher_for([], canary_results=[]),
+            )
+        self.assertEqual(ctx.exception.kind, "scraper_error")
+
+    def test_nothing_anywhere_with_a_healthy_canary_is_a_genuine_empty(self):
+        out = flight_tools.search_flexible(
+            self._query(), currency="EUR", calendar=self._calendar({}),
+            flight_searcher=searcher_for([]),
+        )
+        self.assertEqual(out["status"], "empty")
+
+    def test_a_wrong_currency_in_the_grid_is_an_error(self):
+        def calendar(query, currency, duration):
+            return [pair_price("2026-12-22", "2027-01-06", 889.0, currency="USD")]
+
+        with self.assertRaises(FlightSearchError) as ctx:
+            flight_tools.search_flexible(
+                self._query(), currency="EUR", calendar=calendar, flight_searcher=searcher_for([])
+            )
+        self.assertEqual(ctx.exception.kind, "currency_mismatch")
+
+    def test_a_return_window_before_the_outbound_is_rejected(self):
+        with self.assertRaises(FlightSearchError):
+            flight_tools.search_flexible(
+                self._query(out_window="2027-01-05:2027-01-08", back_window="2026-12-20:2026-12-23"),
+                currency="EUR", calendar=self._calendar({}), flight_searcher=searcher_for([]),
+            )
+
+    def test_a_single_date_is_a_one_day_window(self):
+        calls = []
+
+        def calendar(query, currency, duration):
+            calls.append(duration)
+            return [pair_price("2026-12-20", "2027-01-05", 900.0)]
+
+        out = flight_tools.search_flexible(
+            self._query(out_window="2026-12-20", back_window="2027-01-05"),
+            currency="EUR", calendar=calendar, flight_searcher=searcher_for([]),
+        )
+        self.assertEqual(calls, [16])
+        self.assertEqual(out["cheapest"]["nights"], 16)
+
+
+# ---------------------------------------------------------------------------
+# Trip planning
+# ---------------------------------------------------------------------------
+
+
+class TestPlanTrip(Base):
+    def _query(self, **overrides):
+        query = {
+            "origin": "LIS",
+            "visit": "PHX,SFO,LAX",
+            "out_window": "2026-12-20:2026-12-23",
+            "back_window": "2027-01-05:2027-01-08",
+        }
+        query.update(overrides)
+        return query
+
+    def _ranking(self, pairs):
+        def _call(query, currency=None, **kwargs):
+            return {"status": "ok", "options": pairs, "currency": currency}
+
+        return _call
+
+    def test_nights_split_evenly_when_none_are_named(self):
+        self.assertEqual(flight_tools._split_nights(15, ["PHX", "SFO", "LAX"], {}), [5, 5, 5])
+
+    def test_the_last_free_city_absorbs_the_remainder(self):
+        nights = flight_tools._split_nights(16, ["PHX", "SFO", "LAX"], {})
+        self.assertEqual(sum(nights), 16)
+        self.assertEqual(nights, [5, 5, 6])
+
+    def test_named_nights_are_honoured(self):
+        nights = flight_tools._split_nights(16, ["PHX", "SFO", "LAX"], {"PHX": 8})
+        self.assertEqual(nights[0], 8)
+        self.assertEqual(sum(nights), 16)
+
+    def test_a_trip_too_short_for_the_cities_is_rejected(self):
+        with self.assertRaises(FlightSearchError) as ctx:
+            flight_tools._split_nights(2, ["PHX", "SFO", "LAX"], {})
+        self.assertEqual(ctx.exception.kind, "bad_request")
+
+    def test_nights_for_a_city_not_being_visited_is_rejected(self):
+        with self.assertRaises(FlightSearchError):
+            flight_tools._split_nights(15, ["PHX"], {"SFO": 3})
+
+    def test_legs_are_built_from_the_nights(self):
+        legs = flight_tools.build_itinerary_legs("LIS", ["PHX", "SFO", "LAX"], "2026-12-21", [5, 5, 6])
+        self.assertEqual(
+            [(leg_["origin"], leg_["destination"], leg_["date"]) for leg_ in legs],
+            [
+                ("LIS", "PHX", "2026-12-21"),
+                ("PHX", "SFO", "2026-12-26"),
+                ("SFO", "LAX", "2026-12-31"),
+                ("LAX", "LIS", "2027-01-06"),
+            ],
+        )
+
+    def test_it_prices_candidates_for_real_and_ranks_them(self):
+        pairs = [
+            {"out_date": "2026-12-21", "back_date": "2027-01-06", "price": 850.0},
+            {"out_date": "2026-12-22", "back_date": "2027-01-07", "price": 889.0},
+        ]
+
+        def searcher(query, currency, limit=5):
+            if is_canary(query):
+                return [flight(199.0)]
+            legs = flight_tools.normalize_legs(query)
+            price = 1520.0 if legs[0]["date"] == "2026-12-21" else 1400.0
+            return [tuple(segment(leg_["origin"], leg_["destination"], leg_["date"], price=price)
+                          for leg_ in legs)]
+
+        out = flight_tools.plan_trip(
+            self._query(), currency="EUR", searcher=searcher, flexible=self._ranking(pairs)
+        )
+        self.assertEqual(out["status"], "ok")
+        self.assertEqual(out["route"], "LIS - PHX - SFO - LAX - LIS")
+        self.assertEqual(out["cheapest"]["price"], 1400.0)
+        self.assertEqual(out["cheapest"]["out_date"], "2026-12-22")
+        self.assertEqual(len(out["cheapest"]["legs"]), 4)
+
+    def test_the_indicative_ranking_never_becomes_a_reported_price(self):
+        """The calendar pre-filter picks dates. Every price reported is a real search."""
+        pairs = [{"out_date": "2026-12-21", "back_date": "2027-01-06", "price": 850.0}]
+
+        def searcher(query, currency, limit=5):
+            if is_canary(query):
+                return [flight(199.0)]
+            legs = flight_tools.normalize_legs(query)
+            return [tuple(segment(leg_["origin"], leg_["destination"], leg_["date"], price=1520.0)
+                          for leg_ in legs)]
+
+        out = flight_tools.plan_trip(
+            self._query(), currency="EUR", searcher=searcher, flexible=self._ranking(pairs)
+        )
+        self.assertEqual(out["cheapest"]["price"], 1520.0)
+        self.assertNotIn(850.0, [o["price"] for o in out["options"]])
+
+    def test_max_searches_bounds_the_work(self):
+        pairs = [
+            {"out_date": "2026-12-2%d" % i, "back_date": "2027-01-06", "price": 800.0 + i}
+            for i in range(0, 4)
+        ]
+        calls = []
+
+        def searcher(query, currency, limit=5):
+            if is_canary(query):
+                return [flight(199.0)]
+            legs = flight_tools.normalize_legs(query)
+            calls.append(legs[0]["date"])
+            return [tuple(segment(leg_["origin"], leg_["destination"], leg_["date"], price=1500.0)
+                          for leg_ in legs)]
+
+        out = flight_tools.plan_trip(
+            self._query(max_searches=2), currency="EUR", searcher=searcher, flexible=self._ranking(pairs)
+        )
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(out["searched"], 2)
+        self.assertEqual(out["skipped"], 2)
+
+    def test_a_date_combination_that_returns_nothing_is_reported_not_hidden(self):
+        pairs = [
+            {"out_date": "2026-12-21", "back_date": "2027-01-06", "price": 850.0},
+            {"out_date": "2026-12-22", "back_date": "2027-01-06", "price": 860.0},
+        ]
+
+        def searcher(query, currency, limit=5):
+            if is_canary(query):
+                return [flight(199.0)]
+            legs = flight_tools.normalize_legs(query)
+            if legs[0]["date"] == "2026-12-22":
+                return []
+            return [tuple(segment(leg_["origin"], leg_["destination"], leg_["date"], price=1520.0)
+                          for leg_ in legs)]
+
+        out = flight_tools.plan_trip(
+            self._query(), currency="EUR", searcher=searcher, flexible=self._ranking(pairs)
+        )
+        self.assertEqual(len(out["options"]), 1)
+        self.assertEqual(len(out["failures"]), 1)
+        self.assertEqual(out["failures"][0]["out_date"], "2026-12-22")
+
+    def test_every_candidate_failing_is_an_error_not_an_empty_answer(self):
+        pairs = [{"out_date": "2026-12-21", "back_date": "2027-01-06", "price": 850.0}]
+
+        def searcher(query, currency, limit=5):
+            if is_canary(query):
+                return [flight(199.0)]
+            raise FlightSearchError("http_error", "503 from Google")
+
+        with self.assertRaises(FlightSearchError) as ctx:
+            flight_tools.plan_trip(
+                self._query(), currency="EUR", searcher=searcher, flexible=self._ranking(pairs)
+            )
+        self.assertEqual(ctx.exception.kind, "no_itinerary")
+
+    def test_an_empty_visit_list_is_rejected(self):
+        with self.assertRaises(FlightSearchError):
+            flight_tools.plan_trip(self._query(visit=""), currency="EUR",
+                                   searcher=searcher_for([]), flexible=self._ranking([]))
+
+
+# ---------------------------------------------------------------------------
 # The MCP surface
 # ---------------------------------------------------------------------------
 
@@ -609,12 +1100,13 @@ class TestMcpServer(Base):
     def test_notifications_get_no_response(self):
         self.assertIsNone(flight_search_mcp.handle({"jsonrpc": "2.0", "method": "notifications/initialized"}))
 
-    def test_all_six_tools_are_advertised_with_schemas(self):
+    def test_every_tool_is_advertised_with_a_schema(self):
         response = flight_search_mcp.handle({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
         names = sorted(t["name"] for t in response["result"]["tools"])
         self.assertEqual(
             names,
-            ["check_prices", "list_tracked", "remove_tracked", "search_dates", "search_flights", "track_flight"],
+            ["check_prices", "list_tracked", "plan_trip", "remove_tracked", "search_dates",
+             "search_flexible", "search_flights", "track_flight"],
         )
         for tool in response["result"]["tools"]:
             self.assertIn("inputSchema", tool)
@@ -633,6 +1125,29 @@ class TestMcpServer(Base):
     def test_an_unknown_tool_is_an_error_not_a_crash(self):
         result = flight_search_mcp.call_tool("book_me_a_yacht", {})
         self.assertTrue(result["isError"])
+
+    def test_legs_and_return_date_survive_the_mcp_argument_mapping(self):
+        query = flight_search_mcp._query(
+            {
+                "origin": "LIS",
+                "destination": "JFK",
+                "date": "2026-12-20",
+                "return_date": "2027-01-06",
+                "top_n": 3,
+            },
+            ["date"],
+        )
+        self.assertEqual(query["return_date"], "2027-01-06")
+        self.assertEqual(query["top_n"], 3)
+        self.assertEqual(flight_tools.trip_shape(flight_tools.normalize_legs(query)), "round_trip")
+
+    def test_a_multi_city_tool_call_reaches_the_planner(self):
+        legs = [
+            {"origin": "LIS", "destination": "PHX", "date": "2026-12-20"},
+            {"origin": "PHX", "destination": "LIS", "date": "2027-01-06"},
+        ]
+        query = flight_search_mcp._query({"legs": legs}, ["date"])
+        self.assertEqual(flight_tools.normalize_legs(query), legs)
 
     def test_tool_names_match_the_manifest_contract(self):
         manifest = json.loads(
