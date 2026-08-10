@@ -276,7 +276,7 @@ class TestManifest(unittest.TestCase):
             PLUGIN_SCRIPTS / "book-restaurant.py",
             PLUGIN_SCRIPTS / "confirm-via-discord.py",
         ]:
-            self.assertNotIn("—", path.read_text(), f"em dash in {path.name}")
+            self.assertNotIn("\u2014", path.read_text(), f"em dash in {path.name}")
 
 
 if __name__ == "__main__":
