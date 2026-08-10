@@ -90,6 +90,27 @@ def _load_config() -> dict[str, Any]:
     return config
 
 
+def resolve_timeout(cli_timeout: int | None, config: dict[str, Any]) -> int:
+    """Precedence: explicit --timeout, then config, then the module default.
+
+    It used to be config-then-CLI, which meant the shipped 600s config value
+    silently swallowed --timeout and made the abort-on-timeout path impossible to
+    exercise in under ten minutes. An untestable safety path is not a safety path.
+    """
+    if cli_timeout is not None:
+        return int(cli_timeout)
+    raw = config.get("confirm_timeout_seconds")
+    if raw is not None:
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            print(
+                f"[confirm-via-discord] Ignoring unparseable confirm_timeout_seconds: {raw!r}",
+                file=sys.stderr,
+            )
+    return TIMEOUT_SECONDS
+
+
 def _get_token() -> str:
     """Get Discord bot token."""
     env = _load_env()
@@ -213,13 +234,37 @@ def _add_reactions(token: str, channel_id: str, message_id: str) -> None:
             print(f"[confirm-via-discord] Warning: could not add reaction {emoji}: {e}", file=sys.stderr)
 
 
+def reaction_is_authorised(users: Any, approver_id: str = "") -> bool:
+    """Decide whether a reactor list contains a reaction that counts.
+
+    Split out from the HTTP call so the gate can be tested without Discord.
+
+    Bots never count, including this one - it adds both emoji itself as tap
+    targets. When ``approver_id`` is set, only that user counts. The old rule
+    was "two or more reactors", which in any channel with more than one human
+    let a bystander approve a booking made in the operator's name.
+    """
+    if not isinstance(users, list):
+        return False
+    for user in users:
+        if not isinstance(user, dict):
+            continue
+        if user.get("bot"):
+            continue
+        if approver_id and str(user.get("id", "")) != str(approver_id):
+            continue
+        return True
+    return False
+
+
 def _check_reaction(
     token: str,
     channel_id: str,
     message_id: str,
     emoji: str,
+    approver_id: str = "",
 ) -> bool:
-    """Check if any user (other than the bot itself) reacted with the given emoji."""
+    """Check whether an authorised human reacted with the given emoji."""
     encoded = urllib.parse.quote(emoji)
     try:
         users = _discord_request(
@@ -227,15 +272,7 @@ def _check_reaction(
             f"/channels/{channel_id}/messages/{message_id}/reactions/{encoded}",
             token,
         )
-        if not isinstance(users, list):
-            return False
-        # The bot adds its own reaction as a prompt - we want OTHER users to react
-        # Discord returns all reactors including the bot
-        # Check if there's at least one non-bot reactor
-        # Discord bot accounts have is_bot=True; the bot's own reaction has the bot's user ID
-        # For simplicity in V1: if there are 2+ reactors, a human has also reacted
-        # (1 = just the bot's own prompt reaction, 2+ = human reacted too)
-        return len(users) >= 2
+        return reaction_is_authorised(users, approver_id)
     except RuntimeError:
         return False
 
@@ -246,16 +283,19 @@ def _poll_for_reaction(
     message_id: str,
     timeout: int,
     poll_interval: int,
+    approver_id: str = "",
 ) -> str:
     """Poll for a confirm or cancel reaction. Returns 'confirmed', 'cancelled', or 'timeout'."""
     deadline = time.time() + timeout
     elapsed_log = 0
 
     while time.time() < deadline:
-        if _check_reaction(token, channel_id, message_id, CONFIRM_EMOJI):
-            return "confirmed"
-        if _check_reaction(token, channel_id, message_id, CANCEL_EMOJI):
+        # Cancel is checked first so a race between the two emoji resolves to
+        # not booking.
+        if _check_reaction(token, channel_id, message_id, CANCEL_EMOJI, approver_id):
             return "cancelled"
+        if _check_reaction(token, channel_id, message_id, CONFIRM_EMOJI, approver_id):
+            return "confirmed"
 
         remaining = int(deadline - time.time())
         if elapsed_log % 60 == 0:  # log every ~60s
@@ -273,7 +313,7 @@ def run_confirm(
     party_size: int,
     screenshot_path: str | None = None,
     channel_id: str | None = None,
-    timeout: int = TIMEOUT_SECONDS,
+    timeout: int | None = None,
 ) -> dict[str, Any]:
     """Full soft-confirm flow. Returns {"confirmed": bool, "reason": str}."""
     config = _load_config()
@@ -283,7 +323,7 @@ def run_confirm(
             "No Discord channel configured: pass --channel-id, set discord_channel_id "
             "in config/restaurant-booking.yaml, or export DISCORD_PRIMARY_CHANNEL_ID"
         )
-    effective_timeout = int(config.get("confirm_timeout_seconds", timeout))
+    effective_timeout = resolve_timeout(timeout, config)
 
     token = _get_token()
     print(f"[confirm-via-discord] Sending soft-confirm to channel {effective_channel}...", file=sys.stderr)
@@ -300,6 +340,16 @@ def run_confirm(
 
     _add_reactions(token, effective_channel, message_id)
 
+    approver_id = str(config.get("confirm_user_id", "") or os.environ.get("DISCORD_APPROVER_USER_ID", ""))
+    if approver_id:
+        print(f"[confirm-via-discord] Only user {approver_id} can approve this booking.", file=sys.stderr)
+    else:
+        print(
+            "[confirm-via-discord] WARNING: no confirm_user_id configured - any "
+            "non-bot member of the channel can approve this booking.",
+            file=sys.stderr,
+        )
+
     print(f"[confirm-via-discord] Polling for reaction (timeout: {effective_timeout}s)...", file=sys.stderr)
     outcome = _poll_for_reaction(
         token=token,
@@ -307,6 +357,7 @@ def run_confirm(
         message_id=message_id,
         timeout=effective_timeout,
         poll_interval=POLL_INTERVAL_SECONDS,
+        approver_id=approver_id,
     )
 
     confirmed = outcome == "confirmed"
@@ -336,7 +387,15 @@ def main() -> None:
     parser.add_argument("--party-size", type=int, required=True, help="Number of guests")
     parser.add_argument("--screenshot", default=None, help="Path to pre-confirm screenshot (optional)")
     parser.add_argument("--channel-id", default=None, help="Discord channel ID override")
-    parser.add_argument("--timeout", type=int, default=TIMEOUT_SECONDS, help=f"Timeout in seconds (default: {TIMEOUT_SECONDS})")
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help=(
+            "Timeout in seconds. Overrides confirm_timeout_seconds in the config; "
+            f"falls back to the config value, then to {TIMEOUT_SECONDS}."
+        ),
+    )
 
     args = parser.parse_args()
 
