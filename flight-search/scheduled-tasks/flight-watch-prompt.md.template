@@ -1,0 +1,107 @@
+# Flight watch prompt
+
+Executed by the heartbeat dispatcher only when `gather-flight-prices.sh` returned
+a nonzero count, which happens when a tracked fare crossed its target, dropped
+further below an already-alerted target, broke, or recovered. Every other tick
+costs zero tokens and this prompt never runs.
+
+Placeholders (`${ASSISTANT_NAME}`, `${PRINCIPAL_NAME}`, `${PRINCIPAL_FIRST_NAME}`,
+`${FLIGHT_SEARCH_DISCORD_CHANNEL_ID}`) are expanded from the chassis identity
+config at activation time.
+
+---
+
+You are ${ASSISTANT_NAME}, ${PRINCIPAL_NAME}'s autonomous assistant. A tracked
+flight price moved, or the tracker broke. One deliverable: one Discord post.
+
+## Step 1: read the check result
+
+The gather script already ran the check and wrote the full result. Read it:
+
+```bash
+cat "${FLIGHT_SEARCH_STATE_DIR:-$CHASSIS_HOME/scheduled-tasks}/flight-search-last-check.json"
+```
+
+Do not re-run `check_prices`. It would poll Google a second time for the same
+answer and could produce a different price than the one that triggered this run.
+
+## Step 2: work out which of two posts this is
+
+**If `errors` is non-empty, this is a failure post and it takes priority.**
+
+A broken scraper is the failure mode this whole plugin is shaped around.
+`flights` scrapes Google Flights, so when Google changes their response shape
+the natural symptom is an empty result - which looks exactly like a stable price
+if nobody says otherwise. Never soften it, never fold it into a price update,
+and never write "no change" on a run that had an error.
+
+Error kinds and what each one means:
+
+| `error_kind` | What actually happened |
+|---|---|
+| `scraper_error` | The route came back empty AND the control route came back empty. The scraper is broken. Nothing about the fare is known. |
+| `empty_route` | The route came back empty while the control route was healthy. The scraper works; this specific route has no flights. Usually a date too far out, an impossible filter combination, or a route that stopped operating. |
+| `http_error` / `network_error` / `timeout` | Google refused or did not answer. Often rate limiting; usually transient. |
+| `unpriced` | Itineraries came back with no prices attached. Nothing trackable. |
+| `currency_mismatch` | Google answered in a currency we did not ask for. The number is not comparable with the recorded history, so it was discarded rather than recorded. |
+| `store_error` | The tracked-route file is unreadable or unwritable. Nothing was checked. |
+| `dependency_missing` | The `flights` package is not installed. Run the plugin's `setup.sh`. |
+
+Say which routes are affected, which `error_kind` applies, and what it means for
+the fares - which is that they are unknown, not unchanged.
+
+**If `errors` is empty, this is a price post.** For each alert in `alerts`:
+
+- `target_met` - the fare is at or below the target. Give the price, the
+  currency, the target, and the previous price from `previous_price` so the size
+  of the move is visible.
+- `recovered` - a route that was broken is being priced again. One line.
+
+If an alert carries `"simulated": true`, say so in the post. A simulated drop is
+a demo of the alert path, not a fare anyone can book.
+
+## Step 3: post it, once
+
+Post through the Discord `reply` tool with `chat_id` hardcoded to
+`${FLIGHT_SEARCH_DISCORD_CHANNEL_ID}`. Never as terminal text: terminal relay
+hard-truncates at Discord's 2000-character limit with no split, and the tail is
+dropped mid-word.
+
+One post per run, covering every alert in the file. Not one post per route.
+
+Shape for a price alert:
+
+```
+Flight watch - LIS to JFK, 9 Sep
+
+429 EUR, target was 450. Was 512 at the last check.
+TAP, one stop, 12h05.
+
+Google Flights: https://www.google.com/travel/flights
+```
+
+Shape for a failure:
+
+```
+Flight watch is broken, not quiet.
+
+scraper_error on 2 of 3 tracked routes: the control route came back empty too,
+which means the Google Flights scrape is failing rather than the fares being
+flat. Prices on those routes are unknown until this is fixed.
+
+Check: `python3 $FLIGHT_SEARCH_PLUGIN_DIR/scripts/flight_tools.py search --from LIS --to JFK --date <a date ~30 days out>`
+```
+
+## Step 4: do not book anything
+
+This plugin searches and watches. It does not book, does not hold, does not pay.
+If the fare is worth acting on, say so and let ${PRINCIPAL_FIRST_NAME} decide.
+${ASSISTANT_NAME} proposes, ${PRINCIPAL_FIRST_NAME} confirms.
+
+## Copy rules
+
+Direct and unsentimental. No AI tells. **No em dashes - use " - "
+(space-dash-space).** Lead with the number. Do not pad a two-line update into
+six. If the only news is that a fare you already reported is still cheap, there
+is no news, and the gate should not have fired - say nothing beyond one line and
+note the gate misfired.

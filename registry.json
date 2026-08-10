@@ -33,6 +33,12 @@
       "min_chassis_version": "0.3.0"
     },
     {
+      "name": "flight-search",
+      "path": "flight-search",
+      "description": "Search Google Flights and monitor fares on tracked routes: six tools over the MIT-licensed `flights` package, exposed over MCP and as a CLI, with a daily heartbeat that costs nothing until a fare crosses its target. Built around one distinction - a broken scraper is never reported as an empty result or as an unchanged price, proved at runtime against a dense control route. No credentials, and it never books anything.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
       "name": "image-generation",
       "path": "image-generation",
       "description": "Generate images from a text prompt through either a local ComfyUI running FLUX.1 (free, private, minutes) or a hosted image API (paid, seconds, better at text inside the image). One CLI, a flag to switch. Ships the ComfyUI workflow graph with a three-node-id contract so the graph can be swapped without touching the script. Credentials come from the environment only; the script never reads a secret off disk.",
