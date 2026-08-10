@@ -31,6 +31,13 @@ Exit codes:
     1 - error (see stderr)
     2 - user aborted (✗ reaction or timeout)
     3 - dry-run completed (no booking made)
+    4 - TheFork served a bot-detection interstitial (nothing was read, nothing submitted)
+    5 - the booking form did not yield a usable slot (NOT a claim that the restaurant is full)
+
+Codes 4 and 5 exist because a rotted selector and a genuinely full restaurant
+look identical from the outside. This script never reports "no availability".
+It reports what it was able to observe, and says so when it could not observe
+anything.
 """
 from __future__ import annotations
 
@@ -44,9 +51,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-REPO = Path(__file__).resolve().parent.parent.parent.parent
-SCRIPTS = REPO / "scripts"
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
+
+# CHASSIS_HOME is the install root that owns scripts/bw-fetch.sh and .env.
+# The old parent-of-parent-of-parent-of-parent walk only resolved correctly when
+# the plugin sat at <chassis>/plugins/restaurant-booking/scripts/, which is one
+# of several layouts it ships into. Honour the env var the chassis already sets
+# and keep the walk as the fallback so existing installs are unaffected.
+_ENV_HOME = os.environ.get("CHASSIS_HOME", "").strip()
+REPO = Path(_ENV_HOME).expanduser().resolve() if _ENV_HOME else Path(__file__).resolve().parents[3]
+SCRIPTS = REPO / "scripts"
 LOGS_DIR = PLUGIN_ROOT / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -54,7 +68,14 @@ THEFORK_BASE = "https://www.thefork.com"
 THEFORK_LOGIN_URL = f"{THEFORK_BASE}/signin"
 THEFORK_SEARCH_URL = f"{THEFORK_BASE}/search"
 
-BW_FETCH = str(REPO / "scripts" / "bw-fetch.sh")
+EXIT_OK = 0
+EXIT_ERROR = 1
+EXIT_ABORTED = 2
+EXIT_DRY_RUN = 3
+EXIT_BLOCKED = 4
+EXIT_NO_USABLE_SLOT = 5
+
+BW_FETCH = str(SCRIPTS / "bw-fetch.sh")
 CONFIRM_SCRIPT = str(Path(__file__).resolve().parent / "confirm-via-discord.py")
 CALENDAR_SCRIPT = str(Path(__file__).resolve().parent / "create-calendar-event.py")
 
@@ -175,6 +196,39 @@ def run_booking(
     return result
 
 
+def _parse_json_or_none(text: str) -> dict[str, Any] | None:
+    """Best-effort JSON parse of a subprocess stdout blob."""
+    try:
+        parsed = json.loads((text or "").strip())
+    except (json.JSONDecodeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def load_plugin_config() -> dict[str, str]:
+    """Read the flat scalar settings out of config/restaurant-booking.yaml.
+
+    Deliberately a scalar-only reader rather than a PyYAML dependency: the
+    config is flat, and plugin test suites in this repo have to stay stdlib.
+    """
+    config_path = Path(
+        os.environ.get("PLUGIN_CONFIG_PATH", "")
+        or PLUGIN_ROOT / "config" / "restaurant-booking.yaml"
+    )
+    config: dict[str, str] = {}
+    if not config_path.exists():
+        return config
+    for line in config_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or ":" not in line:
+            continue
+        key, _, value = line.partition(":")
+        value = value.strip().strip('"').strip("'")
+        if value:
+            config[key.strip()] = value
+    return config
+
+
 def _extract_name_from_url(url: str) -> str:
     """Extract a readable restaurant name from a TheFork URL slug."""
     import re
@@ -223,6 +277,12 @@ def _run_playwright_flow(
 
     # Generate a script for inline Playwright execution via Node/npx
     # This is the standalone path (not MCP)
+    config = load_plugin_config()
+    try:
+        tolerance_minutes = int(config.get("time_slot_tolerance_minutes", 30))
+    except ValueError:
+        tolerance_minutes = 30
+
     playwright_script = _build_playwright_script(
         username=username,
         password=password,
@@ -234,6 +294,8 @@ def _run_playwright_flow(
         notes=notes,
         dry_run=dry_run,
         logs_dir=str(LOGS_DIR),
+        tolerance_minutes=tolerance_minutes,
+        login_url=config.get("thefork_login_url", THEFORK_LOGIN_URL),
     )
 
     script_path = LOGS_DIR / f"booking-pw-{datetime.now().strftime('%Y%m%d-%H%M%S')}.js"
@@ -253,11 +315,34 @@ def _run_playwright_flow(
 
     print(proc.stderr[-3000:] if proc.stderr else "", file=sys.stderr)
 
-    if proc.returncode == 2:
+    if proc.returncode == EXIT_ABORTED:
         print("[book-restaurant] User aborted booking.", file=sys.stderr)
-        sys.exit(2)
+        sys.exit(EXIT_ABORTED)
 
-    if proc.returncode == 3:
+    if proc.returncode == EXIT_BLOCKED:
+        detail = _parse_json_or_none(proc.stdout) or {}
+        print(json.dumps({**detail, "status": "blocked_by_bot_detection"}, indent=2))
+        print(
+            "[book-restaurant] BLOCKED: TheFork served a bot-detection interstitial. "
+            "Nothing was read from the page and nothing was submitted. "
+            "This is NOT a statement about availability at the restaurant.",
+            file=sys.stderr,
+        )
+        sys.exit(EXIT_BLOCKED)
+
+    if proc.returncode == EXIT_NO_USABLE_SLOT:
+        detail = _parse_json_or_none(proc.stdout) or {}
+        print(json.dumps({**detail, "status": "no_usable_slot"}, indent=2))
+        print(
+            "[book-restaurant] NO USABLE SLOT: the booking form did not yield a slot "
+            "this script could select. Treat this as a broken read, not as "
+            "'the restaurant is full' - check the screenshot before drawing either "
+            "conclusion.",
+            file=sys.stderr,
+        )
+        sys.exit(EXIT_NO_USABLE_SLOT)
+
+    if proc.returncode == EXIT_DRY_RUN:
         print("[book-restaurant] Dry run complete.", file=sys.stderr)
         # Parse dry-run result from stdout
         try:
@@ -340,6 +425,8 @@ def _build_playwright_script(
     notes: str | None,
     dry_run: bool,
     logs_dir: str,
+    tolerance_minutes: int = 30,
+    login_url: str = THEFORK_LOGIN_URL,
 ) -> str:
     """Generate a Node.js Playwright script for the TheFork booking flow.
 
@@ -350,6 +437,7 @@ def _build_playwright_script(
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     screenshot_preconfirm = f"{logs_dir}/booking-{ts}-preconfirm.png"
     screenshot_confirmed = f"{logs_dir}/booking-{ts}-confirmed.png"
+    screenshot_blocked = f"{logs_dir}/booking-{ts}-blocked.png"
 
     # Escape values for embedding in JS string literals
     def js_str(s: str | None) -> str:
@@ -363,7 +451,7 @@ def _build_playwright_script(
 // TheFork booking script - generated by book-restaurant.py
 // Password is read from THEFORK_PASSWORD env var, not embedded here.
 const {{ chromium }} = require('playwright');
-const {{ execSync }} = require('child_process');
+const {{ spawnSync }} = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -378,15 +466,80 @@ const NOTES = {js_str(notes)};
 const DRY_RUN = {dry_run_js};
 const SCREENSHOT_PRECONFIRM = {js_str(screenshot_preconfirm)};
 const SCREENSHOT_CONFIRMED = {js_str(screenshot_confirmed)};
+const SCREENSHOT_BLOCKED = {js_str(screenshot_blocked)};
 const CONFIRM_SCRIPT = {js_str(confirm_script)};
+const LOGIN_URL = {js_str(login_url)};
+const TOLERANCE_MINUTES = {tolerance_minutes};
+
+const EXIT_OK = 0, EXIT_ERROR = 1, EXIT_ABORTED = 2, EXIT_DRY_RUN = 3;
+const EXIT_BLOCKED = 4, EXIT_NO_USABLE_SLOT = 5;
+
+// Observed 2026-08-10 against thefork.pt and thefork.com: TheFork answers
+// automated traffic with an HTTP 403 and a branded interstitial. The page
+// screenshots perfectly well, which is exactly why this has to be matched on
+// rather than left to a selector timeout - a blocked page and a page whose
+// markup moved produce the same "element not found" symptom, and only one of
+// them is a code problem.
+const BLOCK_SIGNATURES = [
+  'access is temporarily restricted',
+  'acesso temporariamente restrito',
+  'we detected unusual activity',
+  'detetamos atividade invulgar',
+  'automated (bot) activity',
+];
+
+async function bodyText(page) {{
+  try {{
+    return (await page.evaluate(() => (document.body ? document.body.innerText : ''))) || '';
+  }} catch (e) {{
+    return '';
+  }}
+}}
+
+// Emits the structured outcome and exits. Never returns.
+async function bail(page, browser, code, payload) {{
+  try {{ process.stdout.write(JSON.stringify(payload) + '\\n'); }} catch (e) {{ /* stdout closed */ }}
+  try {{ await browser.close(); }} catch (e) {{ /* already closing */ }}
+  process.exit(code);
+}}
+
+// Called after every navigation. Anything that smells like bot detection stops
+// the run here rather than letting the flow limp on and produce a confident
+// wrong answer downstream.
+async function assertNotBlocked(page, browser, response, stage) {{
+  const status = response ? response.status() : null;
+  const text = (await bodyText(page)).toLowerCase();
+  const signature = BLOCK_SIGNATURES.find((s) => text.includes(s));
+  if (signature || status === 403 || status === 429) {{
+    try {{ await page.screenshot({{ path: SCREENSHOT_BLOCKED, fullPage: false }}); }} catch (e) {{ /* best effort */ }}
+    process.stderr.write(`[playwright] BLOCKED at ${{stage}}: http=${{status}} signature=${{signature || 'none'}}\\n`);
+    await bail(page, browser, EXIT_BLOCKED, {{
+      status: 'blocked_by_bot_detection',
+      stage,
+      http_status: status,
+      signature: signature || `HTTP ${{status}}`,
+      url: page.url(),
+      screenshot_path: SCREENSHOT_BLOCKED,
+      detail:
+        'TheFork served a bot-detection interstitial. No page content was read ' +
+        'and nothing was submitted. This says nothing about availability at the ' +
+        'restaurant.',
+    }});
+  }}
+}}
 
 if (!PASSWORD) {{
   process.stderr.write('ERROR: THEFORK_PASSWORD env var not set\\n');
-  process.exit(1);
+  process.exit(EXIT_ERROR);
 }}
 
 async function run() {{
-  const browser = await chromium.launch({{ headless: true }});
+  // channel: 'chromium' launches the full Chromium build rather than the
+  // headless shell. The shell advertises itself as HeadlessChrome in the UA and
+  // was refused on every request during the 2026-08-10 smoke test. This is a
+  // browser-build choice, not a stealth patch - no fingerprint patching is done
+  // anywhere in this plugin, pending an explicit ruling on anti-bot posture.
+  const browser = await chromium.launch({{ headless: true, channel: 'chromium' }});
   const context = await browser.newContext({{
     viewport: {{ width: 1280, height: 900 }},
     locale: 'en-GB',
@@ -396,9 +549,10 @@ async function run() {{
 
   try {{
     // Step 1: Navigate to TheFork login page
-    process.stderr.write('[playwright] Navigating to TheFork login...\\n');
-    await page.goto('https://www.thefork.com/signin', {{ waitUntil: 'networkidle', timeout: 30000 }});
+    process.stderr.write(`[playwright] Navigating to TheFork login: ${{LOGIN_URL}}\\n`);
+    const loginResp = await page.goto(LOGIN_URL, {{ waitUntil: 'networkidle', timeout: 30000 }});
     await page.waitForTimeout(2000);
+    await assertNotBlocked(page, browser, loginResp, 'login_page');
 
     // Accept cookies if the banner appears
     try {{
@@ -437,8 +591,9 @@ async function run() {{
 
     // Step 3: Navigate to restaurant page
     process.stderr.write(`[playwright] Navigating to restaurant: ${{RESTAURANT_URL}}\\n`);
-    await page.goto(RESTAURANT_URL, {{ waitUntil: 'networkidle', timeout: 30000 }});
+    const restoResp = await page.goto(RESTAURANT_URL, {{ waitUntil: 'networkidle', timeout: 30000 }});
     await page.waitForTimeout(2000);
+    await assertNotBlocked(page, browser, restoResp, 'restaurant_page');
 
     // Extract restaurant display name from page title if we don't have it
     const pageTitle = await page.title();
@@ -482,7 +637,7 @@ async function run() {{
       }} catch (e) {{ /* try next selector */ }}
     }}
     if (!partySizeSet) {{
-      process.stderr.write('[playwright] WARNING: Could not set party size via standard selectors - may need manual intervention\\n');
+      process.stderr.write('[playwright] Could not set party size via any known selector\\n');
     }}
 
     // Try setting the date
@@ -506,7 +661,7 @@ async function run() {{
       }} catch (e) {{ /* try next */ }}
     }}
     if (!dateSet) {{
-      process.stderr.write('[playwright] WARNING: Could not set date via standard selectors\\n');
+      process.stderr.write('[playwright] Could not set date via any known selector\\n');
     }}
 
     // Try setting time slot
@@ -517,6 +672,11 @@ async function run() {{
     ];
 
     let timeSet = false;
+    // Distinguishes "the slot list never rendered" from "the slot list rendered
+    // and held nothing near the requested time". Collapsing those two into one
+    // message is how a broken selector gets reported as a full restaurant.
+    let timeOutcome = 'selector_not_found';
+    let slotsSeen = 0;
     for (const sel of timeSelectors) {{
       try {{
         const el = page.locator(sel).first();
@@ -527,6 +687,7 @@ async function run() {{
             try {{
               await el.selectOption({{ label: TIME_STR }});
               timeSet = true;
+              timeOutcome = 'exact';
             }} catch(e2) {{
               // Collect all options and find nearest
               const options = await el.locator('option').all();
@@ -538,6 +699,7 @@ async function run() {{
                 const label = await opt.textContent();
                 const m = label && label.match(/(\\d{{1,2}}):(\\d{{2}})/);
                 if (m) {{
+                  slotsSeen += 1;
                   const diff = Math.abs(parseInt(m[1]) * 60 + parseInt(m[2]) - requestedMins);
                   if (diff < nearestDiff) {{
                     nearestDiff = diff;
@@ -545,15 +707,21 @@ async function run() {{
                   }}
                 }}
               }}
-              if (nearest && nearestDiff <= 30) {{
+              if (nearest && nearestDiff <= TOLERANCE_MINUTES) {{
                 await el.selectOption({{ value: nearest }});
                 timeSet = true;
+                timeOutcome = 'nearest';
                 process.stderr.write(`[playwright] Time set to nearest available: ${{nearest}} (diff: ${{nearestDiff}}min)\\n`);
+              }} else if (slotsSeen > 0) {{
+                timeOutcome = 'no_slot_within_tolerance';
+              }} else {{
+                timeOutcome = 'slot_list_empty';
               }}
             }}
           }} else {{
             await el.fill(TIME_STR);
             timeSet = true;
+            timeOutcome = 'exact';
           }}
           if (timeSet) {{
             process.stderr.write(`[playwright] Time set via: ${{sel}}\\n`);
@@ -563,7 +731,36 @@ async function run() {{
       }} catch (e) {{ /* try next */ }}
     }}
     if (!timeSet) {{
-      process.stderr.write('[playwright] WARNING: Could not set time via standard selectors\\n');
+      process.stderr.write(`[playwright] Could not set time (outcome: ${{timeOutcome}})\\n`);
+    }}
+
+    // Hard gate. Previously each of these was a stderr warning and the flow
+    // carried on to screenshot a half-filled form and ask a human to approve it.
+    // A soft-confirm is only a safety gate if the thing being confirmed is the
+    // thing that would be submitted, so an incompletely filled form stops here.
+    if (!partySizeSet || !dateSet || !timeSet) {{
+      const missing = [];
+      if (!partySizeSet) missing.push('party_size');
+      if (!dateSet) missing.push('date');
+      if (!timeSet) missing.push('time');
+      try {{ await page.screenshot({{ path: SCREENSHOT_PRECONFIRM, fullPage: false }}); }} catch (e) {{ /* best effort */ }}
+      await bail(page, browser, EXIT_NO_USABLE_SLOT, {{
+        status: 'no_usable_slot',
+        reason: timeSet ? 'form_fields_not_set' : timeOutcome,
+        missing_fields: missing,
+        slots_seen: slotsSeen,
+        tolerance_minutes: TOLERANCE_MINUTES,
+        restaurant: RESTAURANT_NAME,
+        restaurant_url: RESTAURANT_URL,
+        requested_datetime: DATE_STR + 'T' + TIME_STR,
+        party_size: PARTY_SIZE,
+        screenshot_path: SCREENSHOT_PRECONFIRM,
+        detail:
+          'The booking form could not be filled completely, so no booking was ' +
+          'proposed and nothing was submitted. Do NOT read this as "the ' +
+          'restaurant has no availability" - a moved selector and a full ' +
+          'restaurant are indistinguishable from here. Open the screenshot.',
+      }});
     }}
 
     await page.waitForTimeout(1500);
@@ -603,24 +800,30 @@ async function run() {{
       }};
       process.stdout.write(JSON.stringify(dryResult) + '\\n');
       await browser.close();
-      process.exit(3);
+      process.exit(EXIT_DRY_RUN);
     }}
 
     // Step 6: Call confirm-via-discord.py
     process.stderr.write('[playwright] Calling Discord soft-confirm...\\n');
     let confirmed = false;
     try {{
-      const confirmResult = execSync(
-        `python3 "${{CONFIRM_SCRIPT}}" ` +
-        `--restaurant ${{JSON.stringify(RESTAURANT_NAME)}} ` +
-        `--datetime "${{DATE_STR}} ${{TIME_STR}}" ` +
-        `--party-size ${{PARTY_SIZE}} ` +
-        `--screenshot ${{JSON.stringify(SCREENSHOT_PRECONFIRM)}}`,
-        {{ encoding: 'utf8', timeout: 680000 }}  // 680s > 10 min timeout
-      );
-      const confirmData = JSON.parse(confirmResult.trim());
+      // spawnSync with an argv array, not execSync with an interpolated string.
+      // RESTAURANT_NAME arrives from a chat message via the intent parser, so a
+      // shell-quoted template here is a command-injection path into the host.
+      const confirmProc = spawnSync('python3', [
+        CONFIRM_SCRIPT,
+        '--restaurant', RESTAURANT_NAME,
+        '--datetime', `${{DATE_STR}} ${{TIME_STR}}`,
+        '--party-size', String(PARTY_SIZE),
+        '--screenshot', SCREENSHOT_PRECONFIRM,
+      ], {{ encoding: 'utf8', timeout: 680000 }});  // 680s > the 10 min confirm timeout
+      if (confirmProc.status !== 0) {{
+        throw new Error(`confirm-via-discord.py exited ${{confirmProc.status}}: ${{(confirmProc.stderr || '').slice(-500)}}`);
+      }}
+      const confirmData = JSON.parse((confirmProc.stdout || '').trim());
       confirmed = confirmData.confirmed === true;
     }} catch (e) {{
+      // Fail closed. Any failure to establish consent means no booking.
       process.stderr.write(`[playwright] Discord confirm error: ${{e.message}}\\n`);
       confirmed = false;
     }}
@@ -628,7 +831,7 @@ async function run() {{
     if (!confirmed) {{
       process.stderr.write('[playwright] Booking aborted by user or timeout.\\n');
       await browser.close();
-      process.exit(2);
+      process.exit(EXIT_ABORTED);
     }}
 
     // Step 7: Click the confirm/reserve button
@@ -692,6 +895,27 @@ async function run() {{
     await page.screenshot({{ path: SCREENSHOT_CONFIRMED, fullPage: false }});
     process.stderr.write(`[playwright] Confirmation screenshot: ${{SCREENSHOT_CONFIRMED}}\\n`);
 
+    // The reserve button was clicked, so a reservation may well exist. Saying
+    // "confirmed" while carrying confirmation_number: 'unknown' asserts a
+    // success nobody verified, and the operator would have no reason to go and
+    // check. Report the ambiguity instead and make it non-zero.
+    if (confirmationNumber === 'unknown') {{
+      process.stderr.write('[playwright] Submitted, but no confirmation reference found on the page.\\n');
+      await bail(page, browser, EXIT_ERROR, {{
+        status: 'submitted_outcome_unknown',
+        confirmation_number: null,
+        restaurant: RESTAURANT_NAME,
+        restaurant_url: RESTAURANT_URL,
+        datetime: DATE_STR + 'T' + TIME_STR + ':00+01:00',
+        party_size: PARTY_SIZE,
+        screenshot_path: SCREENSHOT_CONFIRMED,
+        detail:
+          'The reserve button was clicked and no confirmation reference could be ' +
+          'read back. A reservation may exist. Check TheFork account and the ' +
+          'screenshot before retrying, and cancel any duplicate.',
+      }});
+    }}
+
     const result = {{
       confirmation_number: confirmationNumber,
       restaurant: RESTAURANT_NAME,
@@ -705,7 +929,7 @@ async function run() {{
 
     process.stdout.write(JSON.stringify(result) + '\\n');
     await browser.close();
-    process.exit(0);
+    process.exit(EXIT_OK);
 
   }} catch (err) {{
     process.stderr.write(`[playwright] ERROR: ${{err.message}}\\n`);
@@ -713,13 +937,13 @@ async function run() {{
       await page.screenshot({{ path: SCREENSHOT_PRECONFIRM.replace('.png', '-error.png') }});
     }} catch (e2) {{ /* screenshot on error failed */ }}
     await browser.close();
-    process.exit(1);
+    process.exit(EXIT_ERROR);
   }}
 }}
 
 run().catch(err => {{
   process.stderr.write(`[playwright] Fatal: ${{err.message}}\\n`);
-  process.exit(1);
+  process.exit(EXIT_ERROR);
 }});
 """
 
