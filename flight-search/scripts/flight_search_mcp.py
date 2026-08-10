@@ -67,22 +67,112 @@ def _query_schema(extra: dict, required: list) -> dict:
     return {"type": "object", "properties": props, "required": required}
 
 
+_LEGS_SCHEMA = {
+    "type": "array",
+    "minItems": 1,
+    "maxItems": 6,
+    "description": (
+        "A multi-city itinerary, one entry per leg in travel order. Use this instead of "
+        "origin/destination/date when the trip touches more than two cities. Google prices the whole "
+        "itinerary as one fare; the legs are never searched separately and added up."
+    ),
+    "items": {
+        "type": "object",
+        "properties": {
+            "origin": {"type": "string"},
+            "destination": {"type": "string"},
+            "date": {"type": "string", "description": "YYYY-MM-DD"},
+        },
+        "required": ["origin", "destination", "date"],
+    },
+}
+
+_TOP_N_SCHEMA = {
+    "type": "integer",
+    "minimum": 1,
+    "maximum": 5,
+    "default": 2,
+    "description": (
+        "Expansion breadth for multi-leg trips: how many outbound candidates get a follow-up request "
+        "for the next leg. Cost is roughly top_n ** (legs - 1) requests. A four-leg trip at 2 took "
+        "ninety seconds live."
+    ),
+}
+
 TOOLS = [
     {
         "name": "search_flights",
         "description": (
-            "Search Google Flights for one-way itineraries on a route for a date. Returns priced "
-            "itineraries sorted cheapest first. status=empty means a live control query confirmed the "
-            "scraper works and the route really has nothing; any failure comes back as an error with an "
-            "error_kind - never report 'no flights' on an error."
+            "Search Google Flights. One-way by default; pass return_date for a round trip, or `legs` "
+            "for a multi-city itinerary. Returns priced itineraries sorted cheapest first, each with "
+            "its segments. The price is the whole-itinerary fare, not a per-leg price. status=empty "
+            "means a live control query confirmed the scraper works and the route really has nothing; "
+            "any failure comes back as an error with an error_kind - never report 'no flights' on an "
+            "error."
         ),
         "inputSchema": _query_schema(
             {
                 "date": {"type": "string", "description": "Departure date, YYYY-MM-DD."},
+                "return_date": {
+                    "type": "string",
+                    "description": "Return date, YYYY-MM-DD. Present makes it a round trip priced as one fare.",
+                },
+                "legs": _LEGS_SCHEMA,
+                "top_n": _TOP_N_SCHEMA,
                 "sort": {"type": "string", "enum": sorted(flight_tools.SORTS), "default": "cheapest"},
                 "limit": {"type": "integer", "minimum": 1, "maximum": 25, "default": 5},
             },
-            ["origin", "destination", "date"],
+            [],
+        ),
+    },
+    {
+        "name": "search_flexible",
+        "description": (
+            "Cheapest round trips across an outbound window and a return window, e.g. out 20-23 "
+            "December and back 5-8 January. Sweeps trip lengths against Google's calendar grid, so a "
+            "four-by-four window costs seven requests rather than sixteen searches. These are "
+            "indicative calendar prices - run search_flights on a promising pair for real itineraries."
+        ),
+        "inputSchema": _query_schema(
+            {
+                "out_window": {
+                    "type": "string",
+                    "description": "Outbound window as 'YYYY-MM-DD:YYYY-MM-DD', or a single date.",
+                },
+                "back_window": {
+                    "type": "string",
+                    "description": "Return window as 'YYYY-MM-DD:YYYY-MM-DD', or a single date.",
+                },
+            },
+            ["origin", "destination", "out_window", "back_window"],
+        ),
+    },
+    {
+        "name": "plan_trip",
+        "description": (
+            "Price a multi-city trip that has to touch a list of cities, across flexible outbound and "
+            "return windows. Ranks candidate date pairs with the cheap calendar grid, then runs real "
+            "multi-city searches on the best few and reports their actual fares. Slow by nature - "
+            "each full search is tens of seconds - so it is bounded by max_searches. Never put this "
+            "on a schedule."
+        ),
+        "inputSchema": _query_schema(
+            {
+                "visit": {
+                    "type": "string",
+                    "description": "Cities to touch, in travel order, comma-separated IATA codes, e.g. 'PHX,SFO,LAX'.",
+                },
+                "out_window": {"type": "string", "description": "'YYYY-MM-DD:YYYY-MM-DD' or a single date."},
+                "back_window": {"type": "string", "description": "'YYYY-MM-DD:YYYY-MM-DD' or a single date."},
+                "nights": {
+                    "type": "object",
+                    "description": "Nights in named cities, e.g. {\"PHX\": 7}. Unnamed cities split what is left.",
+                    "additionalProperties": {"type": "integer", "minimum": 1},
+                },
+                "max_searches": {"type": "integer", "minimum": 1, "maximum": 12, "default": 4},
+                "top_n": _TOP_N_SCHEMA,
+            },
+            ["origin", "visit", "out_window", "back_window"],
         ),
     },
     {
@@ -102,16 +192,22 @@ TOOLS = [
     {
         "name": "track_flight",
         "description": (
-            "Register a route for daily price monitoring. target_price is required: it is the alert "
-            "condition, and without one every wobble in a volatile fare becomes a notification."
+            "Register a route for daily price monitoring. Takes the same trip shapes as "
+            "search_flights: one-way, round trip via return_date, or multi-city via legs. "
+            "target_price is required: it is the alert condition, and without one every wobble in a "
+            "volatile fare becomes a notification. Tracking a multi-city trip costs a full expansion "
+            "on every check, so keep top_n low."
         ),
         "inputSchema": _query_schema(
             {
                 "date": {"type": "string", "description": "Departure date, YYYY-MM-DD."},
+                "return_date": {"type": "string", "description": "Return date, YYYY-MM-DD, for a round trip."},
+                "legs": _LEGS_SCHEMA,
+                "top_n": _TOP_N_SCHEMA,
                 "target_price": {"type": "number", "description": "Alert when the cheapest fare is at or below this."},
                 "label": {"type": "string", "description": "Human label for the alert, e.g. 'Christmas trip home'."},
             },
-            ["origin", "destination", "date", "target_price"],
+            ["target_price"],
         ),
     },
     {
@@ -146,6 +242,7 @@ def _query(args: dict, date_keys: list) -> dict:
         "origin", "destination", "adults", "children", "infants_in_seat", "infants_on_lap",
         "cabin", "max_stops", "airlines", "max_price", "max_duration_minutes",
         "max_layover_minutes", "depart_after", "depart_before", "arrive_after", "arrive_before",
+        "legs", "return_date", "top_n",
     ] + date_keys
     return {k: args[k] for k in keys if args.get(k) is not None}
 
@@ -160,6 +257,11 @@ def dispatch_tool(name: str, args: dict) -> dict:
         return flight_tools.search_flights(query, currency=currency, limit=int(args.get("limit", 5)))
     if name == "search_dates":
         return flight_tools.search_dates(_query(args, ["from_date", "to_date"]), currency=currency)
+    if name == "search_flexible":
+        return flight_tools.search_flexible(_query(args, ["out_window", "back_window"]), currency=currency)
+    if name == "plan_trip":
+        query = _query(args, ["out_window", "back_window", "visit", "nights", "max_searches"])
+        return flight_tools.plan_trip(query, currency=currency)
     if name == "track_flight":
         return flight_tools.track_flight(
             _query(args, ["date"]),

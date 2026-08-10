@@ -39,7 +39,7 @@ Error kinds and what each one means:
 
 | `error_kind` | What actually happened |
 |---|---|
-| `scraper_error` | The route came back empty AND the control route came back empty. The scraper is broken. Nothing about the fare is known. |
+| `scraper_error` | The route came back empty AND the control route came back empty. Nothing about the fare is known. Usually Google refusing the client after a burst of searching, which clears on its own; sometimes a response-shape change upstream. Say which is more likely, do not guess between them with confidence. |
 | `empty_route` | The route came back empty while the control route was healthy. The scraper works; this specific route has no flights. Usually a date too far out, an impossible filter combination, or a route that stopped operating. |
 | `http_error` / `network_error` / `timeout` | Google refused or did not answer. Often rate limiting; usually transient. |
 | `unpriced` | Itineraries came back with no prices attached. Nothing trackable. |

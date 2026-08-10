@@ -168,6 +168,22 @@ def canary_lead_days() -> int:
         return 30
 
 
+def default_top_n() -> int:
+    """Expansion breadth for multi-leg searches. See live_flight_searcher."""
+    try:
+        return max(1, min(5, int(_env("FLIGHT_SEARCH_TOP_N", "2"))))
+    except ValueError:
+        return 2
+
+
+def max_plan_searches() -> int:
+    """Ceiling on how many full itinerary searches one plan_trip call may run."""
+    try:
+        return max(1, int(_env("FLIGHT_SEARCH_MAX_PLAN_SEARCHES", "4")))
+    except ValueError:
+        return 4
+
+
 # ---------------------------------------------------------------------------
 # Small helpers
 # ---------------------------------------------------------------------------
@@ -262,6 +278,71 @@ def _enum(container, table: dict, key: str, label: str):
         ) from exc
 
 
+def normalize_legs(query: dict) -> list[dict]:
+    """Every query is a list of legs internally, whatever shorthand it arrived in.
+
+    One leg is one-way. Two legs that mirror each other are a round trip. Anything
+    else is multi-city. Google is asked for exactly one itinerary either way - the
+    legs are never searched separately and stitched together, because a stitched
+    price is not a fare anyone can book.
+    """
+    legs = query.get("legs")
+    if legs:
+        out = []
+        for i, leg in enumerate(legs, start=1):
+            if not isinstance(leg, dict):
+                raise FlightSearchError("bad_request", f"leg {i} is not an object")
+            for key in ("origin", "destination", "date"):
+                if not leg.get(key):
+                    raise FlightSearchError("bad_request", f"leg {i} is missing '{key}'")
+            out.append(
+                {
+                    "origin": ",".join(_codes(leg["origin"], f"leg {i} origin")),
+                    "destination": ",".join(_codes(leg["destination"], f"leg {i} destination")),
+                    "date": _check_date(leg["date"], f"leg {i} date"),
+                }
+            )
+        dates = [leg["date"] for leg in out]
+        if dates != sorted(dates):
+            raise FlightSearchError(
+                "bad_request", f"leg dates must run forwards in time, got {', '.join(dates)}"
+            )
+        return out
+
+    if not query.get("origin") or not query.get("destination") or not query.get("date"):
+        raise FlightSearchError(
+            "bad_request", "give either origin, destination and date, or a list of legs"
+        )
+    first = {
+        "origin": ",".join(_codes(query["origin"], "origin")),
+        "destination": ",".join(_codes(query["destination"], "destination")),
+        "date": _check_date(query["date"], "date"),
+    }
+    return_date = query.get("return_date")
+    if not return_date:
+        return [first]
+    return_date = _check_date(return_date, "return_date")
+    if return_date < first["date"]:
+        raise FlightSearchError(
+            "bad_request",
+            f"return_date {return_date} is before the outbound date {first['date']}",
+        )
+    return [first, {"origin": first["destination"], "destination": first["origin"], "date": return_date}]
+
+
+def trip_shape(legs: list[dict]) -> str:
+    """`one_way`, `round_trip` or `multi_city`, decided by the legs themselves."""
+    if len(legs) == 1:
+        return "one_way"
+    if (
+        len(legs) == 2
+        and legs[0]["origin"] == legs[1]["destination"]
+        and legs[0]["destination"] == legs[1]["origin"]
+    ):
+        return "round_trip"
+    return "multi_city"
+
+
 def _airports(fli: _Fli, spec: str, label: str) -> list:
     out = []
     for code in _codes(spec, label):
@@ -321,23 +402,43 @@ def _layovers(fli: _Fli, query: dict):
     return fli.LayoverRestrictions(max_duration=int(max_layover))
 
 
+TRIP_TYPES = {"one_way": "ONE_WAY", "round_trip": "ROUND_TRIP", "multi_city": "MULTI_CITY"}
+
+
 def build_flight_filters(fli: _Fli, query: dict, currency: str):
-    """Turn a plain-dict query into `fli`'s FlightSearchFilters. One-way only."""
-    segment = fli.FlightSegment(
-        departure_airport=_airports(fli, query["origin"], "origin"),
-        arrival_airport=_airports(fli, query["destination"], "destination"),
-        travel_date=_check_date(query["date"], "date"),
-        time_restrictions=_time_restrictions(fli, query),
-    )
+    """Turn a plain-dict query into `fli`'s FlightSearchFilters.
+
+    One segment per leg, and the trip type set from the leg shape. Google prices
+    the whole itinerary in one shopping session: for a round trip or a multi-city
+    trip, `fli` sends the chosen outbound back as `selected_flight` and asks
+    Google for the next leg in the context of that choice. That is what makes the
+    result a real fare rather than a sum of separate searches.
+    """
+    legs = normalize_legs(query)
+    shape = trip_shape(legs)
+    restrictions = _time_restrictions(fli, query)
+    segments = [
+        fli.FlightSegment(
+            departure_airport=_airports(fli, leg["origin"], "origin"),
+            arrival_airport=_airports(fli, leg["destination"], "destination"),
+            travel_date=leg["date"],
+            # Hour windows apply to the first leg only. Google takes them per
+            # segment, but "leave after 6am" almost never means the same thing on
+            # a return four weeks later, and silently applying it to every leg
+            # would quietly drop itineraries nobody asked to exclude.
+            time_restrictions=restrictions if index == 0 else None,
+        )
+        for index, leg in enumerate(legs)
+    ]
     return fli.FlightSearchFilters(
-        trip_type=fli.TripType.ONE_WAY,
+        trip_type=_enum(fli.TripType, TRIP_TYPES, shape, "trip type"),
         passenger_info=fli.PassengerInfo(
             adults=int(query.get("adults", 1)),
             children=int(query.get("children", 0)),
             infants_in_seat=int(query.get("infants_in_seat", 0)),
             infants_on_lap=int(query.get("infants_on_lap", 0)),
         ),
-        flight_segments=[segment],
+        flight_segments=segments,
         seat_type=_enum(fli.SeatType, CABINS, query.get("cabin", "economy"), "cabin"),
         stops=_enum(fli.MaxStops, MAX_STOPS, query.get("max_stops", "any"), "max_stops"),
         sort_by=_enum(fli.SortBy, SORTS, query.get("sort", "cheapest"), "sort"),
@@ -402,7 +503,7 @@ def _call_upstream(fn: Callable, *args, **kwargs):
 # ---------------------------------------------------------------------------
 
 
-def normalize_flight(result: Any) -> dict:
+def _normalize_segment(result: Any) -> dict:
     """One `fli` FlightResult to a plain dict. Codes come off `.name`, names off `.value`."""
     legs = []
     for leg in getattr(result, "legs", []) or []:
@@ -419,11 +520,49 @@ def normalize_flight(result: Any) -> dict:
             }
         )
     return {
-        "price": result.price,
-        "currency": result.currency,
+        "from": legs[0]["from"] if legs else None,
+        "to": legs[-1]["to"] if legs else None,
+        "date": legs[0]["departs"][:10] if legs else None,
         "stops": result.stops,
         "duration_minutes": result.duration,
+        "price_at_this_step": result.price,
+        "currency": result.currency,
         "legs": legs,
+    }
+
+
+def normalize_itinerary(result: Any) -> dict:
+    """One search result to a plain dict, whatever the trip shape.
+
+    `fli` returns a bare FlightResult for a one-way trip and a tuple of them for a
+    round trip or multi-city trip, one per segment. Every element of that tuple
+    carries a price, and those prices are NOT per-segment fares - they are the
+    running total for the itinerary as it stood at that point in Google's
+    selection flow. Verified live on 2026-08-10: a LIS-JFK-LIS round trip came
+    back as (490.0, 490.0) EUR against a 442.0 one-way, and a four-segment
+    LIS-PHX-SFO-LAX-LIS trip came back as tuples like
+    (1577.0, 1577.0, 1577.0, 1595.0) where only the last element moves with the
+    final leg chosen.
+
+    So the itinerary price is the LAST element's price. `fli` itself agrees:
+    `SearchFlights.get_booking_options` builds its booking token from
+    `results[-1].price`, which is the number Google is asked to honour.
+
+    Summing the elements would roughly quadruple the price of a four-leg trip.
+    Taking the first would report a total that ignores the return leg actually
+    picked. Neither is the fare.
+    """
+    segments = [_normalize_segment(r) for r in (result if isinstance(result, tuple) else (result,))]
+    total = segments[-1]["price_at_this_step"]
+    return {
+        "price": total,
+        "currency": segments[-1]["currency"],
+        "trip_shape": trip_shape(
+            [{"origin": s["from"], "destination": s["to"], "date": s["date"]} for s in segments]
+        ),
+        "stops": sum(s["stops"] for s in segments if s["stops"] is not None),
+        "duration_minutes": sum(s["duration_minutes"] for s in segments if s["duration_minutes"]),
+        "segments": segments,
     }
 
 
@@ -486,16 +625,27 @@ def interpret_results(
             )
         return {"status": "empty", "flights": [], "currency": currency, "canary": detail}
 
-    flights = [normalize_flight(r) for r in rows]
+    flights = [normalize_itinerary(r) for r in rows]
     priced = [f for f in flights if f["price"] is not None]
     if not priced:
         raise FlightSearchError(
             "unpriced",
             f"{len(flights)} itineraries came back and not one carried a price - nothing here is "
-            "trackable and the number you would report does not exist",
+            "trackable and the number you would report does not exist. Premium cabins on a "
+            "multi-passenger round trip are the predictable case: Google expects a specific "
+            "outbound and return to be picked before it quotes a fare.",
         )
 
-    wrong = sorted({(f["currency"] or "none") for f in priced if (f["currency"] or "").upper() != currency})
+    # Every segment's currency is checked, not just the one the total came off.
+    # A mixed-currency itinerary would produce a total that means nothing.
+    wrong = sorted(
+        {
+            (c or "none")
+            for f in priced
+            for c in [f["currency"]] + [s["currency"] for s in f["segments"] if s["price_at_this_step"] is not None]
+            if (c or "").upper() != currency
+        }
+    )
     if wrong:
         raise FlightSearchError(
             "currency_mismatch",
@@ -521,7 +671,13 @@ def interpret_results(
 def live_flight_searcher(query: dict, currency: str, limit: int) -> list:
     fli = _load_fli()
     filters = build_flight_filters(fli, query, currency)
-    results = _call_upstream(fli.SearchFlights().search, filters, currency=currency)
+    # top_n is the expansion breadth for multi-leg trips: how many outbound
+    # candidates get a follow-up request asking Google for the next leg. Cost is
+    # roughly top_n ** (legs - 1) requests, so the default stays small. A
+    # four-leg trip at top_n=2 took 90 seconds live; at top_n=5 it would be
+    # thirty-one requests and several minutes.
+    top_n = max(1, int(query.get("top_n") or default_top_n()))
+    results = _call_upstream(fli.SearchFlights().search, filters, top_n=top_n, currency=currency)
     return list(results or [])
 
 
@@ -537,18 +693,24 @@ def live_date_searcher(query: dict, currency: str) -> list:
 # ---------------------------------------------------------------------------
 
 
-def search_flights(query: dict, currency: str | None = None, limit: int = 5, searcher=None) -> dict:
-    currency = (currency or default_currency()).upper()
-    searcher = searcher or live_flight_searcher
-    raw = searcher(query, currency, limit)
-    out = interpret_results(raw, currency, searcher, limit=limit)
-    out["query"] = {
-        "origin": query["origin"].upper(),
-        "destination": query["destination"].upper(),
-        "date": query["date"],
+def describe_query(query: dict) -> dict:
+    legs = normalize_legs(query)
+    return {
+        "trip_shape": trip_shape(legs),
+        "legs": legs,
         "cabin": query.get("cabin", "economy"),
         "adults": int(query.get("adults", 1)),
     }
+
+
+def search_flights(query: dict, currency: str | None = None, limit: int = 5, searcher=None) -> dict:
+    """One-way, round trip or multi-city, decided by the legs in the query."""
+    currency = (currency or default_currency()).upper()
+    searcher = searcher or live_flight_searcher
+    normalize_legs(query)  # fail on a bad query before spending a request
+    raw = searcher(query, currency, limit)
+    out = interpret_results(raw, currency, searcher, limit=limit)
+    out["query"] = describe_query(query)
     return out
 
 
@@ -612,6 +774,396 @@ def search_dates(query: dict, currency: str | None = None, searcher=None, flight
 
 
 # ---------------------------------------------------------------------------
+# Flexible windows
+# ---------------------------------------------------------------------------
+
+
+def _window(spec: str, label: str) -> tuple[str, str]:
+    """'2026-12-20:2026-12-23' to a (first, last) pair. A bare date is a one-day window."""
+    parts = [p.strip() for p in (spec or "").split(":") if p.strip()]
+    if len(parts) == 1:
+        parts = [parts[0], parts[0]]
+    if len(parts) != 2:
+        raise FlightSearchError(
+            "bad_request", f"{label} must be YYYY-MM-DD or YYYY-MM-DD:YYYY-MM-DD, got '{spec}'"
+        )
+    first, last = _check_date(parts[0], label), _check_date(parts[1], label)
+    if last < first:
+        first, last = last, first
+    return first, last
+
+
+def _days(window: tuple[str, str]) -> list[str]:
+    start = datetime.strptime(window[0], "%Y-%m-%d")
+    end = datetime.strptime(window[1], "%Y-%m-%d")
+    span = (end - start).days
+    if span > 60:
+        raise FlightSearchError(
+            "bad_request", f"a {span}-day window is too wide to search; keep it to 60 days or fewer"
+        )
+    return [(start + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(span + 1)]
+
+
+def live_round_trip_calendar(query: dict, currency: str, duration: int) -> list:
+    """Google's calendar grid for a round trip of a fixed length.
+
+    Returns at most one (outbound, return) pair per call - the cheapest pair in
+    the window at that trip length. Verified live: a one-way grid returns a price
+    per day, but the round-trip grid answers with a single best pair. That is why
+    a flexible round-trip search sweeps trip LENGTHS rather than days.
+    """
+    fli = _load_fli()
+    out_window = query["out_window"]
+    origin, destination = query["origin"], query["destination"]
+    first_out = out_window[0]
+    back = (datetime.strptime(first_out, "%Y-%m-%d") + timedelta(days=duration)).strftime("%Y-%m-%d")
+    filters = fli.DateSearchFilters(
+        trip_type=fli.TripType.ROUND_TRIP,
+        passenger_info=fli.PassengerInfo(
+            adults=int(query.get("adults", 1)), children=int(query.get("children", 0))
+        ),
+        flight_segments=[
+            fli.FlightSegment(
+                departure_airport=_airports(fli, origin, "origin"),
+                arrival_airport=_airports(fli, destination, "destination"),
+                travel_date=first_out,
+            ),
+            fli.FlightSegment(
+                departure_airport=_airports(fli, destination, "destination"),
+                arrival_airport=_airports(fli, origin, "origin"),
+                travel_date=back,
+            ),
+        ],
+        seat_type=_enum(fli.SeatType, CABINS, query.get("cabin", "economy"), "cabin"),
+        stops=_enum(fli.MaxStops, MAX_STOPS, query.get("max_stops", "any"), "max_stops"),
+        price_limit=_price_limit(fli, query, currency),
+        airlines=_airlines(fli, query.get("airlines")),
+        from_date=out_window[0],
+        to_date=out_window[1],
+        duration=duration,
+    )
+    results = _call_upstream(fli.SearchDates().search, filters, currency=currency)
+    return list(results or [])
+
+
+def search_flexible(query: dict, currency: str | None = None, calendar=None, flight_searcher=None) -> dict:
+    """Cheapest round trips across an outbound window and a return window.
+
+    Sweeps trip lengths rather than day pairs. Every trip length that can land
+    both ends inside the two windows costs one calendar request, and Google
+    answers each with the cheapest pair at that length. A four-day outbound
+    window against a four-day return window is seven requests, not sixteen
+    searches.
+
+    These are calendar-grid prices, which is what Google shows before you pick
+    flights. Run search_flights on a promising pair for real itineraries.
+    """
+    currency = (currency or default_currency()).upper()
+    calendar = calendar or live_round_trip_calendar
+    flight_searcher = flight_searcher or live_flight_searcher
+
+    out_window = _window(query["out_window"], "out_window")
+    back_window = _window(query["back_window"], "back_window")
+    if back_window[0] < out_window[0]:
+        raise FlightSearchError(
+            "bad_request",
+            f"the return window starts {back_window[0]}, before the outbound window opens {out_window[0]}",
+        )
+
+    first_out = datetime.strptime(out_window[0], "%Y-%m-%d")
+    last_out = datetime.strptime(out_window[1], "%Y-%m-%d")
+    first_back = datetime.strptime(back_window[0], "%Y-%m-%d")
+    last_back = datetime.strptime(back_window[1], "%Y-%m-%d")
+    shortest = max(1, (first_back - last_out).days)
+    longest = (last_back - first_out).days
+    if longest < shortest:
+        raise FlightSearchError("bad_request", "no trip length fits between those two windows")
+
+    inner = dict(query)
+    inner["out_window"] = out_window
+    options: list[dict] = []
+    failures: list[dict] = []
+    for duration in range(shortest, longest + 1):
+        try:
+            points = calendar(inner, currency, duration)
+        except FlightSearchError as exc:
+            failures.append({"nights": duration, "error_kind": exc.kind, "error": exc.message})
+            continue
+        for point in points:
+            dates = [d.strftime("%Y-%m-%d") for d in point.date]
+            if len(dates) < 2:
+                continue
+            if not (out_window[0] <= dates[0] <= out_window[1]):
+                continue
+            if not (back_window[0] <= dates[1] <= back_window[1]):
+                continue
+            if point.price is None:
+                continue
+            if (point.currency or "").upper() != currency:
+                raise FlightSearchError(
+                    "currency_mismatch",
+                    f"asked Google for {currency} and the calendar answered in {point.currency}",
+                )
+            options.append(
+                {
+                    "out_date": dates[0],
+                    "back_date": dates[1],
+                    "nights": duration,
+                    "price": point.price,
+                    "currency": point.currency,
+                }
+            )
+
+    if not options:
+        # Same rule as everywhere else: prove the scraper is alive before
+        # calling an empty answer an answer.
+        healthy, detail = canary_check(currency, flight_searcher)
+        if not healthy:
+            raise FlightSearchError(
+                "scraper_error",
+                "no date pair came back for any trip length AND the control route is also empty - "
+                "treat this as a broken scraper, not a route with no fares",
+                detail,
+            )
+        if failures:
+            raise FlightSearchError(
+                "empty_window",
+                f"every trip length either failed or returned nothing across {len(range(shortest, longest + 1))} "
+                "lengths, while the control route is healthy",
+                failures,
+            )
+        return {
+            "status": "empty",
+            "options": [],
+            "currency": currency,
+            "canary": detail,
+            "searched_nights": [shortest, longest],
+        }
+
+    options.sort(key=lambda o: o["price"])
+    # One row per date pair: two trip lengths can resolve to the same pair.
+    seen = set()
+    unique = []
+    for option in options:
+        key = (option["out_date"], option["back_date"])
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(option)
+
+    return {
+        "status": "ok",
+        "currency": currency,
+        "source": "google calendar grid - indicative prices, run search_flights on a pair for real itineraries",
+        "cheapest": unique[0],
+        "options": unique,
+        "spread": round(unique[-1]["price"] - unique[0]["price"], 2),
+        "searched_nights": [shortest, longest],
+        "failures": failures,
+        "query": {
+            "origin": query["origin"].upper(),
+            "destination": query["destination"].upper(),
+            "out_window": list(out_window),
+            "back_window": list(back_window),
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Trip planning: multi-city across flexible windows
+# ---------------------------------------------------------------------------
+
+
+def _split_nights(total: int, cities: list[str], fixed: dict) -> list[int]:
+    """Nights per city. Named cities keep their nights; the rest share what is left."""
+    for city, nights in fixed.items():
+        if city not in cities:
+            raise FlightSearchError("bad_request", f"nights given for '{city}', which is not in the visit list")
+        if nights < 1:
+            raise FlightSearchError("bad_request", f"nights for '{city}' must be at least 1")
+    spoken_for = sum(fixed.get(city, 0) for city in cities)
+    free_cities = [c for c in cities if c not in fixed]
+    remaining = total - spoken_for
+    if remaining < len(free_cities):
+        raise FlightSearchError(
+            "bad_request",
+            f"a {total}-night trip cannot cover {len(cities)} cities with {spoken_for} nights already "
+            f"assigned - at least one night each is needed",
+        )
+    out = []
+    for index, city in enumerate(cities):
+        if city in fixed:
+            out.append(fixed[city])
+            continue
+        share = remaining // len(free_cities)
+        # The last free city absorbs the remainder rather than dropping days.
+        if city == free_cities[-1]:
+            share = remaining - share * (len(free_cities) - 1)
+        out.append(share)
+    return out
+
+
+def build_itinerary_legs(origin: str, cities: list[str], out_date: str, nights: list[int]) -> list[dict]:
+    hops = [origin] + cities + [origin]
+    legs = []
+    current = datetime.strptime(out_date, "%Y-%m-%d")
+    for index in range(len(hops) - 1):
+        legs.append(
+            {
+                "origin": hops[index],
+                "destination": hops[index + 1],
+                "date": current.strftime("%Y-%m-%d"),
+            }
+        )
+        if index < len(nights):
+            current = current + timedelta(days=nights[index])
+    return legs
+
+
+def plan_trip(query: dict, currency: str | None = None, searcher=None, flexible=None) -> dict:
+    """Price a multi-city trip across flexible outbound and return windows.
+
+    The expensive part is a real multi-city search: at two legs of expansion
+    breadth it is roughly `top_n ** (legs - 1)` requests and took ninety seconds
+    live for a four-leg trip. A four-day outbound window against a four-day
+    return window is sixteen date pairs, which would be twenty-four minutes of
+    scraping for one question.
+
+    So the date pairs are ranked first with the cheap calendar grid - a plain
+    return to the first city on the list, one request per trip length - and only
+    the best few get a real itinerary search. **That ranking is a heuristic.** It
+    prices a simple return, not the trip. It is used to choose which dates are
+    worth searching, never as the price of anything, and every price reported
+    back comes from a real multi-city search.
+    """
+    currency = (currency or default_currency()).upper()
+    searcher = searcher or live_flight_searcher
+    flexible = flexible or search_flexible
+
+    origin = ",".join(_codes(query["origin"], "origin"))
+    cities = [c.strip().upper() for c in (query.get("visit") or "").split(",") if c.strip()]
+    if not cities:
+        raise FlightSearchError("bad_request", "visit must list at least one city, e.g. 'PHX,SFO,LAX'")
+    for city in cities:
+        _codes(city, "visit")
+
+    out_window = _window(query["out_window"], "out_window")
+    back_window = _window(query["back_window"], "back_window")
+    budget = max(1, int(query.get("max_searches") or max_plan_searches()))
+
+    ranking = flexible(
+        {
+            "origin": origin,
+            "destination": cities[0],
+            "out_window": query["out_window"],
+            "back_window": query["back_window"],
+            "adults": query.get("adults", 1),
+            "children": query.get("children", 0),
+            "cabin": query.get("cabin", "economy"),
+            "max_stops": query.get("max_stops", "any"),
+        },
+        currency=currency,
+    )
+    pairs = ranking.get("options") or []
+    if not pairs:
+        # Fall back to the corners of the windows rather than giving up: the
+        # calendar being thin is not a reason to refuse to price a trip.
+        out_days, back_days = _days(out_window), _days(back_window)
+        pairs = [
+            {"out_date": out_days[0], "back_date": back_days[0], "price": None, "currency": currency},
+            {"out_date": out_days[-1], "back_date": back_days[-1], "price": None, "currency": currency},
+        ]
+
+    fixed_nights = query.get("nights") or {}
+    candidates = []
+    for pair in pairs[:budget]:
+        total_nights = (
+            datetime.strptime(pair["back_date"], "%Y-%m-%d")
+            - datetime.strptime(pair["out_date"], "%Y-%m-%d")
+        ).days
+        nights = _split_nights(total_nights, cities, fixed_nights)
+        candidates.append(
+            {
+                "out_date": pair["out_date"],
+                "back_date": pair["back_date"],
+                "total_nights": total_nights,
+                "nights_by_city": dict(zip(cities, nights)),
+                "indicative_price": pair.get("price"),
+                "legs": build_itinerary_legs(origin, cities, pair["out_date"], nights),
+            }
+        )
+
+    priced = []
+    failures = []
+    for candidate in candidates:
+        leg_query = {
+            "legs": candidate["legs"],
+            "adults": query.get("adults", 1),
+            "children": query.get("children", 0),
+            "cabin": query.get("cabin", "economy"),
+            "max_stops": query.get("max_stops", "any"),
+            "airlines": query.get("airlines"),
+            "max_price": query.get("max_price"),
+            "top_n": query.get("top_n"),
+            "sort": "cheapest",
+        }
+        try:
+            result = search_flights(leg_query, currency=currency, limit=3, searcher=searcher)
+        except FlightSearchError as exc:
+            failures.append({**{k: candidate[k] for k in ("out_date", "back_date")},
+                             "error_kind": exc.kind, "error": exc.message})
+            continue
+        if result["status"] != "ok":
+            failures.append({**{k: candidate[k] for k in ("out_date", "back_date")},
+                             "error_kind": "empty_itinerary",
+                             "error": "no itinerary came back for these dates while the scraper is healthy"})
+            continue
+        priced.append(
+            {
+                "out_date": candidate["out_date"],
+                "back_date": candidate["back_date"],
+                "total_nights": candidate["total_nights"],
+                "nights_by_city": candidate["nights_by_city"],
+                "price": result["cheapest_price"],
+                "currency": result["currency"],
+                "legs": candidate["legs"],
+                "best": result["flights"][0],
+            }
+        )
+
+    if not priced:
+        raise FlightSearchError(
+            "no_itinerary",
+            f"none of the {len(candidates)} date combinations produced a bookable itinerary. This is "
+            "an error, not an answer: do not report it as 'no flights'.",
+            failures,
+        )
+
+    priced.sort(key=lambda p: p["price"])
+    return {
+        "status": "ok",
+        "currency": currency,
+        "route": " - ".join([origin] + cities + [origin]),
+        "cheapest": priced[0],
+        "options": priced,
+        "searched": len(candidates),
+        "skipped": max(0, len(pairs) - len(candidates)),
+        "failures": failures,
+        "date_ranking": {
+            "method": "round-trip calendar grid to the first city, used to choose dates only",
+            "considered": len(pairs),
+        },
+        "query": {
+            "origin": origin,
+            "visit": cities,
+            "out_window": list(out_window),
+            "back_window": list(back_window),
+            "nights_fixed": fixed_nights,
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
 # The tracked-route store
 # ---------------------------------------------------------------------------
 
@@ -653,13 +1205,10 @@ def save_store(store: dict, path: pathlib.Path | None = None) -> None:
 
 
 def route_id(query: dict) -> str:
-    origin = ",".join(_codes(query["origin"], "origin"))
-    destination = ",".join(_codes(query["destination"], "destination"))
+    legs = normalize_legs(query)
     material = json.dumps(
         {
-            "origin": origin,
-            "destination": destination,
-            "date": query["date"],
+            "legs": legs,
             "cabin": query.get("cabin", "economy"),
             "adults": int(query.get("adults", 1)),
             "children": int(query.get("children", 0)),
@@ -669,7 +1218,24 @@ def route_id(query: dict) -> str:
         sort_keys=True,
     )
     digest = hashlib.sha1(material.encode("utf-8")).hexdigest()[:6]
-    return f"{origin.split(',')[0]}-{destination.split(',')[0]}-{query['date']}-{digest}"
+    stops = [legs[0]["origin"].split(",")[0]] + [leg["destination"].split(",")[0] for leg in legs]
+    if trip_shape(legs) == "round_trip":
+        stops = stops[:2]
+    return f"{'-'.join(stops)}-{legs[0]['date']}-{digest}"
+
+
+def describe_route(query: dict) -> str:
+    legs = normalize_legs(query)
+    shape = trip_shape(legs)
+    if shape == "one_way":
+        return f"{legs[0]['origin']} to {legs[0]['destination']} on {legs[0]['date']}"
+    if shape == "round_trip":
+        return (
+            f"{legs[0]['origin']} to {legs[0]['destination']}, out {legs[0]['date']}, "
+            f"back {legs[1]['date']}"
+        )
+    hops = " - ".join([legs[0]["origin"]] + [leg["destination"] for leg in legs])
+    return f"{hops}, from {legs[0]['date']}"
 
 
 def track_flight(query: dict, target_price: float, currency: str | None = None, label: str | None = None,
@@ -693,9 +1259,7 @@ def track_flight(query: dict, target_price: float, currency: str | None = None, 
         raise FlightSearchError("bad_request", "target_price must be greater than zero")
 
     currency = (currency or default_currency()).upper()
-    _check_date(query["date"], "date")
-    _codes(query["origin"], "origin")
-    _codes(query["destination"], "destination")
+    legs = normalize_legs(query)
 
     store = load_store(path)
     rid = route_id(query)
@@ -709,11 +1273,23 @@ def track_flight(query: dict, target_price: float, currency: str | None = None, 
             save_store(store, path)
             return {"status": "ok", "action": "updated", "route": existing}
 
+    stored_query = {k: v for k, v in query.items() if v is not None}
+    # Store the resolved legs, not the shorthand. A route tracked as
+    # "LIS to JFK returning on the 20th" and one tracked as two explicit legs are
+    # the same route, and a check months later should not depend on which spelling
+    # someone used.
+    stored_query.pop("origin", None)
+    stored_query.pop("destination", None)
+    stored_query.pop("date", None)
+    stored_query.pop("return_date", None)
+    stored_query["legs"] = legs
+
     route = {
         "id": rid,
-        "label": label or f"{query['origin'].upper()} to {query['destination'].upper()} on {query['date']}",
+        "label": label or describe_route(query),
+        "trip_shape": trip_shape(legs),
         "created_utc": iso(now_utc()),
-        "query": {k: v for k, v in query.items() if v is not None},
+        "query": stored_query,
         "target_price": target_price,
         "currency": currency,
         "status": "new",
@@ -737,6 +1313,7 @@ def list_tracked(path: pathlib.Path | None = None) -> dict:
             {
                 "id": route["id"],
                 "label": route.get("label"),
+                "trip_shape": route.get("trip_shape", "one_way"),
                 "query": route.get("query"),
                 "target_price": route.get("target_price"),
                 "currency": route.get("currency"),
@@ -946,13 +1523,25 @@ def check_prices(path: pathlib.Path | None = None, searcher=None, simulate_drop:
 # ---------------------------------------------------------------------------
 
 
-def _query_args(parser: argparse.ArgumentParser, with_date: bool = True) -> None:
-    parser.add_argument("--from", dest="origin", required=True,
+def _query_args(parser: argparse.ArgumentParser, with_date: bool = True, legs: bool = False,
+                with_destination: bool = True) -> None:
+    parser.add_argument("--from", dest="origin", required=not legs,
                         help="origin IATA code, or a comma-separated list for multi-airport")
-    parser.add_argument("--to", dest="destination", required=True,
-                        help="destination IATA code, or a comma-separated list")
+    if with_destination:
+        parser.add_argument("--to", dest="destination", required=not legs,
+                            help="destination IATA code, or a comma-separated list")
+    else:
+        parser.set_defaults(destination=None)
     if with_date:
-        parser.add_argument("--date", required=True, help="departure date, YYYY-MM-DD")
+        parser.add_argument("--date", required=not legs, help="departure date, YYYY-MM-DD")
+    if legs:
+        parser.add_argument("--return-date", help="return date, YYYY-MM-DD - makes it a round trip")
+        parser.add_argument("--leg", action="append", metavar="ORIGIN:DEST:DATE",
+                            help="one leg of a multi-city trip, repeatable and in travel order. "
+                                 "Replaces --from/--to/--date.")
+        parser.add_argument("--top-n", type=int,
+                            help="expansion breadth for multi-leg trips (default 2). Cost is roughly "
+                                 "top_n ** (legs - 1) requests.")
     parser.add_argument("--adults", type=int, default=1)
     parser.add_argument("--children", type=int, default=0)
     parser.add_argument("--infants-in-seat", type=int, default=0)
@@ -967,6 +1556,13 @@ def _query_args(parser: argparse.ArgumentParser, with_date: bool = True) -> None
     parser.add_argument("--depart-before", type=int, help="latest departure hour, 0-24, local")
     parser.add_argument("--arrive-after", type=int, help="earliest arrival hour, 0-24, local")
     parser.add_argument("--arrive-before", type=int, help="latest arrival hour, 0-24, local")
+
+
+def _parse_leg(spec: str) -> dict:
+    parts = [p.strip() for p in (spec or "").split(":")]
+    if len(parts) != 3 or not all(parts):
+        raise FlightSearchError("bad_request", f"--leg wants ORIGIN:DEST:DATE, got '{spec}'")
+    return {"origin": parts[0], "destination": parts[1], "date": parts[2]}
 
 
 def _query_from_args(args, with_date: bool = True) -> dict:
@@ -990,7 +1586,35 @@ def _query_from_args(args, with_date: bool = True) -> dict:
     }
     if with_date:
         query["date"] = args.date
+    if getattr(args, "leg", None):
+        if args.origin or args.destination or getattr(args, "date", None):
+            raise FlightSearchError(
+                "bad_request", "use --leg on its own, or --from/--to/--date - not both"
+            )
+        query["legs"] = [_parse_leg(spec) for spec in args.leg]
+        query.pop("origin", None)
+        query.pop("destination", None)
+        query.pop("date", None)
+    elif with_date and hasattr(args, "leg") and not args.origin:
+        raise FlightSearchError("bad_request", "give --from, --to and --date, or one or more --leg")
+    if getattr(args, "return_date", None):
+        query["return_date"] = args.return_date
+    if getattr(args, "top_n", None):
+        query["top_n"] = args.top_n
     return {k: v for k, v in query.items() if v is not None}
+
+
+def _parse_nights(spec: str | None) -> dict:
+    out = {}
+    for pair in [p.strip() for p in (spec or "").split(",") if p.strip()]:
+        if "=" not in pair:
+            raise FlightSearchError("bad_request", f"--nights wants CITY=N, got '{pair}'")
+        city, _, nights = pair.partition("=")
+        try:
+            out[city.strip().upper()] = int(nights)
+        except ValueError as exc:
+            raise FlightSearchError("bad_request", f"'{nights}' is not a number of nights") from exc
+    return out
 
 
 def _parse_simulated(pairs: list[str] | None) -> dict:
@@ -1012,18 +1636,43 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--store", help="path to the tracked-route store")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_search = sub.add_parser("search", help="search_flights - prices on a route for a date")
-    _query_args(p_search)
+    p_search = sub.add_parser(
+        "search", help="search_flights - one-way, round trip (--return-date) or multi-city (--leg)"
+    )
+    _query_args(p_search, legs=True)
     p_search.add_argument("--sort", default="cheapest", choices=sorted(SORTS))
     p_search.add_argument("--limit", type=int, default=5)
 
-    p_dates = sub.add_parser("dates", help="search_dates - cheapest day across a range")
+    p_dates = sub.add_parser("dates", help="search_dates - cheapest day across a range, one-way")
     _query_args(p_dates, with_date=False)
     p_dates.add_argument("--from-date", required=True)
     p_dates.add_argument("--to-date", required=True)
 
+    p_flex = sub.add_parser(
+        "flexible", help="search_flexible - cheapest round trips across an outbound and a return window"
+    )
+    _query_args(p_flex, with_date=False)
+    p_flex.add_argument("--out-window", required=True, metavar="DATE[:DATE]",
+                        help="outbound window, e.g. 2026-12-20:2026-12-23")
+    p_flex.add_argument("--back-window", required=True, metavar="DATE[:DATE]",
+                        help="return window, e.g. 2027-01-05:2027-01-08")
+
+    p_plan = sub.add_parser(
+        "plan", help="plan_trip - a multi-city trip across flexible windows, priced for real"
+    )
+    _query_args(p_plan, with_date=False, with_destination=False)
+    p_plan.add_argument("--visit", required=True, metavar="PHX,SFO,LAX",
+                        help="cities to touch, in travel order")
+    p_plan.add_argument("--out-window", required=True, metavar="DATE[:DATE]")
+    p_plan.add_argument("--back-window", required=True, metavar="DATE[:DATE]")
+    p_plan.add_argument("--nights", metavar="PHX=7,SFO=6",
+                        help="nights in named cities; the rest split what is left")
+    p_plan.add_argument("--max-searches", type=int,
+                        help="ceiling on full itinerary searches (default 4). Each one is slow.")
+    p_plan.add_argument("--top-n", type=int, help="expansion breadth per leg (default 2)")
+
     p_track = sub.add_parser("track", help="track_flight - register a route with a target price")
-    _query_args(p_track)
+    _query_args(p_track, legs=True)
     p_track.add_argument("--target-price", type=float, required=True)
     p_track.add_argument("--label")
 
@@ -1054,6 +1703,20 @@ def run_command(args) -> dict:
         query["from_date"] = args.from_date
         query["to_date"] = args.to_date
         return search_dates(query, currency=currency)
+    if args.command == "flexible":
+        query = _query_from_args(args, with_date=False)
+        query["out_window"] = args.out_window
+        query["back_window"] = args.back_window
+        return search_flexible(query, currency=currency)
+    if args.command == "plan":
+        query = _query_from_args(args, with_date=False)
+        query["visit"] = args.visit
+        query["out_window"] = args.out_window
+        query["back_window"] = args.back_window
+        query["nights"] = _parse_nights(args.nights)
+        if args.max_searches:
+            query["max_searches"] = args.max_searches
+        return plan_trip(query, currency=currency)
     if args.command == "track":
         return track_flight(_query_from_args(args), args.target_price, currency=currency,
                             label=args.label, path=path)

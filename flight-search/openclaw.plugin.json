@@ -56,6 +56,20 @@
         "maximum": 300,
         "description": "How far ahead the control route is priced. Far enough out to be reliably full, near enough to be inside Google's window.",
         "default": 30
+      },
+      "top_n": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 5,
+        "description": "Expansion breadth for round-trip and multi-city searches: how many outbound candidates get a follow-up request asking Google for the next leg. Cost is roughly top_n ** (legs - 1) requests, so this is the main lever on how long a multi-city search takes. A four-leg trip at 2 took 43 to 90 seconds live.",
+        "default": 2
+      },
+      "max_plan_searches": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 12,
+        "description": "Ceiling on how many full itinerary searches one plan_trip call may run. Each is tens of seconds, and a four-day-by-four-day window has sixteen date pairs, so this is what keeps a planning question from becoming a half-hour of scraping.",
+        "default": 4
       }
     },
     "required": ["enabled"]
@@ -64,6 +78,8 @@
     "tools": [
       "search_flights",
       "search_dates",
+      "search_flexible",
+      "plan_trip",
       "track_flight",
       "check_prices",
       "list_tracked",
@@ -82,7 +98,9 @@
       "FLIGHT_SEARCH_CANARY_ROUTE": "JFK-LAX",
       "FLIGHT_SEARCH_CANARY_LEAD_DAYS": "30",
       "FLIGHT_SEARCH_MAX_HISTORY": "60",
-      "FLIGHT_SEARCH_ERROR_REPEAT_DAYS": "3"
+      "FLIGHT_SEARCH_ERROR_REPEAT_DAYS": "3",
+      "FLIGHT_SEARCH_TOP_N": "2",
+      "FLIGHT_SEARCH_MAX_PLAN_SEARCHES": "4"
     },
     "mcpServers": {
       "flight-search": {
@@ -127,7 +145,8 @@
     "outbound_messages": "Price alerts and scraper failures posted to discord_channel_id by the heartbeat. No email, no bookings, no purchases - this plugin searches and watches, it never buys anything."
   },
   "_notes": {
-    "one_way_only": "v0.1 searches and tracks one-way itineraries. `fli` returns round trips as tuples of results with price semantics this plugin has not verified against live data, and guessing them would put a wrong number into a price history. Round trips are the next thing to add, behind a live check of what the tuple actually carries.",
+    "trip_shapes": "One-way, round trip and multi-city up to six legs, all searchable and all trackable. Google prices the whole itinerary in one shopping session - the chosen outbound is sent back as the selected flight and Google is asked for the next leg in that context - so a fare here is a fare, never a sum of separate one-way searches. The itinerary price is the LAST element of the tuple `fli` returns: verified live on 2026-08-10, a LIS-JFK-LIS round trip came back as (490.0, 490.0) against a 442.0 one-way, and a four-leg LIS-PHX-SFO-LAX-LIS trip as (1577.0, 1577.0, 1577.0, 1595.0). `fli` agrees - get_booking_options builds its token from results[-1].price.",
+    "planning_cost": "A multi-leg search costs roughly top_n ** (legs - 1) requests. plan_trip ranks candidate date pairs with the cheap calendar grid and then prices only the best few for real, bounded by max_plan_searches. The ranking is a heuristic used to choose dates and never becomes a reported price.",
     "alert_policy": "A target price is required at track time and is the only alert condition, per the default in new-jaxity#499. Alerts fire on transitions rather than states: crossing the target, dropping further below an already-alerted target, breaking, and recovering. A fare sitting below its target for a week is one alert, not seven.",
     "failure_semantics": "The plugin never reports an empty result as an answer without proving the scraper is alive. See the module docstring in scripts/flight_tools.py."
   }

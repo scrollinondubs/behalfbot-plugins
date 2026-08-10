@@ -10,8 +10,10 @@ watches. It never books, holds or pays for anything.
 
 | Tool | What it does |
 |---|---|
-| `search_flights` | Prices on a route for a date |
-| `search_dates` | Cheapest departure day across a range |
+| `search_flights` | Prices on a route for a date. One-way, round trip, or multi-city |
+| `search_dates` | Cheapest departure day across a range, one-way |
+| `search_flexible` | Cheapest round trips across an outbound window and a return window |
+| `plan_trip` | A multi-city trip that has to touch a list of cities, across flexible windows |
 | `track_flight` | Register a route with a target price |
 | `check_prices` | Poll tracked routes, emit alerts |
 | `list_tracked` | Tracked routes with their price history |
@@ -52,6 +54,113 @@ Three more cases are errors rather than emptiness, for the same reason:
 The heartbeat gate inherits this: a failed check emits `count: 1` with an error
 payload, and the prompt template tells the model to say the fares are *unknown*,
 not unchanged.
+
+## Trip shapes, and where the price comes from
+
+One-way, round trip and multi-city are the same call with different legs:
+
+```bash
+# one-way
+python3 scripts/flight_tools.py search --from LIS --to JFK --date 2026-09-19
+
+# round trip - one fare, not two searches
+python3 scripts/flight_tools.py search --from LIS --to JFK --date 2026-09-19 --return-date 2026-09-26
+
+# multi-city - legs in travel order
+python3 scripts/flight_tools.py search \
+  --leg LIS:PHX:2026-12-20 --leg PHX:SFO:2026-12-27 \
+  --leg SFO:LAX:2027-01-02 --leg LAX:LIS:2027-01-06
+```
+
+**Nothing here stitches legs together.** Google prices the whole itinerary in one
+shopping session: the chosen outbound is sent back as the selected flight and
+Google is asked for the next leg in the context of that choice, which is exactly
+what the website does when you click through a multi-city search. A price built
+by adding up separate one-way searches would not be a fare anyone can book, so it
+is not built that way.
+
+Each result carries a `price` and a list of `segments`. **The price is the whole
+itinerary, not a leg.** `fli` returns a tuple of results for a multi-leg trip and
+every element carries a price, but those are running totals through Google's
+selection flow, not per-leg fares. Verified live on 2026-08-10:
+
+| Trip | What came back | The fare |
+|---|---|---|
+| LIS-JFK one-way | `442.0` | 442 EUR |
+| LIS-JFK-LIS round trip | `(490.0, 490.0)` | 490 EUR, not 980 |
+| LIS-PHX-SFO-LAX-LIS | `(1577.0, 1577.0, 1577.0, 1595.0)` | 1595 EUR, the last element |
+
+So the itinerary price is the **last** element's price. `fli` agrees with itself
+here: `get_booking_options` builds its booking token from `results[-1].price`,
+which is the number Google is asked to honour. Each segment still reports its
+own `price_at_this_step` if you want to see the ladder.
+
+Cost note: a multi-leg search costs roughly `top_n ** (legs - 1)` requests, where
+`top_n` is how many outbound candidates get expanded (default 2, max 5). A
+four-leg trip at `top_n=2` took 43 to 90 seconds live. Keep it low, and never put
+a multi-city search on a tight schedule.
+
+## Flexible dates
+
+For a round trip with soft dates at both ends:
+
+```bash
+python3 scripts/flight_tools.py flexible --from LIS --to PHX \
+  --out-window 2026-12-20:2026-12-23 --back-window 2027-01-05:2027-01-08
+```
+
+This sweeps trip **lengths**, not day pairs. Google's calendar grid answers a
+round-trip query with the single cheapest (out, back) pair at a given trip
+length, so every length that can land both ends inside the two windows costs one
+request. Four days against four days is seven requests, not sixteen searches.
+Those are indicative calendar prices; run `search` on a pair you like for real
+itineraries.
+
+For the trip that has to touch several cities:
+
+```bash
+python3 scripts/flight_tools.py plan --from LIS --visit PHX,SFO,LAX \
+  --out-window 2026-12-20:2026-12-23 --back-window 2027-01-05:2027-01-08 \
+  --nights PHX=6 --max-searches 4
+```
+
+`plan` ranks the date pairs with the cheap calendar grid first, then runs real
+multi-city searches on the best few and reports their actual fares. **The
+ranking is a heuristic and never becomes a reported price** - it prices a plain
+return to the first city on the list, purely to decide which dates are worth the
+expensive search. Every number in the output comes from a real itinerary search.
+There is a test that holds that line.
+
+Nights are split evenly across the cities unless you name some with `--nights`;
+the last unnamed city absorbs the remainder. A date combination that returns
+nothing is listed under `failures` rather than quietly dropped, and if every
+combination fails you get an error, not an empty list.
+
+`plan` is slow by construction: `max_searches` full searches, tens of seconds
+each. It is a planning question you ask once, not something to schedule.
+
+## When it says `scraper_error`
+
+Two different things produce it, and they need different responses.
+
+**Google is refusing this client.** The most common cause, and the one seen
+during development: after a burst of searching, Google stops answering. Same
+code, same minute, same IP, one machine gets prices and another gets nothing -
+observed on 2026-08-10 between a macOS build of `curl_cffi` and the Linux build
+in a container, with identical pinned versions. The likely mechanism is the TLS
+fingerprint plus request volume, and the cure is to stop searching for a while.
+It clears on its own.
+
+**Google changed their response shape.** `fli` needs a fix or a version bump.
+
+Telling them apart: wait an hour and try one plain search. If it works, it was
+throttling. If a `parse_error` shows up rather than an empty result, it is a
+shape change and the upstream needs attention.
+
+Either way the plugin refuses to call it "no flights", which is the whole point.
+The multi-leg searches are the expensive ones - a four-leg trip at `top_n=2` is
+seven requests and can be dozens with a wider breadth - so a run of `plan` is the
+most likely thing to trip a throttle. Space them out.
 
 ## Install
 
@@ -149,15 +258,26 @@ The first prints `{"count": 0, ...}` and costs nothing. The second prints
 `{"count": 1, "alert_kinds": ["target_met"], ...}`, which is what wakes the
 model.
 
-**9. Clean up.**
+**9. The trip that is actually worth demoing.** A round trip, then the real
+multi-city planning question. Both live; the plan step takes a couple of minutes,
+so start it and talk over it.
+
+```bash
+python3 scripts/flight_tools.py search --from LIS --to JFK --date "$NEAR" --return-date "$LATE" --limit 2
+python3 scripts/flight_tools.py plan --from LIS --visit PHX,SFO,LAX \
+  --out-window 2026-12-20:2026-12-23 --back-window 2027-01-05:2027-01-08 --max-searches 2
+```
+
+**10. Clean up.**
 
 ```bash
 python3 scripts/flight_tools.py remove "$RID"
 unset FLIGHT_SEARCH_STORE
 ```
 
-Steps 1, 2 and 4 need network. Steps 5 to 8 are deterministic and work offline,
-so a recording is safe even on conference wifi.
+Steps 1, 2, 4 and 9 need network. Steps 5 to 8 are deterministic and work
+offline, so the part of the recording that shows the alert and failure paths is
+safe even on conference wifi.
 
 ## Configuration
 
@@ -172,6 +292,8 @@ so a recording is safe even on conference wifi.
 | `error_repeat_days` | `3` | How long a still-broken route stays quiet before shouting again. The first failure always alerts. |
 | `canary_route` | `JFK-LAX` | The control route. Must be dense enough that an empty answer is never legitimate. |
 | `canary_lead_days` | `30` | How far ahead the control route is priced |
+| `top_n` | `2` | Expansion breadth for multi-leg trips. Cost is roughly `top_n ** (legs - 1)` requests. |
+| `max_plan_searches` | `4` | Ceiling on full itinerary searches in one `plan_trip` call |
 
 ## Heartbeat
 
@@ -206,15 +328,23 @@ A fare sitting below its target for a week is one alert, not seven.
 
 ## Scope
 
-One-way only in v0.1. `fli` returns round trips as tuples with price semantics
-this plugin has not verified against live data, and a guess there would put a
-wrong number into a price history that later gets compared against. Round trips
-are the next addition, behind a live check of what the tuple actually carries.
+Trip shapes: one-way, round trip, and multi-city up to six legs. All three can be
+searched, and all three can be tracked.
 
 Filters supported: passengers (adults, children, infants in seat, infants on
 lap), cabin class, specific airlines, price ceiling, max total duration,
 departure and arrival hour windows, max layover, multi-airport origins and
-destinations (`--from LIS,OPO`), and date ranges via `search_dates`.
+destinations (`--from LIS,OPO`), and date ranges via `search_dates`,
+`search_flexible` and `plan`.
+
+Hour windows apply to the first leg only. Google takes them per segment, but
+"leave after 6am" rarely means the same thing on a return four weeks later, and
+applying it to every leg would silently drop itineraries nobody asked to exclude.
+
+Not supported: reordering the cities in a `plan` call. The visit list is followed
+in the order given. Trying every permutation of three cities would be six times
+the searches for a question that usually has a natural answer, so pick the order
+and re-run if you want to compare.
 
 ## Layout
 

@@ -5,9 +5,9 @@ description: Search Google Flights and monitor fares on tracked routes. Use when
 
 # Flight search
 
-Six tools over the `flights` package, which scrapes Google Flights. Available as
-MCP tools (`search_flights`, `search_dates`, `track_flight`, `check_prices`,
-`list_tracked`, `remove_tracked`) and as a CLI at
+Eight tools over the `flights` package, which scrapes Google Flights. Available
+as MCP tools (`search_flights`, `search_dates`, `search_flexible`, `plan_trip`,
+`track_flight`, `check_prices`, `list_tracked`, `remove_tracked`) and as a CLI at
 `$FLIGHT_SEARCH_PLUGIN_DIR/scripts/flight_tools.py`.
 
 ## The one rule
@@ -53,8 +53,52 @@ That returns a price per departure day plus `cheapest`, `dearest` and `spread`.
 Use it before `search` whenever the dates are soft, and lead the answer with the
 spread: "the 13th is 70 EUR cheaper than the 12th" is the useful sentence.
 
-One-way only in this version. A round trip is two searches and a caveat, not a
-guess at what Google returned.
+## Round trips and multi-city
+
+Same command, different legs:
+
+```bash
+# round trip
+python3 "$FLIGHT_SEARCH_PLUGIN_DIR/scripts/flight_tools.py" search \
+  --from LIS --to JFK --date 2026-09-19 --return-date 2026-09-26
+
+# multi-city, legs in travel order
+python3 "$FLIGHT_SEARCH_PLUGIN_DIR/scripts/flight_tools.py" search \
+  --leg LIS:PHX:2026-12-20 --leg PHX:SFO:2026-12-27 --leg LAX:LIS:2027-01-06
+```
+
+**The `price` on a result is the whole itinerary, not a leg.** Never add the
+segment prices together and never quote `price_at_this_step` as a fare - those
+are Google's running totals through its own selection flow. If you catch yourself
+about to say "and the return leg is another 490", stop: the 490 was the trip.
+
+Multi-leg searches are slow, roughly `top_n ** (legs - 1)` requests. A four-leg
+trip takes a minute or two. Say that before starting one rather than going quiet.
+
+## Soft dates at both ends
+
+```bash
+python3 "$FLIGHT_SEARCH_PLUGIN_DIR/scripts/flight_tools.py" flexible \
+  --from LIS --to PHX --out-window 2026-12-20:2026-12-23 --back-window 2027-01-05:2027-01-08
+```
+
+Cheap: it sweeps trip lengths against Google's calendar grid, one request each.
+Indicative prices, so follow up with `search` on a pair worth booking.
+
+For a trip that has to touch several cities:
+
+```bash
+python3 "$FLIGHT_SEARCH_PLUGIN_DIR/scripts/flight_tools.py" plan \
+  --from LIS --visit PHX,SFO,LAX \
+  --out-window 2026-12-20:2026-12-23 --back-window 2027-01-05:2027-01-08 --nights PHX=6
+```
+
+`plan` picks candidate dates with the cheap grid and then prices real multi-city
+itineraries for the best few. Every price it reports is a real search; the grid
+only chose the dates. Cities are visited in the order given - if the order is
+worth questioning, say so and offer to re-run rather than assuming.
+
+It takes minutes. Ask before starting one, and never schedule it.
 
 ## Tracking
 
@@ -67,6 +111,10 @@ python3 "$FLIGHT_SEARCH_PLUGIN_DIR/scripts/flight_tools.py" track \
 wobble in a volatile fare becomes a notification. If someone asks to "watch this
 flight" without naming a number, ask for one - a sensible opening move is the
 current cheapest fare minus ten percent.
+
+Round trips and multi-city trips track the same way - add `--return-date` or
+`--leg`. A multi-city route re-runs its full expansion on every check, so track
+those sparingly and leave `top_n` at its default.
 
 Alerts fire on transitions, not states: crossing the target, dropping further
 below an already-alerted target, breaking, and recovering. A fare sitting below
