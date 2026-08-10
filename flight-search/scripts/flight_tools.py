@@ -808,10 +808,38 @@ def live_date_searcher(query: dict, currency: str) -> list:
 # ---------------------------------------------------------------------------
 
 
+# Measured against a browser on 2026-08-10. One-way prices matched the site
+# exactly on both routes tested. Multi-leg prices did not, and they miss cheap
+# fares rather than expensive ones, so they must never be quoted as firm.
+MULTI_LEG_WARNING = (
+    "Multi-leg prices from this tool read HIGH and are indicative only. Measured against Google "
+    "Flights on 2026-08-10: a four-leg LIS-PHX-SFO-LAX-LIS trip reported 1520 EUR while the site "
+    "offered a bookable 1003 EUR fare for the same trip, 34 percent lower. The cause is upstream - "
+    "the shopping endpoint the `flights` package calls returns a materially different set of "
+    "itineraries for multi-leg queries than the website shows, and no available parameter changes "
+    "that. Quote this number as a rough indication, say a cheaper fare probably exists, and send "
+    "the person to the site. Never present it as the price of the trip."
+)
+
+
+def price_confidence(legs: list[dict]) -> tuple[str, str | None]:
+    """How much a number from this tool can be trusted, by trip shape.
+
+    One-way matched the website to the euro on every route tested. Multi-leg did
+    not. Callers get this in the payload rather than only in the README, because
+    the thing consuming these results is usually a model, and a caveat that lives
+    in documentation is a caveat that does not reach the person asking.
+    """
+    if trip_shape(legs) == "one_way":
+        return "matches_site", None
+    return "indicative_reads_high", MULTI_LEG_WARNING
+
+
 def describe_query(query: dict, currency: str) -> dict:
     legs = normalize_legs(query)
     caveats = url_caveats(query)
-    return {
+    confidence, warning = price_confidence(legs)
+    described = {
         "trip_shape": trip_shape(legs),
         "legs": legs,
         "cabin": query.get("cabin", "economy"),
@@ -819,7 +847,11 @@ def describe_query(query: dict, currency: str) -> dict:
         "search_url": search_url(legs, currency),
         "url_caveats": caveats,
         "verify": link_note(legs, caveats),
+        "price_confidence": confidence,
     }
+    if warning:
+        described["price_warning"] = warning
+    return described
 
 
 def search_flights(query: dict, currency: str | None = None, limit: int = 5, searcher=None) -> dict:
@@ -1286,6 +1318,8 @@ def plan_trip(query: dict, currency: str | None = None, searcher=None, flexible=
     return {
         "status": "ok",
         "currency": currency,
+        "price_confidence": "indicative_reads_high",
+        "price_warning": MULTI_LEG_WARNING,
         "route": " - ".join([origin] + cities + [origin]),
         "cheapest": priced[0],
         "options": priced,
