@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "status": 401,
+      "code": 38192,
+      "title": "Access token expired",
+      "detail": "The access token is expired"
+    }
+  ]
+}

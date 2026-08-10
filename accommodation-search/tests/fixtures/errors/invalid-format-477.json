@@ -1,0 +1,14 @@
+{
+  "errors": [
+    {
+      "status": 400,
+      "code": 477,
+      "title": "INVALID FORMAT",
+      "detail": "invalid query parameter format",
+      "source": {
+        "parameter": "cityCode",
+        "example": "PAR"
+      }
+    }
+  ]
+}

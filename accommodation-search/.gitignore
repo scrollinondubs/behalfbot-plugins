@@ -1,0 +1,6 @@
+# The monthly call ledger. Install-local state, not source: it records how many
+# supplier calls this machine has spent this month and nothing else.
+var/
+
+__pycache__/
+*.pyc

@@ -1,0 +1,27 @@
+# accommodation-search runtime dependencies: none.
+#
+# This is not an oversight and it is not an empty file left behind by accident.
+# It is the pin.
+#
+# CONTRIBUTING.md requires every third-party dependency to be pinned to an
+# exact version with a committed lockfile, because nothing may execute on an
+# install that a human did not choose. Zero third-party dependencies satisfies
+# that requirement in the strongest available way: there is no resolution step,
+# no lockfile that can drift from a manifest, and no transitive tree to audit.
+#
+# Two things made that the easy choice rather than a sacrifice:
+#
+#   - The repo's CI runner has no install step, deliberately. Plugin suites are
+#     required to be stdlib-only, no network, no docker. A suite that needs a
+#     dependency is a suite that stops running.
+#   - Amadeus is plain HTTPS with an OAuth2 client-credentials token. The
+#     official SDK is a convenience wrapper over exactly that, and the parts of
+#     it worth having - the ten-second token refresh buffer, the request pacing
+#     - are a dozen lines each and are implemented in amadeus_client.py with
+#     the reasoning attached.
+#
+# validate.sh enforces this rather than trusting it: it walks every import in
+# the plugin and fails if one of them is not in the standard library.
+#
+# If a dependency is ever added here, it takes an exact `==` pin and a
+# hash-locked lockfile alongside it, per CONTRIBUTING.md.
