@@ -54,7 +54,7 @@ plugin directory with a manifest that is not registered fails, and a registered
 path that does not exist fails. An unregistered plugin is invisible to every
 chassis, which is a silent failure nobody notices until an install goes wrong.
 
-## The two rules that actually matter
+## The three rules that actually matter
 
 **`setup.sh` must be idempotent and Linux-first.** It will be run repeatedly, on
 machines that already have half of what it installs, by an agent with no human
@@ -66,6 +66,44 @@ filesystem paths, databases. The manifest's config schema is how an operator
 decides whether to enable you. A plugin that quietly reaches something it did not
 declare is the failure mode this whole repo is shaped to avoid - these run with
 broad access on someone's personal machine.
+
+**Pin every third-party dependency to an exact version, and commit the lockfile.**
+Nothing may execute on an install that is not pinned to something a human chose.
+
+- Exact versions in `package.json` and `requirements.txt`. Not `^1.2.0`, not
+  `latest`, not a bare package name.
+- Commit `package-lock.json`, or the pip equivalent. npm's `integrity` field is a
+  SHA-512 of the tarball, which is the same guarantee `PLUGINS_PIN` gives for
+  this repo's own code, one layer down.
+- Install with `npm ci`, never `npm install`. `npm ci` fails when the lockfile
+  and the manifest disagree; `npm install` quietly rewrites the lockfile.
+- **Never `npx -y <package>`.** That fetches and runs whatever is latest at that
+  moment, on someone's personal machine, with nobody having read it. If your
+  plugin drives an external CLI or MCP server, depend on it at a pinned version
+  and invoke the local binary.
+- Vendoring third-party source is not the answer either. Depend on it, pin it,
+  and bump the pin deliberately after reading the diff. Fork only what you
+  actually modify, and only where the licence allows it.
+
+The reasoning is the one already behind the SHA gate in `tools/fetch-plugins.sh`:
+this repo's own code cannot change under an install without a human moving a pin.
+A dependency that resolves at install time can, and the person running the agent
+would never see it happen.
+
+## Check the licence before you depend on anything
+
+A repo with no `LICENSE` file is not permissively licensed. It is all rights
+reserved by default, whatever its README implies. Plugins here get distributed to
+other people's machines, so "it is public on GitHub" is not permission.
+
+If the upstream you want has no licence, ask the author to add one before you
+build on it. Most say yes. Until they do, it cannot ship from here.
+
+Watch for the mismatch between a package and the repo it claims to come from.
+A published npm or PyPI package whose stated source repository does not exist,
+or does not match what the package actually contains, is the shape a supply-chain
+problem arrives in. Pinning the package version is what protects an install;
+trusting the README does not.
 
 ## Before you open a PR
 
@@ -105,6 +143,8 @@ The shell bar is "contains no real bug", not "matches our style".
   declare in its manifest
 - A new plugin directory with no `registry.json` entry (CI catches this, but it
   is the single most common miss)
+- An unpinned dependency, a missing lockfile, or an `npx -y` invocation
+- A dependency on an upstream with no licence
 - Vendoring a copy of something from a chassis repo. This repo is the source of
   truth and the chassis fetch from it; a copy going the other way defeats the
   point.
