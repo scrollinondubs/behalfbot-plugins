@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+
+# Local tracked-route stores and check results if someone points the plugin at
+# its own directory instead of ${CHASSIS_HOME}. Real installs keep these on
+# bind-mounted storage, not here.
+tracked-routes.json
+flight-search-last-check.json
+flight-search-state.json

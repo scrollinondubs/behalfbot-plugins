@@ -1,0 +1,162 @@
+{
+  "id": "behalfbot-flight-search",
+  "name": "Behalf.bot - Flight search and price tracking",
+  "description": "Search Google Flights and monitor fares on tracked routes. Eight MCP tools over the MIT-licensed `flights` package: prices on a route for a date as one-way, round trip or multi-city; cheapest day across a range; cheapest round trips across flexible outbound and return windows; a multi-city trip planner that has to touch a list of cities; plus register, poll, list and remove for tracked routes. One-way and round-trip results carry a Google Flights link so any number can be checked by hand. A daily heartbeat speaks up only when a fare crosses its target - or when the scraper breaks, which it reports as a failure rather than as silence.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Master switch. Off by default: the plugin reaches Google Flights on a schedule, which is a network egress an operator should opt into.",
+        "default": false
+      },
+      "currency": {
+        "type": "string",
+        "description": "ISO 4217 code requested from Google and asserted on every response. `fli` otherwise picks a currency from the caller's IP, which silently makes a price history incomparable when the install moves or a VPN changes. A response in any other currency is rejected as an error rather than recorded.",
+        "default": "EUR"
+      },
+      "store_path": {
+        "type": "string",
+        "description": "Tracked routes and their price history. Must sit on bind-mounted storage or every tracked route dies with the container. Written atomically (temp file plus rename), so a kill mid-write cannot corrupt it.",
+        "default": "${CHASSIS_HOME}/data/flight-search/tracked-routes.json"
+      },
+      "state_dir": {
+        "type": "string",
+        "description": "Holds the heartbeat's once-per-day marker and the last check result. Must persist across restarts or the tracker polls Google on every 15-minute dispatcher tick.",
+        "default": "${CHASSIS_HOME}/scheduled-tasks"
+      },
+      "discord_channel_id": {
+        "type": "string",
+        "description": "Channel the heartbeat posts price alerts and scraper failures to. Install-specific, no default. Alerts go through the Discord reply tool with this id hardcoded in the call, never as terminal text - terminal relay hard-truncates at 2000 characters."
+      },
+      "max_history_points": {
+        "type": "integer",
+        "minimum": 2,
+        "maximum": 1000,
+        "description": "Price points kept per route before the oldest are dropped. 60 is roughly two months of daily checks.",
+        "default": 60
+      },
+      "error_repeat_days": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 30,
+        "description": "How long a route that is still broken stays quiet before alerting again. The first failure always alerts. 0 re-alerts on every check, which turns a week-long Google change into a week of daily notifications; a large value risks one shout being missed and never repeated.",
+        "default": 3
+      },
+      "canary_route": {
+        "type": "string",
+        "description": "Control route used to tell a broken scraper from an empty result, as ORIGIN-DESTINATION. It must be dense enough that an empty answer is never legitimate. When a real search comes back empty, this route is searched too: also empty means the scraper is broken and the original result means nothing.",
+        "default": "JFK-LAX"
+      },
+      "canary_lead_days": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 300,
+        "description": "How far ahead the control route is priced. Far enough out to be reliably full, near enough to be inside Google's window.",
+        "default": 30
+      },
+      "top_n": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 5,
+        "description": "Expansion breadth for round-trip and multi-city searches: how many outbound candidates get a follow-up request asking Google for the next leg. Cost is roughly top_n ** (legs - 1) requests, so this is the main lever on how long a multi-city search takes. A four-leg trip at 2 took 43 to 90 seconds live.",
+        "default": 2
+      },
+      "max_plan_searches": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 12,
+        "description": "Ceiling on how many full itinerary searches one plan_trip call may run. Each is tens of seconds, and a four-day-by-four-day window has sixteen date pairs, so this is what keeps a planning question from becoming a half-hour of scraping.",
+        "default": 4
+      }
+    },
+    "required": [
+      "enabled"
+    ]
+  },
+  "contracts": {
+    "tools": [
+      "search_flights",
+      "search_dates",
+      "search_flexible",
+      "plan_trip",
+      "track_flight",
+      "check_prices",
+      "list_tracked",
+      "remove_tracked"
+    ],
+    "skills": [
+      "flight-search"
+    ],
+    "heartbeats": [
+      "flight-watch"
+    ],
+    "triggers": [],
+    "hooks": [],
+    "env": {
+      "FLIGHT_SEARCH_PLUGIN_DIR": "${PLUGIN_DIR}",
+      "FLIGHT_SEARCH_GATHER_SCRIPT": "${PLUGIN_DIR}/scripts/gather-flight-prices.sh",
+      "FLIGHT_SEARCH_STORE": "${CHASSIS_HOME}/data/flight-search/tracked-routes.json",
+      "FLIGHT_SEARCH_STATE_DIR": "${CHASSIS_HOME}/scheduled-tasks",
+      "FLIGHT_SEARCH_CURRENCY": "EUR",
+      "FLIGHT_SEARCH_CANARY_ROUTE": "JFK-LAX",
+      "FLIGHT_SEARCH_CANARY_LEAD_DAYS": "30",
+      "FLIGHT_SEARCH_MAX_HISTORY": "60",
+      "FLIGHT_SEARCH_ERROR_REPEAT_DAYS": "3",
+      "FLIGHT_SEARCH_TOP_N": "2",
+      "FLIGHT_SEARCH_MAX_PLAN_SEARCHES": "4"
+    },
+    "mcpServers": {
+      "flight-search": {
+        "command": "python3",
+        "args": [
+          "${PLUGIN_DIR}/scripts/flight_search_mcp.py"
+        ],
+        "env": {
+          "FLIGHT_SEARCH_STORE": "${CHASSIS_HOME}/data/flight-search/tracked-routes.json",
+          "FLIGHT_SEARCH_CURRENCY": "EUR"
+        }
+      }
+    }
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "Dormant by default. The MCP server is started on demand by the harness; the flight-watch heartbeat must be added to the install's heartbeat config at activation time, pointed at scripts/gather-flight-prices.sh with the prompt template in scheduled-tasks/. Set the cadence to daily and the criticality to background so conservation mode suppresses it - a fare alert is never worth spending a constrained budget on. The gate is free: it exits count=0 without touching a model on every tick where nothing moved, and polls Google at most once per calendar day."
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "python3",
+        "install": "apt-get install python3 python3-pip (Debian) / your platform's package manager",
+        "_explanation": "Runs the tools, the MCP server and the heartbeat gate. Python 3.10 or newer, which is what the pinned `flights` release requires."
+      },
+      {
+        "name": "flights",
+        "install": "pip3 install -r requirements.lock.txt",
+        "_explanation": "The `flights` package (punitarani/fli, MIT, LICENSE.txt verified in the upstream repo, not inferred from the README). Pinned to an exact version, with its full transitive closure pinned in requirements.lock.txt. It is a Google Flights scraper: pinning protects an install from an upstream change arriving unannounced, it does not protect anyone from Google changing their response shape, which is what the canary in flight_tools.py exists for."
+      }
+    ]
+  },
+  "_declares": {
+    "_why": "CONTRIBUTING.md asks a plugin to declare everything it touches, and network egress and disk paths have no dedicated manifest field. This block is documentation for an operator deciding whether to enable it.",
+    "network_egress": [
+      "https://www.google.com/_/FlightsFrontendUi/... - the Google Flights frontend endpoints `flights` calls, reached on every search and on one daily heartbeat poll per tracked route, plus one control-route search whenever a result comes back empty",
+      "https://pypi.org - setup.sh only, to install the pinned dependency set"
+    ],
+    "filesystem": [
+      "store_path - read and written on every track / check / list / remove",
+      "state_dir - the heartbeat's day marker and the last check result"
+    ],
+    "credentials": "None. There is no account, no API key and no login anywhere in this plugin. Nothing is read from .env and nothing is read from Vaultwarden.",
+    "outbound_messages": "Price alerts and scraper failures posted to discord_channel_id by the heartbeat. No email, no bookings, no purchases - this plugin searches and watches, it never buys anything."
+  },
+  "_notes": {
+    "trip_shapes": "One-way, round trip and multi-city up to six legs, all searchable and all trackable. Google prices the whole itinerary in one shopping session - the chosen outbound is sent back as the selected flight and Google is asked for the next leg in that context - so a fare here is a fare, never a sum of separate one-way searches. The itinerary price is the LAST element of the tuple `fli` returns: verified live on 2026-08-10, a LIS-JFK-LIS round trip came back as (490.0, 490.0) against a 442.0 one-way, and a four-leg LIS-PHX-SFO-LAX-LIS trip as (1577.0, 1577.0, 1577.0, 1595.0). `fli` agrees - get_booking_options builds its token from results[-1].price.",
+    "browser_parity": "Every one-way and round-trip result carries a search_url that re-runs the same query on google.com/travel/flights, plus url_caveats naming the filters a link cannot carry. Measured against a real browser on 2026-08-10. One-way LIS to PHX matched exactly: 487 EUR both sides, same American flight, same 11:05 departure. Multi-leg trips read HIGH: the LIS-PHX round trip reported 889 EUR against the browser's 825 for the same outbound, and the four-leg LIS-PHX-SFO-LAX-LIS trip reported 1520 EUR against 1484 standard economy and 1003 basic economy. Ruled out: expansion breadth, locale, sort order, outbound choice, timing, and projected-versus-realized staging. Open lead: the browser surfaces basic-economy fares the plugin's results never contain, so the shopping endpoint may return a narrower set of fare families than the web UI. Quote multi-leg numbers as indicative and hand over the check. Multi-city and multi-airport queries get no link rather than a wrong one.",
+    "planning_cost": "A multi-leg search costs roughly top_n ** (legs - 1) requests. plan_trip ranks candidate date pairs with the cheap calendar grid and then prices only the best few for real, bounded by max_plan_searches. The ranking is a heuristic used to choose dates and never becomes a reported price.",
+    "alert_policy": "A target price is required at track time and is the only alert condition, per the default in new-jaxity#499. Alerts fire on transitions rather than states: crossing the target, dropping further below an already-alerted target, breaking, and recovering. A fare sitting below its target for a week is one alert, not seven.",
+    "failure_semantics": "The plugin never reports an empty result as an answer without proving the scraper is alive. See the module docstring in scripts/flight_tools.py."
+  }
+}

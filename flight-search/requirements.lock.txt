@@ -1,0 +1,44 @@
+# Full transitive closure of flights==0.9.0, every package pinned exactly.
+# This is the pip equivalent of the committed lockfile CONTRIBUTING.md asks for:
+# nothing resolves at install time, so an install cannot pick up a version no
+# human chose.
+#
+# Generated against the platform the chassis actually runs on, not a developer
+# laptop - a macOS freeze carries different markers and different wheels:
+#
+#   docker run --rm python:3.12-slim sh -c "pip install -q flights==0.9.0 && pip freeze"
+#
+# Regenerate with that command when the pin in requirements.txt moves.
+#
+# No --hash pins, deliberately. curl_cffi ships platform-specific binary wheels,
+# so a hash set is only valid for one arch and one Python minor, and would fail
+# an install on any other. Version pinning is what protects the install here;
+# the hashes would protect nothing extra while breaking arm64 hosts. Flagged
+# rather than left silent, because it is a real deviation from the rule.
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.14.2
+babel==2.18.0
+certifi==2026.7.22
+cffi==2.1.1
+curl_cffi==0.16.0
+flights==0.9.0
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.18
+markdown-it-py==4.2.0
+mdurl==0.1.2
+plotext==5.3.2
+pycparser==3.0
+pydantic==2.13.4
+pydantic_core==2.46.4
+Pygments==2.20.0
+python-dotenv==1.2.2
+ratelimit==2.2.1
+rich==15.0.0
+shellingham==1.5.4
+tenacity==9.1.4
+typer==0.27.1
+typing-inspection==0.4.3
+typing_extensions==4.16.0

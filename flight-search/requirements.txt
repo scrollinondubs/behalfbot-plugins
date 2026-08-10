@@ -1,0 +1,12 @@
+# Direct dependency, exact version. Not a range, per CONTRIBUTING.md.
+#
+# `flights` is the pip name for punitarani/fli - MIT (LICENSE.txt in the
+# upstream repo, checked directly rather than taken from the README).
+#
+# setup.sh installs from requirements.lock.txt, not this file. This one records
+# what we actually chose; the lock records everything that comes with it.
+#
+# Bumping the pin: read the upstream diff first, then re-run the live checks in
+# README.md ("Verifying a bump"). It is a scraper, so a version bump is exactly
+# when its behaviour is most likely to have changed.
+flights==0.9.0
