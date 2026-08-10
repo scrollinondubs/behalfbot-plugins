@@ -140,10 +140,12 @@ Multi-city and multi-airport searches get no link, by design. For those, tell th
 reader to open Google Flights, switch to Multi-city and enter the legs listed in
 the result.
 
-**Round-trip prices currently read high.** Measured on 2026-08-10, a LIS to PHX
-round trip came back 64 EUR above what the browser showed for the same outbound
-flight, while one-way matched exactly. Quote round-trip numbers as indicative and
-point at the link. Do not present one as a firm fare.
+**Multi-leg prices currently read high.** Measured against a browser on
+2026-08-10: one-way matched exactly (487 EUR both sides), a LIS to PHX round trip
+came back 64 EUR high, and the four-leg LIS-PHX-SFO-LAX-LIS trip came back 1520
+EUR against the browser's 1484. Quote any multi-leg number as indicative, hand
+over the link or the manual steps, and never present one as a firm fare. One-way
+you can state plainly.
 
 ## Reporting a price to a human
 

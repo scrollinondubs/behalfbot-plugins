@@ -173,11 +173,12 @@ on every result, so a mismatch is never a mystery.
 Two cases get no link at all, deliberately, because a link to a different
 question is worse than none:
 
-- **Multi-city.** It cannot be expressed in this link form. A protobuf `tfs`
-  token was tried and tested in a browser on 2026-08-10: a four-segment token
-  rendered as a plain one-way LIS to PHX search, silently dropping three legs.
-  To check a multi-city result by hand, open Google Flights, switch the trip type
-  to Multi-city, and enter the legs the result lists.
+- **Multi-city.** It cannot be expressed in this link form. To check one by
+  hand, open Google Flights, switch the trip type to Multi-city, enter the legs
+  the result lists, and hit Search. (A protobuf `tfs` deep link does work for
+  multi-city - a corrected token loaded all four legs in a browser on
+  2026-08-10 - but building it needs a `tfs` encoder that the pinned `flights`
+  release does not ship. See "Verifying a bump".)
 - **Multi-airport queries** (`--from LIS,OPO`), which a link takes one airport
   for.
 
@@ -187,20 +188,29 @@ Run against the live site through a real browser.
 
 | Query | Plugin | Browser | Verdict |
 |---|---|---|---|
-| One-way LIS to PHX, 21 Dec | 487.0 EUR, 1 stop, American, dep 11:05 | €487, 1 stop, American, 11:05 | **Exact match** |
-| Round trip LIS to PHX, 21 Dec to 6 Jan | 889.0 EUR, American, dep 11:05 | €825 for the same American 11:05 outbound | **64 EUR apart** |
+| One-way LIS to PHX, 21 Dec | 487.0 EUR, 1 stop, American, dep 11:05 | 487 EUR, 1 stop, American, 11:05 | **Exact match** |
+| Round trip LIS to PHX, 21 Dec to 6 Jan | 889.0 EUR, American, dep 11:05 | 825 EUR, same American 11:05 outbound | **64 EUR high, 7.8%** |
+| Multi-city LIS-PHX-SFO-LAX-LIS, 21 Dec to 6 Jan | 1520.0 EUR, American 11:05 outbound | 1484 EUR standard economy, 1003 EUR basic economy, same 11:05 outbound | **36 EUR high vs standard, 517 high vs cheapest** |
 
-The one-way case matches to the euro, the flight and the minute. The round-trip
-case does not, and it is not explained by any of the obvious causes: the gap
-survives `top_n` 2 and 5, survives `curr`/`gl`/`hl` set to PT and to US, is
-stable across repeated runs, and both sides pick the same outbound flight. The
-remaining likely explanation is that the shopping endpoint `fli` calls returns a
-different round-trip fare set than the web UI renders, which would mean round
-trips read high by roughly eight percent on this route.
+**One-way matches to the euro, the flight and the minute. Multi-leg trips read
+high.** The direction is consistent and it is not a staging artifact: the
+plugin's own outbound-step ladder for the multi-city trip was 1565 and 1580,
+which does not contain the browser's rows at all, so it is not "projected total
+versus realized total".
 
-**Treat a round-trip number as indicative until this is closed out.** One-way is
-trustworthy as measured. This is tracked as the next thing to investigate, and
-the check above is the way to re-measure it on any route.
+Ruled out as causes: expansion breadth (identical at `top_n` 2 and 5), locale
+(identical with `gl`/`hl` unset, PT, and US), sort order and outbound choice
+(both sides pick the same flight), and timing (stable across repeated runs, and
+a settled page was read rather than one still showing "Fetching results").
+
+One concrete lead: the browser surfaced a 1003 EUR **basic economy** fare that
+the plugin's results never contain, even though basic economy is not excluded in
+the filters. That points at the shopping endpoint returning a narrower set of
+fare families than the web UI renders, which would explain both multi-leg gaps.
+Unproven, so it is a lead and not a conclusion.
+
+**Treat any multi-leg number as indicative and hand over the check.** One-way is
+trustworthy as measured. Re-measuring on any route is the procedure above.
 
 ## When it says `scraper_error`
 
