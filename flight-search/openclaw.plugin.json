@@ -1,0 +1,134 @@
+{
+  "id": "behalfbot-flight-search",
+  "name": "Behalf.bot - Flight search and price tracking",
+  "description": "Search Google Flights and monitor fares on tracked routes. Six MCP tools over the MIT-licensed `flights` package: prices on a route for a date, cheapest day across a range, register a route with a target price, poll tracked routes, list them with their price history, stop tracking. A daily heartbeat speaks up only when a fare crosses its target - or when the scraper breaks, which it reports as a failure rather than as silence.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Master switch. Off by default: the plugin reaches Google Flights on a schedule, which is a network egress an operator should opt into.",
+        "default": false
+      },
+      "currency": {
+        "type": "string",
+        "description": "ISO 4217 code requested from Google and asserted on every response. `fli` otherwise picks a currency from the caller's IP, which silently makes a price history incomparable when the install moves or a VPN changes. A response in any other currency is rejected as an error rather than recorded.",
+        "default": "EUR"
+      },
+      "store_path": {
+        "type": "string",
+        "description": "Tracked routes and their price history. Must sit on bind-mounted storage or every tracked route dies with the container. Written atomically (temp file plus rename), so a kill mid-write cannot corrupt it.",
+        "default": "${CHASSIS_HOME}/data/flight-search/tracked-routes.json"
+      },
+      "state_dir": {
+        "type": "string",
+        "description": "Holds the heartbeat's once-per-day marker and the last check result. Must persist across restarts or the tracker polls Google on every 15-minute dispatcher tick.",
+        "default": "${CHASSIS_HOME}/scheduled-tasks"
+      },
+      "discord_channel_id": {
+        "type": "string",
+        "description": "Channel the heartbeat posts price alerts and scraper failures to. Install-specific, no default. Alerts go through the Discord reply tool with this id hardcoded in the call, never as terminal text - terminal relay hard-truncates at 2000 characters."
+      },
+      "max_history_points": {
+        "type": "integer",
+        "minimum": 2,
+        "maximum": 1000,
+        "description": "Price points kept per route before the oldest are dropped. 60 is roughly two months of daily checks.",
+        "default": 60
+      },
+      "error_repeat_days": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 30,
+        "description": "How long a route that is still broken stays quiet before alerting again. The first failure always alerts. 0 re-alerts on every check, which turns a week-long Google change into a week of daily notifications; a large value risks one shout being missed and never repeated.",
+        "default": 3
+      },
+      "canary_route": {
+        "type": "string",
+        "description": "Control route used to tell a broken scraper from an empty result, as ORIGIN-DESTINATION. It must be dense enough that an empty answer is never legitimate. When a real search comes back empty, this route is searched too: also empty means the scraper is broken and the original result means nothing.",
+        "default": "JFK-LAX"
+      },
+      "canary_lead_days": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 300,
+        "description": "How far ahead the control route is priced. Far enough out to be reliably full, near enough to be inside Google's window.",
+        "default": 30
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": [
+      "search_flights",
+      "search_dates",
+      "track_flight",
+      "check_prices",
+      "list_tracked",
+      "remove_tracked"
+    ],
+    "skills": ["flight-search"],
+    "heartbeats": ["flight-watch"],
+    "triggers": [],
+    "hooks": [],
+    "env": {
+      "FLIGHT_SEARCH_PLUGIN_DIR": "${PLUGIN_DIR}",
+      "FLIGHT_SEARCH_GATHER_SCRIPT": "${PLUGIN_DIR}/scripts/gather-flight-prices.sh",
+      "FLIGHT_SEARCH_STORE": "${CHASSIS_HOME}/data/flight-search/tracked-routes.json",
+      "FLIGHT_SEARCH_STATE_DIR": "${CHASSIS_HOME}/scheduled-tasks",
+      "FLIGHT_SEARCH_CURRENCY": "EUR",
+      "FLIGHT_SEARCH_CANARY_ROUTE": "JFK-LAX",
+      "FLIGHT_SEARCH_CANARY_LEAD_DAYS": "30",
+      "FLIGHT_SEARCH_MAX_HISTORY": "60",
+      "FLIGHT_SEARCH_ERROR_REPEAT_DAYS": "3"
+    },
+    "mcpServers": {
+      "flight-search": {
+        "command": "python3",
+        "args": ["${PLUGIN_DIR}/scripts/flight_search_mcp.py"],
+        "env": {
+          "FLIGHT_SEARCH_STORE": "${CHASSIS_HOME}/data/flight-search/tracked-routes.json",
+          "FLIGHT_SEARCH_CURRENCY": "EUR"
+        }
+      }
+    }
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "Dormant by default. The MCP server is started on demand by the harness; the flight-watch heartbeat must be added to the install's heartbeat config at activation time, pointed at scripts/gather-flight-prices.sh with the prompt template in scheduled-tasks/. Set the cadence to daily and the criticality to background so conservation mode suppresses it - a fare alert is never worth spending a constrained budget on. The gate is free: it exits count=0 without touching a model on every tick where nothing moved, and polls Google at most once per calendar day."
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "python3",
+        "install": "apt-get install python3 python3-pip (Debian) / your platform's package manager",
+        "_explanation": "Runs the tools, the MCP server and the heartbeat gate. Python 3.10 or newer, which is what the pinned `flights` release requires."
+      },
+      {
+        "name": "flights",
+        "install": "pip3 install -r requirements.lock.txt",
+        "_explanation": "The `flights` package (punitarani/fli, MIT, LICENSE.txt verified in the upstream repo, not inferred from the README). Pinned to an exact version, with its full transitive closure pinned in requirements.lock.txt. It is a Google Flights scraper: pinning protects an install from an upstream change arriving unannounced, it does not protect anyone from Google changing their response shape, which is what the canary in flight_tools.py exists for."
+      }
+    ]
+  },
+  "_declares": {
+    "_why": "CONTRIBUTING.md asks a plugin to declare everything it touches, and network egress and disk paths have no dedicated manifest field. This block is documentation for an operator deciding whether to enable it.",
+    "network_egress": [
+      "https://www.google.com/_/FlightsFrontendUi/... - the Google Flights frontend endpoints `flights` calls, reached on every search and on one daily heartbeat poll per tracked route, plus one control-route search whenever a result comes back empty",
+      "https://pypi.org - setup.sh only, to install the pinned dependency set"
+    ],
+    "filesystem": [
+      "store_path - read and written on every track / check / list / remove",
+      "state_dir - the heartbeat's day marker and the last check result"
+    ],
+    "credentials": "None. There is no account, no API key and no login anywhere in this plugin. Nothing is read from .env and nothing is read from Vaultwarden.",
+    "outbound_messages": "Price alerts and scraper failures posted to discord_channel_id by the heartbeat. No email, no bookings, no purchases - this plugin searches and watches, it never buys anything."
+  },
+  "_notes": {
+    "one_way_only": "v0.1 searches and tracks one-way itineraries. `fli` returns round trips as tuples of results with price semantics this plugin has not verified against live data, and guessing them would put a wrong number into a price history. Round trips are the next thing to add, behind a live check of what the tuple actually carries.",
+    "alert_policy": "A target price is required at track time and is the only alert condition, per the default in new-jaxity#499. Alerts fire on transitions rather than states: crossing the target, dropping further below an already-alerted target, breaking, and recovering. A fare sitting below its target for a week is one alert, not seven.",
+    "failure_semantics": "The plugin never reports an empty result as an answer without proving the scraper is alive. See the module docstring in scripts/flight_tools.py."
+  }
+}

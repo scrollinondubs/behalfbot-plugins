@@ -1,0 +1,8 @@
+{
+  "id": "behalfbot-flight-search",
+  "name": "Behalf.bot - Flight search and price tracking",
+  "description": "Search Google Flights and monitor fares on tracked routes. Six tools over the MIT-licensed `flights` package, plus a daily heartbeat that speaks up when a fare crosses its target - and reports a broken scraper as a failure rather than as silence.",
+  "version": "0.1.0",
+  "skills": ["./skills"],
+  "scripts": ["./scripts"]
+}
