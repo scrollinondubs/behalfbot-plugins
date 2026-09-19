@@ -81,6 +81,12 @@
       "min_chassis_version": "0.2.0"
     },
     {
+      "name": "video-explainer",
+      "path": "video-explainer",
+      "description": "Answer with a narrated video instead of text. Renders an explainer from a storyboard: a slide path needing only Python, ffmpeg and a text-to-speech engine, and an optional Remotion path for when motion carries the argument. The generation counterpart to loom-vision.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
       "name": "whatsapp",
       "path": "whatsapp",
       "description": "Privacy-enforced WhatsApp group reading via wacli: a wrapper that only permits reads of explicitly allowlisted group JIDs, blocks every DM and send path, and supports digest and lead-scan workflows without touching private conversations.",

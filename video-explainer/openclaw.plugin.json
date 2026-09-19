@@ -1,0 +1,119 @@
+{
+  "id": "behalfbot-video-explainer",
+  "name": "Behalf.bot - Video Explainer",
+  "description": "Answer with video instead of text. Renders narrated explainer videos from a storyboard: a slide path that needs only Python, ffmpeg and a text-to-speech engine, and an optional animated path built on Remotion for when motion carries the argument. The counterpart to loom-vision: that one ingests a screen recording, this one produces one.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Top-level toggle. When false the skill will not trigger.",
+        "default": true
+      },
+      "remotion_enabled": {
+        "type": "boolean",
+        "description": "Enable the animated path. Off by default because Remotion is source-available, not open source, and is licensed per organization. Free for individuals and teams of up to 3, paid above that. Turning this on is an assertion that your install is licensed. See LICENSING.md.",
+        "default": false
+      },
+      "tts_engine": {
+        "type": "string",
+        "description": "Which text-to-speech engine to narrate with. 'auto' uses OpenAI when OPENAI_API_KEY is present and falls back to the macOS 'say' command. 'say' is free and offline but macOS only. On Linux, 'auto' requires OPENAI_API_KEY.",
+        "enum": ["auto", "openai", "say"],
+        "default": "auto"
+      },
+      "tts_voice": {
+        "type": "string",
+        "description": "OpenAI TTS voice. Ignored by the 'say' engine.",
+        "default": "onyx"
+      },
+      "width": {
+        "type": "integer",
+        "description": "Output width in pixels.",
+        "default": 1920,
+        "minimum": 640,
+        "maximum": 3840
+      },
+      "height": {
+        "type": "integer",
+        "description": "Output height in pixels.",
+        "default": 1080,
+        "minimum": 360,
+        "maximum": 2160
+      },
+      "fps": {
+        "type": "integer",
+        "description": "Output frame rate. 30 is right for narrated explainers; there is no motion fast enough here to need 60.",
+        "default": 30,
+        "minimum": 12,
+        "maximum": 60
+      },
+      "slide_pad_seconds": {
+        "type": "number",
+        "description": "Silence held after each slide's narration finishes, so a cut never lands on the last syllable.",
+        "default": 0.7,
+        "minimum": 0,
+        "maximum": 5
+      },
+      "output_root": {
+        "type": "string",
+        "description": "Directory where renders are written. Each video gets its own subdirectory holding the slides, the narration mp3s and the finished mp4.",
+        "default": "${CHASSIS_HOME}/temp"
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": [],
+    "skills": ["video-explainer"],
+    "hooks": [],
+    "env": {
+      "VIDEO_EXPLAINER_SKILL_DIR": "${PLUGIN_DIR}/skills/video-explainer",
+      "VIDEO_EXPLAINER_REMOTION_TEMPLATE": "${PLUGIN_DIR}/remotion-template"
+    },
+    "triggers": []
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "Invoked on demand when the agent decides a reply lands better as a video, or when the user asks for one. No scheduled jobs, no keyword trigger: 'make me a video' is too loose a regex to own, and the skill description is enough for the agent to reach for it."
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "python3",
+        "install": "apt-get install -y python3 python3-pip (Debian) / your platform's package manager",
+        "_explanation": "Runs narrated-video.py and slidekit.py. Standard library plus Pillow; no other Python dependency."
+      },
+      {
+        "name": "python3-pil",
+        "install": "apt-get install -y python3-pil (Debian) / pip install Pillow==11.3.0",
+        "_explanation": "Pillow renders the slides. Only needed if you use the bundled slidekit; if you render slide PNGs some other way, narrated-video.py alone does not import it."
+      },
+      {
+        "name": "ffmpeg",
+        "install": "apt-get install -y ffmpeg (Debian) / your platform's package manager",
+        "_explanation": "Muxes each slide with its narration and concatenates the segments. Supplies ffprobe, used to measure narration length so every slide is held for exactly as long as its own audio. Invoked as an external binary and never bundled: the common builds are GPL, and shipping them would pull a corresponding-source obligation onto this repo. See LICENSING.md."
+      },
+      {
+        "name": "node",
+        "install": "apt-get install -y nodejs npm (Debian) / your platform's package manager",
+        "_explanation": "Optional, animated path only. Runs Remotion. Not needed for the slide path."
+      }
+    ]
+  },
+  "external_deps": [
+    {
+      "name": "remotion",
+      "version": "4.0.410",
+      "license": "Remotion License (source-available, not OSI open source)",
+      "license_url": "https://github.com/remotion-dev/remotion/blob/main/LICENSE.md",
+      "_explanation": "Optional, animated path only. Installed from npm into remotion-template/ by setup.sh --remotion, never vendored into this repo. Free for individuals, non-profits and organizations of up to 3 people; a paid Company License is required at 4 or more. `remotion render`, which this skill calls, counts as an 'automation' under their terms, which puts a non-eligible organization on the per-render tier. setup.sh states this before installing and requires an explicit acknowledgement."
+    },
+    {
+      "name": "OpenAI text-to-speech",
+      "license": "commercial API, billed per character to the installer's own key",
+      "_explanation": "Optional. The default narration voice when OPENAI_API_KEY is present. The macOS 'say' command is a free offline fallback. Neither is bundled; point VIDEO_EXPLAINER_TTS_BIN at your own script to use something else entirely."
+    }
+  ]
+}
