@@ -1,0 +1,17 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "segments": [
+    {
+      "durationSeconds": 5,
+      "kicker": "placeholder",
+      "title": "This file is rewritten on every render",
+      "lines": [
+        ["animated-video.py writes it from your storyboard", "bullet"],
+        ["Edit the storyboard, not this", "bullet"],
+        ["npx remotion studio to scrub the timeline", "muted"]
+      ]
+    }
+  ]
+}

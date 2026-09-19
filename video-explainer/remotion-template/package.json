@@ -1,0 +1,20 @@
+{
+  "name": "video-explainer-remotion-template",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Animated explainer scaffold for the video-explainer plugin. Remotion is a dependency here, never a vendored copy: npm install fetches it under this install's own licence. See ../LICENSING.md.",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.526",
+    "remotion": "4.0.526",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}
