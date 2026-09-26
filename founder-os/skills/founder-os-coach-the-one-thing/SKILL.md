@@ -1,5 +1,5 @@
 ---
-name: the-one-thing
+name: founder-os-coach-the-one-thing
 description: FounderOS coach skill, usable at any stage and never a gate. Helps an overloaded founder pick the single task that makes the rest of the week easier or unnecessary, using Gary Keller and Jay Papasan's The ONE Thing. Triggers when a founder lists too many priorities, asks what to do first, or says they are busy but nothing is moving.
 plugin: behalfbot-founder-os
 enabled_when: "chassis.config.yaml modules.founder-os.enabled == true"

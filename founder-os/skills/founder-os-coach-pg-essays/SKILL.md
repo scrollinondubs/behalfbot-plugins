@@ -1,5 +1,5 @@
 ---
-name: pg-essays
+name: founder-os-coach-pg-essays
 description: FounderOS coach skill, usable at any stage and never a gate. Points a founder at the one Paul Graham essay that fits the problem in front of them, with a link and a line on why, and never summarises the essay itself. Triggers when a founder asks for reading, or hits a situation one of these essays is about.
 plugin: behalfbot-founder-os
 enabled_when: "chassis.config.yaml modules.founder-os.enabled == true"
