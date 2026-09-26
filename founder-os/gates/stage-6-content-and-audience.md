@@ -5,6 +5,7 @@ title: "Stage 6 gate: content people answer, on a channel that works"
 stage: 6
 signoff: claude+sean
 fail_routes_to: 6
+evidence: [artifacts/ebomb>=4, artifacts/content_wall>=1, artifacts/email_list>=1, artifacts/response_log>=1, artifacts/sales_page>=1, artifacts/segment_test>=1, artifacts/traction_goal>=1, artifacts/channel_brainstorm>=1, artifacts/channel_test>=2, artifacts/chosen_channel>=1]
 ---
 
 # Stage 6 gate: content people answer, on a channel that works

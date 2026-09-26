@@ -1,0 +1,10 @@
+Founder: Thanks for making time. We're building an app that books gym classes for small studios and sends automatic reminders, so nobody no-shows.
+Marta: Oh wow, that sounds brilliant. I love the reminder part.
+Founder: Would you use something like that at your studio?
+Marta: Definitely, I'd probably use it every day.
+Founder: How much would you pay per month for it?
+Marta: Maybe fifteen euros? I think most studios would pay that.
+Founder: Do you think no-shows are a big problem for studios in general?
+Marta: Everyone complains about no-shows, it's a nightmare for the whole industry.
+Founder: Great, we're launching in the spring.
+Marta: Amazing. Keep me posted when it's live!

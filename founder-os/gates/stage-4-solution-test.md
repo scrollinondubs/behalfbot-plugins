@@ -5,6 +5,7 @@ title: "Stage 4 gate: tested with customers, reshaped by what they did"
 stage: 4
 signoff: claude+sean
 fail_routes_to: 4
+evidence: [artifacts/mvp_choice>=1, artifacts/sprint_plan>=1, artifacts/sprint_sketches>=1, artifacts/prototype>=1, artifacts/interview_record>=5, artifacts/sprint_results>=1, artifacts/solution_interview>=10, artifacts/exit_criteria>=1, artifacts/mvp_scope>=1, artifacts/activation_flow>=1]
 ---
 
 # Stage 4 gate: tested with customers, reshaped by what they did

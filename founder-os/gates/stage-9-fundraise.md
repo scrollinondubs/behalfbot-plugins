@@ -5,6 +5,7 @@ title: "Stage 9 gate: raise only if the numbers already say so"
 stage: 9
 signoff: claude+sean
 fail_routes_to: 8
+evidence: [interviews:money>=3, artifacts/traction_snapshot>=1, artifacts/growth_constraint>=1, artifacts/raise_plans>=1, artifacts/raise_decision>=1]
 ---
 
 # Stage 9 gate: raise only if the numbers already say so

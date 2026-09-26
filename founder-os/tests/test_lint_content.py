@@ -49,6 +49,18 @@ class LintContentTest(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8")
 
+    def card_copy_text(self) -> str:
+        """The example card as a starting point for a new card. Its `eval:`
+        entry belongs to map-the-watering-holes, so a copy starts without one."""
+        text = (self.root / CARD).read_text(encoding="utf-8")
+        return text.replace("eval: example-run\n", "")
+
+    def seed(self, ident: str) -> None:
+        path = self.root / "evals" / "seed-cards.txt"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(ident + "\n")
+
     def assertOneProblem(self, needle: str) -> None:
         problems = lint_content.lint(self.root)
         self.assertEqual(len(problems), 1, problems)
@@ -82,10 +94,13 @@ class LintContentTest(unittest.TestCase):
 
     def test_skill_names_missing_gate(self) -> None:
         self.edit(SKILL, "gate: stage-1-audience", "gate: stage-1-nowhere")
-        self.assertOneProblem("'stage-1-nowhere', which does not exist in gates/")
+        problems = lint_content.lint(self.root)
+        self.assertEqual(len(problems), 2, problems)
+        self.assertIn("'stage-1-nowhere', which does not exist in gates/", problems[0])
+        self.assertIn("'stage-1-audience' needs exactly one stage skill", problems[1])
 
     def test_contrib_card_may_omit_gate(self) -> None:
-        text = (self.root / CARD).read_text(encoding="utf-8")
+        text = self.card_copy_text()
         text = text.replace("id: map-the-watering-holes", "id: contrib-card")
         text = text.replace("gate: stage-1-audience\n", "").replace("tier: core", "tier: contrib")
         self.write("contrib/contrib-card.md", text)
@@ -114,6 +129,7 @@ class LintContentTest(unittest.TestCase):
 
     def test_late_gate_needs_sean_signoff(self) -> None:
         self.edit(GATE, "stage: 1", "stage: 3")
+        self.edit(SKILL, "stage: 1", "stage: 3")
         self.assertOneProblem("need signoff: claude+sean")
 
     def test_gate_cannot_route_forward(self) -> None:
@@ -127,14 +143,15 @@ class LintContentTest(unittest.TestCase):
     # Governance (behalfbot-plugins#29): card budget and card status.
 
     def add_core_card(self, ident: str, stage: int = 1) -> None:
-        text = (self.root / CARD).read_text(encoding="utf-8")
+        text = self.card_copy_text()
         text = text.replace("id: map-the-watering-holes", f"id: {ident}")
         if stage != 1:
             text = text.replace("stage: 1\n", f"stage: {stage}\n", 1)
         self.write(f"core/cards/{ident}.md", text)
+        self.seed(ident)
 
     def add_contrib_card(self, ident: str, status: str | None) -> None:
-        text = (self.root / CARD).read_text(encoding="utf-8")
+        text = self.card_copy_text()
         text = text.replace("id: map-the-watering-holes", f"id: {ident}").replace("tier: core", "tier: contrib")
         if status is not None:
             text = text.replace("tier: contrib\n", f"tier: contrib\nstatus: {status}\n")
@@ -273,6 +290,99 @@ class LintContentTest(unittest.TestCase):
         self.add_question_set(checkpoint={"en": "gpt"})
         problems = lint_content.lint(self.root)
         self.assertTrue(problems and all("laya/x-set.json" in p for p in problems), problems)
+
+
+    # Stage skills, coach skills, discovery and evals (behalfbot-plugins#49, #28).
+
+    COACH = (
+        "---\nname: founder-os-coach-example\ndescription: A coach skill.\nplugin: behalfbot-founder-os\n"
+        "type: coach-skill\n---\n\n# Coach\n\nWorks at any stage.\n"
+    )
+
+    def test_coach_skill_passes(self) -> None:
+        self.write("skills/founder-os-coach-example/SKILL.md", self.COACH)
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_coach_skill_cannot_name_a_gate(self) -> None:
+        self.write("skills/founder-os-coach-example/SKILL.md",
+                   self.COACH.replace("type: coach-skill\n", "type: coach-skill\ngate: stage-1-audience\n"))
+        self.assertOneProblem("a coach skill gates nothing")
+
+    def test_nested_skill_is_not_discovered(self) -> None:
+        self.write("skills/coach/founder-os-coach-example/SKILL.md", self.COACH)
+        self.assertOneProblem("chassis discovery does not look deeper")
+
+    def test_manifest_must_list_every_skill(self) -> None:
+        self.write("openclaw.plugin.json", '{"contracts": {"skills": ["founder-os-stage-1-audience"]}}')
+        self.assertEqual(lint_content.lint(self.root), [])
+        self.write("skills/founder-os-coach-example/SKILL.md", self.COACH)
+        self.assertOneProblem("'founder-os-coach-example' is on disk but not in contracts.skills")
+
+    def test_manifest_must_not_list_missing_skills(self) -> None:
+        self.write("openclaw.plugin.json",
+                   '{"contracts": {"skills": ["founder-os-stage-1-audience", "founder-os-ghost"]}}')
+        self.assertOneProblem("lists 'founder-os-ghost', which has no skills/")
+
+    def test_gate_needs_evidence_minimums(self) -> None:
+        self.edit(GATE, "evidence: [artifacts/audience>=1, artifacts/watering_holes>=1]\n", "")
+        self.assertOneProblem("evidence: evidence must be a non-empty inline list")
+
+    def test_gate_evidence_syntax(self) -> None:
+        self.edit(GATE, "artifacts/watering_holes>=1", "artifacts/watering_holes>=")
+        self.assertOneProblem("is not <table>[/<kind>][:<filter>]>=<n>")
+        self.edit(GATE, "artifacts/watering_holes>=", "pains:earlyvangelist>=1")
+        self.assertOneProblem("filter 'earlyvangelist' does not apply to pains")
+
+    def test_stage_skill_must_match_its_gate_stage(self) -> None:
+        self.edit(SKILL, "stage: 1", "stage: 2")
+        self.assertOneProblem("stage 2 but its gate 'stage-1-audience' is at stage 1")
+
+    def test_gate_needs_one_stage_skill(self) -> None:
+        text = (self.root / SKILL).read_text(encoding="utf-8").replace(
+            "name: founder-os-stage-1-audience", "name: founder-os-stage-1-again")
+        self.write("skills/founder-os-stage-1-again/SKILL.md", text)
+        self.assertOneProblem("needs exactly one stage skill naming it, found 2")
+
+    def test_stage_skill_needs_gate_submission_section(self) -> None:
+        self.edit(SKILL, "## Gate submission", "## Handing over")
+        self.assertOneProblem("## Gate submission")
+
+    def test_unlinked_concept_note(self) -> None:
+        self.write("core/concepts/lonely.md",
+                   "---\nid: lonely\ntype: concept\ntitle: Lonely\ntier: core\n---\n\nOne idea.\n")
+        self.assertOneProblem("no content links to [[lonely]]")
+
+    def test_core_card_needs_eval_or_seed(self) -> None:
+        self.write("core/cards/unevaluated.md", self.card_copy_text().replace(
+            "id: map-the-watering-holes", "id: unevaluated"))
+        self.assertOneProblem("a core card needs `eval:` naming a winning eval run")
+        self.seed("unevaluated")
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_core_card_eval_must_be_a_win(self) -> None:
+        path = self.root / "evals" / "results" / "example-run.json"
+        path.write_text(path.read_text(encoding="utf-8").replace('"verdict": "win"', '"verdict": "null"'),
+                        encoding="utf-8")
+        self.assertOneProblem("verdict is 'null'; core needs 'win'")
+
+    def test_eval_must_resolve(self) -> None:
+        self.edit(CARD, "eval: example-run", "eval: no-such-run")
+        self.assertOneProblem("has no results file evals/results/no-such-run.json")
+
+    def test_contrib_eval_may_be_a_loss(self) -> None:
+        path = self.root / "evals" / "results" / "example-run.json"
+        text = path.read_text(encoding="utf-8").replace("card:map-the-watering-holes", "card:hopeful")
+        path.write_text(text.replace('"verdict": "win"', '"verdict": "loss"'), encoding="utf-8")
+        self.edit(CARD, "eval: example-run\n", "")
+        self.seed("map-the-watering-holes")
+        contrib = self.card_copy_text().replace("id: map-the-watering-holes", "id: hopeful")
+        contrib = contrib.replace("tier: core", "tier: contrib\nstatus: candidate\neval: example-run")
+        self.write("contrib/hopeful.md", contrib)
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_stale_seed_entry(self) -> None:
+        self.seed("long-gone")
+        self.assertOneProblem("'long-gone' is not a core card; take it off the seed list")
 
 
 if __name__ == "__main__":

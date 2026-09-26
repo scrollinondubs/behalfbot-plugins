@@ -5,6 +5,7 @@ title: "Stage 7 gate: money changed hands, or a pilot was signed"
 stage: 7
 signoff: claude+sean
 fail_routes_to: 7
+evidence: [artifacts/commitment>=2, artifacts/offer_log>=1, artifacts/outreach_log>=1, artifacts/deal_log>=1, artifacts/sales_roadmap>=1, artifacts/pivot_or_proceed>=1, interviews:earlyvangelist>=1]
 ---
 
 # Stage 7 gate: money changed hands, or a pilot was signed

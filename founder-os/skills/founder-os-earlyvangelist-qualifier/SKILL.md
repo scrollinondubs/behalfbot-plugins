@@ -89,5 +89,7 @@ accept tags nobody looked at. The cross-founder export is operator-only.
   `record_audit.py --table interviews --id <interview_id> --auditor claude --check earlyvangelist --verdict flag|fail --findings "<criteria met, with quotes and turns>"`.
   `flag` means escalated to Sean; `fail` means fewer than four.
 - After Sean confirms, his own `audits` row with `--auditor sean --verdict pass`.
+  Sean writes it himself: `--auditor sean` is operator-only
+  (`FOUNDER_OS_OPERATOR=1`), and no skill sets that.
 - Never set `interviews.earlyvangelist` from this skill. The ledger has no call
   to change an interview after it is written, and the gate reads the audits.

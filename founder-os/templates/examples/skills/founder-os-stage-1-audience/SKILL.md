@@ -42,6 +42,14 @@ them back to naming the audience.
 5. Once the notes hold up, help them pick the bowling-pin segment, then hand over
    to the gate auditor.
 
+## Gate submission
+
+1. `stage.py submit --founder-id <id>` counts the gate's minimums and marks
+   the stage gate_pending.
+2. Rule on each check in the gate spec with one audits row against the
+   submission artifact.
+3. `stage.py decide --decision pass|fail`. Stage 1 needs no sign-off from Sean.
+
 ## Ledger writes
 
 - `add_artifact(kind="audience")` when the one-line audience and the segment are

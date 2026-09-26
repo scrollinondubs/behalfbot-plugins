@@ -1,0 +1,8 @@
+Founder: Tell me about the last time a tenant reported a repair.
+Sofia: Last Thursday a tenant in one of my six flats reported a leaking boiler at 11pm. I called three plumbers before one picked up, and the repair cost 240 euros.
+Founder: How do you keep track of repairs across the six flats?
+Sofia: WhatsApp groups, one per flat, and a notes file on my laptop. In June I missed a gas safety check because the reminder was buried in a chat, and I paid a 150 euro late fee.
+Founder: What have you tried to fix that?
+Sofia: I paid for a property management app for three months last year and cancelled in February. It was built for agencies with fifty units, not someone like me.
+Founder: What would a useful next step look like for you?
+Sofia: Put two weeks in my calendar starting on the 6th, and I'll log every repair request in whatever you give me and meet you on the 20th to go through it.

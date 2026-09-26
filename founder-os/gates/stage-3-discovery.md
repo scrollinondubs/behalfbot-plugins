@@ -5,6 +5,7 @@ title: "Stage 3 gate: interviews that could have said no"
 stage: 3
 signoff: claude+sean
 fail_routes_to: 3
+evidence: [interviews>=10, interviews:audited>=10, interviews:committed>=3, interviews:earlyvangelist>=1, artifacts/big_questions>=1]
 ---
 
 # Stage 3 gate: interviews that could have said no
