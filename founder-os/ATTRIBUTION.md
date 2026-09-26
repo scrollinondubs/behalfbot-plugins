@@ -12,15 +12,17 @@ merged.
 
 | Source | Author(s) | Source id | Cards | Read the original |
 |---|---|---|---|---|
-| The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself` (stage 3) | https://www.momtestbook.com |
+| The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself` (stage 3), skill `founder-os-mom-test-auditor` | https://www.momtestbook.com |
 | Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3) | https://www.cindyalvarez.com/lean-customer-development/ |
+| 30x500 (Sales Safari, Pain-Dream-Fix) | Amy Hoy, Alex Hillman | `thirty-x-500` | skills `founder-os-pain-tagger` (stage 2), `founder-os-pain-dream-fix-checker` (stage 6) | https://30x500.com |
+| The Four Steps to the Epiphany, The Startup Owner's Manual (earlyvangelist criteria) | Steve Blank | `four-steps` | skill `founder-os-earlyvangelist-qualifier` (stage 3) | https://steveblank.com/books-for-startups/ |
 
 ## Sources to come
 
 | Source | Author(s) | Used in stages |
 |---|---|---|
-| 30x500 (Sales Safari, e-bombs, Pain-Dream-Fix) | Amy Hoy, Alex Hillman | 1, 2, 6 |
-| The Four Steps to the Epiphany (Customer Development) | Steve Blank | 3, 7 |
+| 30x500 (e-bombs, audience cards) | Amy Hoy, Alex Hillman | 1, 6 |
+| The Four Steps to the Epiphany (Customer Validation cards) | Steve Blank | 7 |
 | Jobs to be Done / Competing Against Luck | Clayton Christensen | 2, 5 |
 | Badass: Making Users Awesome | Kathy Sierra | 4 |
 | Sprint (GV design sprint) | Jake Knapp, John Zeratsky, Braden Kowitz | 4 |

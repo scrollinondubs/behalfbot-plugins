@@ -1,0 +1,10 @@
+Founder: Thanks for jumping on. So we're building an app that chases late invoices for design studios. It will automatically send reminders and our tool plugs into your bank.
+Priya: Oh, I love that. That's a great idea, honestly.
+Founder: Would you use something like that?
+Priya: Yeah, probably. I'd definitely use it if it was cheap.
+Founder: How much would you pay for it per month?
+Priya: I don't know, maybe twenty euros? People would pay for that, for sure.
+Founder: Do you think other studios have the same problem?
+Priya: Sure, everyone hates chasing money.
+Founder: Great. Our app also has a dashboard with all your clients.
+Priya: Sounds great. Keep me posted when it launches.

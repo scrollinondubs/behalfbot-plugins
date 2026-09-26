@@ -1,0 +1,8 @@
+Founder: Tell me about the last time a client paid late.
+Marta: It happens every month to us. In June a client owed us 9,000 euros for ninety days and we nearly missed payroll. I know this is our biggest operational problem, I raised it at our partner meeting before anyone asked.
+Founder: What have you tried?
+Marta: I have been testing two invoicing tools this quarter and I asked three other studio owners what they use. I want something in place before our audit in November.
+Founder: And today, what do you do?
+Marta: I built a spreadsheet with conditional colours and a script that emails me every Monday with the overdue list. We also pay a bookkeeper to chase the worst ones.
+Founder: Who decides on tools like that?
+Marta: I do. I have a budget line for finance tools and I can spend up to 200 euros a month without asking anyone.

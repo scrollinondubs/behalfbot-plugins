@@ -1,0 +1,53 @@
+{
+  "name": "earlyvangelist",
+  "version": "v1",
+  "task": "earlyvangelist",
+  "purpose": "Steve Blank's five earlyvangelist criteria as yes/no questions over what the interviewee said. Four or more yes answers escalate the interview to Claude and then Sean. Laya never marks anyone an earlyvangelist.",
+  "notes": [
+    "The criteria nest: each one usually implies the one before it. The escalation rule counts them independently anyway, because a missing earlier criterion is itself a finding.",
+    "Run over the interviewee's words only. The founder's own pitch talks about the problem too and would score as if the interviewee had said it.",
+    "No accuracy has been measured on this set yet."
+  ],
+  "escalate_at": 4,
+  "checkpoint": {
+    "en": "english",
+    "default": "multilingual"
+  },
+  "questions": {
+    "has_problem": {
+      "type": "noul",
+      "instructions": "Does the person have this problem in their own work or life, rather than knowing someone who does?",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    },
+    "knows_problem": {
+      "type": "noul",
+      "instructions": "Does the person already see it as a problem and say so themselves, before anyone suggested it?",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    },
+    "searching": {
+      "type": "noul",
+      "instructions": "Is the person actively looking for a way to solve it, for example trying products, asking around, or working to a deadline?",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    },
+    "has_workaround": {
+      "type": "noul",
+      "instructions": "Has the person put together their own stopgap for it, such as a spreadsheet, a script, several tools glued together, or paying someone to handle it?",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    },
+    "has_budget": {
+      "type": "noul",
+      "instructions": "Does the person already spend money on this problem, or say they control or can get a budget to fix it?",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    }
+  }
+}
