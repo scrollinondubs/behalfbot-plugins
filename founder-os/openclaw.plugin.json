@@ -1,8 +1,8 @@
 {
   "id": "behalfbot-founder-os",
   "name": "Behalf.bot - FounderOS",
-  "description": "A gated coach for early-stage founders. It walks a founder through a fixed sequence of stages, from why and founder fit through audience, pain research, discovery, solution test, positioning, content, validation and traction. Each stage ends in a gate that needs ledger evidence, not self-report. Content (framework cards, concept notes, skills, gate specs, Laya question sets) is markdown and JSON in git; founder state lives in a ledger behind a storage interface. This release adds four auditor skills (Mom Test interview audit, pain tagger and pain-log check, earlyvangelist qualifier, Pain-Dream-Fix checker). Laya does the per-item tagging over its /v1/systemone endpoint, Claude writes the feedback, and every tag a founder accepts or rejects is kept as a fine-tuning label. Without Laya the auditors fall back to a Claude-only audit.",
-  "version": "0.2.0",
+  "description": "A gated coach for early-stage founders. It walks a founder through a fixed sequence of stages, from why and founder fit through audience, pain research, discovery, solution test, positioning, content, validation and traction. Each stage ends in a gate that needs ledger evidence, not self-report. Content (framework cards, concept notes, skills, gate specs, Laya question sets) is markdown and JSON in git; founder state lives in a ledger behind a storage interface. Ships the stage 0-9 cards with draft gates, four auditor skills (Mom Test interview audit, pain tagger and pain-log check, earlyvangelist qualifier, Pain-Dream-Fix checker) with Laya tagging and a Claude-only fallback, coach skills, and the founder bundle: a `founder-os export` / `founder-os import` CLI plus an opt-in, signed progress webhook.",
+  "version": "0.3.0",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -36,6 +36,21 @@
         "type": "string",
         "default": "${CUSTOMER_HOME}/data/founder-os-ledger.db",
         "description": "SQLite ledger file, used only when ledger_backend is sqlite. Exported as FOUNDER_OS_SQLITE_PATH."
+      },
+      "files_dir": {
+        "type": "string",
+        "default": "${CUSTOMER_HOME}/data/founder-os-files",
+        "description": "Content-addressed store for original files attached to artifacts (artifacts.meta.files[].sha256). Founder bundles export and import them from here. Exported as FOUNDER_OS_FILES_DIR."
+      },
+      "progress_webhook_url": {
+        "type": "string",
+        "default": "",
+        "description": "Opt-in. The per-student https URL a cohort instructor gave you. When set, founder-os progress POSTs exactly stage, gate_status and updated_at to it, and nothing else from the ledger. Empty (the default) means nothing is ever sent. Requires progress_webhook_secret. Exported as FOUNDER_OS_PROGRESS_WEBHOOK_URL. See docs/bundle-format.md, Progress webhook."
+      },
+      "progress_webhook_secret": {
+        "type": "string",
+        "default": "",
+        "description": "Shared HMAC-SHA256 signing key the instructor issued with the URL. Every webhook request is signed with it so the instructor can reject forged or replayed reports. Keep it in the operator's secret store, not in a committed file. Exported as FOUNDER_OS_PROGRESS_WEBHOOK_SECRET."
       }
     },
     "required": [
@@ -43,7 +58,9 @@
     ]
   },
   "contracts": {
-    "tools": [],
+    "tools": [
+      "founder-os"
+    ],
     "skills": [
       "founder-os-mom-test-auditor",
       "founder-os-pain-tagger",
@@ -55,7 +72,10 @@
       "FOUNDER_OS_DIR": "${PLUGIN_DIR}",
       "FOUNDER_OS_LEDGER_BACKEND": "postgres",
       "FOUNDER_OS_PG_SCHEMA": "founder_os",
-      "FOUNDER_OS_SQLITE_PATH": "${CUSTOMER_HOME}/data/founder-os-ledger.db"
+      "FOUNDER_OS_SQLITE_PATH": "${CUSTOMER_HOME}/data/founder-os-ledger.db",
+      "FOUNDER_OS_FILES_DIR": "${CUSTOMER_HOME}/data/founder-os-files",
+      "FOUNDER_OS_PROGRESS_WEBHOOK_URL": "",
+      "FOUNDER_OS_PROGRESS_WEBHOOK_SECRET": ""
     },
     "triggers": []
   },

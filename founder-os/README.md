@@ -17,9 +17,11 @@ founder's ledger, not the founder's say-so.
 | 8 | Traction and PMF | PMF score, a metric that moves |
 | 9 | Fundraise (optional) | Only if 7 and 8 justify it |
 
-Status: **foundations plus the auditors.** The layout, the authoring
-templates, the ledger, the first stage 3 card and draft gate, and four auditor
-skills are in place. Stage coaching skills do not ship yet. The epic is
+Status: **content and tooling in place.** The layout, the authoring
+templates, the ledger, the founder bundle (export/import CLI and signed
+progress webhook), the stage 0-9 framework cards with draft gates, four
+auditor skills and the coach skills are in place. Gate minimums are drafts
+pending Sean's ruling. The epic is
 [behalfbot-plugins#22](https://github.com/scrollinondubs/behalfbot-plugins/issues/22).
 
 ## Auditors
@@ -58,6 +60,23 @@ SQL. See [`schema/README.md`](schema/README.md).
 
 Anything else a database holds, such as a retrieval index over the cards, is
 derived from the markdown and can be rebuilt from it at any time.
+
+## Moving a founder between installs
+
+A founder's ledger travels as a founder bundle: one JSON file per table, the
+artifacts as markdown, the original attached files, a manifest and checksums.
+VCL exports it, and a self-hosted install imports it:
+
+```
+bin/founder-os export --founder-id <id> --out alice.zip
+bin/founder-os import alice.zip
+```
+
+Import is idempotent and all-or-nothing, and it refuses a bundle from a newer
+format version. A self-hosted graduate can opt in to a signed progress webhook
+that tells their cohort instructor their stage and gate status, and nothing
+else. The format, the id remapping rules and the webhook's privacy boundary are
+in [`docs/bundle-format.md`](docs/bundle-format.md).
 
 ## Core vs contrib
 
@@ -103,7 +122,9 @@ founder-os/
   scripts/lint_content.py  content lint, run by validate.sh
   scripts/ledger_migrate.py  apply ledger migrations to the configured backend
   founder_ledger/        storage interface and its Postgres and SQLite adapters
-  docs/                  implementation notes, e.g. the ledger on Turso for VCL
+  founder_bundle/        founder bundle export/import and the progress webhook
+  bin/founder-os         CLI: export, import, progress
+  docs/                  the bundle format, and implementation notes such as the ledger on Turso
   tests/                 offline test suites, run by CI
   schema/                ledger schema and migrations
   evals/                 evals that gate promotion into core
