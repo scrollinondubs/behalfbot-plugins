@@ -34,6 +34,13 @@ for root in "$PLUGIN_DIR" "$PLUGIN_DIR/templates/examples"; do
   fi
 done
 
+if python3 "$PLUGIN_DIR/scripts/run_evals.py" validate; then
+  echo "[founder-os] OK: eval fixtures"
+else
+  echo "[founder-os] FAIL: eval fixtures" >&2
+  fail=1
+fi
+
 # Applies every migration to a throwaway in-memory SQLite database. Proves the
 # schema files parse and the storage interface imports, without touching the
 # real ledger.

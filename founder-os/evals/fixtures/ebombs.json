@@ -1,0 +1,25 @@
+{
+  "set": "ebombs",
+  "stage": 6,
+  "description": "E-bomb and sales-page drafts, paragraphs separated by blank lines and numbered from 1. Judge each paragraph as pain, dream or fix. Synthetic, written for these evals.",
+  "items": [
+    {"id": "eb-1", "input_file": "src/eb-1.md",
+     "expected": {"sections": ["fix", "pain", "pain", "dream", "fix"], "premature_pitch": true, "fix_before_dream": true, "product_paragraphs": [1, 5]},
+     "note": "Opens with the product."},
+    {"id": "eb-2", "input_file": "src/eb-2.md",
+     "expected": {"sections": ["pain", "pain", "dream", "fix", "fix"], "premature_pitch": false, "fix_before_dream": false, "product_paragraphs": []},
+     "note": "A clean e-bomb. The fix teaches a method and never mentions a product."},
+    {"id": "eb-3", "input_file": "src/eb-3.md",
+     "expected": {"sections": ["pain", "fix", "dream", "fix"], "premature_pitch": false, "fix_before_dream": true, "product_paragraphs": [2, 4]},
+     "note": "The pain comes first, but the product arrives before the reader has seen the dream."},
+    {"id": "eb-4", "input_file": "src/eb-4.md",
+     "expected": {"sections": ["dream", "pain", "pain", "dream", "fix"], "premature_pitch": false, "fix_before_dream": false, "product_paragraphs": [5]},
+     "note": "Opens on the dream, then the pain, and only the last paragraph pitches."},
+    {"id": "eb-5", "input_file": "src/eb-5.md",
+     "expected": {"sections": ["pain", "pain", "dream", "fix"], "premature_pitch": false, "fix_before_dream": false, "product_paragraphs": [2]},
+     "note": "A pain paragraph that slips the product in. Its section is still pain."},
+    {"id": "eb-6", "input_file": "src/eb-6.md",
+     "expected": {"sections": ["fix", "fix", "fix", "pain"], "premature_pitch": true, "fix_before_dream": false, "product_paragraphs": [1, 2, 3]},
+     "note": "A feature list with the pain as an afterthought and no dream at all."}
+  ]
+}

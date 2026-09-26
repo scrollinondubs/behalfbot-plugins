@@ -1,6 +1,6 @@
 Founder: Do you think dog groomers struggle with bookings?
 Paulo: Oh, everyone in grooming hates admin. It's the worst part of the job.
-Founder: Would an online booking page make your life easier?
+Founder: Is admin a big deal for you too?
 Paulo: Probably, yeah. I'd probably use it if it were simple.
 Founder: What would it need to have?
 Paulo: I guess it should send reminders. People forget things.

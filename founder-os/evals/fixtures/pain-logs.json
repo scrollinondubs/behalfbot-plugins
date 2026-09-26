@@ -1,0 +1,503 @@
+{
+ "set": "pain-logs",
+ "stage": 2,
+ "description": "A founder's Sales Safari pain log for one audience: quotes with source URL, watering hole, author and job. Synthetic, written for these evals; every URL is on an example domain.",
+ "items": [
+  {
+   "id": "pl-1",
+   "input": {
+    "founder_handle": "@ana_builds",
+    "audience": "Freelance designers who invoice clients directly",
+    "entries": [
+     {
+      "id": "p1",
+      "quote": "Third reminder sent today for an invoice from May. I hate that I have to sound like a debt collector.",
+      "source_url": "https://reddit.example/r/freelance/comments/a1",
+      "watering_hole": "r/freelance",
+      "author": "u/inkwell",
+      "posted_on": "2026-07-02",
+      "job": "chase-late-invoices"
+     },
+     {
+      "id": "p2",
+      "quote": "Client just told me their 'payment run' is only once a quarter. I delivered in April.",
+      "source_url": "https://reddit.example/r/freelance/comments/a2",
+      "watering_hole": "r/freelance",
+      "author": "u/pixelmoth",
+      "posted_on": "2026-07-05",
+      "job": "chase-late-invoices"
+     },
+     {
+      "id": "p3",
+      "quote": "I keep a sticky note on my monitor with who owes me what. It's up to six names now.",
+      "source_url": "https://designers-pt.slack.example/archives/C1/p101",
+      "watering_hole": "slack:designers-pt",
+      "author": "@joana.r",
+      "posted_on": "2026-07-06",
+      "job": "chase-late-invoices"
+     },
+     {
+      "id": "p4",
+      "quote": "Had to borrow from my sister to pay rent because two invoices are 50+ days late.",
+      "source_url": "https://designers-pt.slack.example/archives/C1/p102",
+      "watering_hole": "slack:designers-pt",
+      "author": "@miguelf",
+      "posted_on": "2026-07-09",
+      "job": "chase-late-invoices"
+     },
+     {
+      "id": "p5",
+      "quote": "Spent my whole Friday writing polite chasers instead of designing. Not billable, obviously.",
+      "source_url": "https://forum.bookkeepers.example/t/88/4",
+      "watering_hole": "forum.bookkeepers.example",
+      "author": "lena_k",
+      "posted_on": "2026-07-11",
+      "job": "chase-late-invoices"
+     },
+     {
+      "id": "p6",
+      "quote": "The agency says 'the PO wasn't approved' every single time I chase. Six weeks now.",
+      "source_url": "https://reddit.example/r/freelance/comments/a3",
+      "watering_hole": "r/freelance",
+      "author": "u/tallfern",
+      "posted_on": "2026-07-12",
+      "job": "chase-late-invoices"
+     },
+     {
+      "id": "p7",
+      "quote": "User says clients pay late and it is stressful to follow up.",
+      "source_url": "https://reddit.example/r/freelance/comments/a4",
+      "watering_hole": "r/freelance",
+      "author": "u/greycat",
+      "posted_on": "2026-07-13",
+      "job": "chase-late-invoices"
+     },
+     {
+      "id": "p8",
+      "quote": "Anyone else hate chasing invoices? It's the worst.",
+      "source_url": "https://designers-pt.slack.example/archives/C1",
+      "watering_hole": "slack:designers-pt",
+      "author": "@rita.m",
+      "posted_on": "2026-07-14",
+      "job": "chase-late-invoices"
+     },
+     {
+      "id": "p9",
+      "quote": "Quoting for a big job and I have no idea how to price the revisions.",
+      "source_url": "https://reddit.example/r/freelance/comments/a5",
+      "watering_hole": "r/freelance",
+      "author": "u/pixelmoth",
+      "posted_on": "2026-07-15",
+      "job": "price-projects"
+     },
+     {
+      "id": "p10",
+      "quote": "Every client wants 'just one more round' and I never know whether to charge.",
+      "source_url": "https://designers-pt.slack.example/archives/C1/p110",
+      "watering_hole": "slack:designers-pt",
+      "author": "@joana.r",
+      "posted_on": "2026-07-16",
+      "job": "price-projects"
+     }
+    ]
+   },
+   "expected": {
+    "flagged": [
+     "p7",
+     "p8"
+    ],
+    "verdict": "pass"
+   },
+   "note": "Six real authors across three places on one job. p7 is the founder's paraphrase, p8 links the channel, not the post."
+  },
+  {
+   "id": "pl-2",
+   "input": {
+    "founder_handle": "@ben_ships",
+    "audience": "Owners of small dog grooming salons",
+    "entries": [
+     {
+      "id": "g1",
+      "quote": "Groomers generally struggle with no-shows, which costs them money.",
+      "source_url": "https://groomers.example/t/12/1",
+      "watering_hole": "groomers.example",
+      "author": "ben_notes",
+      "posted_on": "2026-06-01",
+      "job": "reduce-no-shows"
+     },
+     {
+      "id": "g2",
+      "quote": "Quick poll from me: do no-shows annoy you? Vote below!",
+      "source_url": "https://groomers.example/t/99",
+      "watering_hole": "groomers.example",
+      "author": "@ben_ships",
+      "posted_on": "2026-06-02",
+      "job": "reduce-no-shows"
+     },
+     {
+      "id": "g3",
+      "quote": "Two no-shows on Saturday, that's a whole morning of income gone.",
+      "source_url": "https://groomers.example/t/14/3",
+      "watering_hole": "groomers.example",
+      "author": "paws_and_suds",
+      "posted_on": "2026-06-03",
+      "job": "reduce-no-shows"
+     },
+     {
+      "id": "g4",
+      "quote": "Tip for everyone: take a deposit when they book, it fixed no-shows for me years ago.",
+      "source_url": "https://groomers.example/t/15/2",
+      "watering_hole": "groomers.example",
+      "author": "old_clipper",
+      "posted_on": "2026-06-04",
+      "job": "reduce-no-shows"
+     },
+     {
+      "id": "g5",
+      "quote": "Two no-shows on Saturday, that's a whole morning of income gone.",
+      "source_url": "https://groomers.example/t/14/3",
+      "watering_hole": "groomers.example",
+      "author": "paws_and_suds",
+      "posted_on": "2026-06-03",
+      "job": "reduce-no-shows"
+     },
+     {
+      "id": "g6",
+      "quote": "We are launching a new booking plugin for groomers next month, sign up for early access.",
+      "source_url": "https://fb.example/groups/groomers/posts/7",
+      "watering_hole": "fb:groomers-uk",
+      "author": "plugin_team",
+      "posted_on": "2026-06-05",
+      "job": "reduce-no-shows"
+     },
+     {
+      "id": "g7",
+      "quote": "I text every client the night before and still get a no-show most weeks.",
+      "source_url": "https://fb.example/groups/groomers/posts/9",
+      "watering_hole": "fb:groomers-uk",
+      "author": "suds_lisboa",
+      "posted_on": "2026-06-06",
+      "job": "reduce-no-shows"
+     },
+     {
+      "id": "g8",
+      "quote": "No-shows are the worst thing about grooming in my opinion.",
+      "source_url": "",
+      "watering_hole": "fb:groomers-uk",
+      "author": "fluffcut",
+      "posted_on": "2026-06-07",
+      "job": "reduce-no-shows"
+     }
+    ]
+   },
+   "expected": {
+    "flagged": [
+     "g1",
+     "g2",
+     "g4",
+     "g5",
+     "g6",
+     "g8"
+    ],
+    "verdict": "fail"
+   },
+   "note": "A paraphrase, the founder's own poll, advice, a duplicate, an announcement and an unlinked opinion. Two real pains remain."
+  },
+  {
+   "id": "pl-3",
+   "input": {
+    "founder_handle": "@cris_dev",
+    "audience": "Independent bakery owners",
+    "entries": [
+     {
+      "id": "b1",
+      "quote": "Flour delivery late again, had to buy retail at twice the price.",
+      "source_url": "https://bakers.example/t/1/2",
+      "watering_hole": "bakers.example",
+      "author": "crumbqueen",
+      "posted_on": "2026-05-01",
+      "job": "supplier-reliability"
+     },
+     {
+      "id": "b2",
+      "quote": "Supplier moved my order to Thursday with an hour's notice. Again.",
+      "source_url": "https://bakers.example/t/2/5",
+      "watering_hole": "bakers.example",
+      "author": "crumbqueen",
+      "posted_on": "2026-05-03",
+      "job": "supplier-reliability"
+     },
+     {
+      "id": "b3",
+      "quote": "Third missed butter delivery this month. I'm running out of patience.",
+      "source_url": "https://bakers.example/t/3/1",
+      "watering_hole": "bakers.example",
+      "author": "crumbqueen",
+      "posted_on": "2026-05-06",
+      "job": "supplier-reliability"
+     },
+     {
+      "id": "b4",
+      "quote": "Had to close at noon because the yeast never came.",
+      "source_url": "https://ig.example/p/xyz1",
+      "watering_hole": "ig:#bakerylife",
+      "author": "levain_lou",
+      "posted_on": "2026-05-07",
+      "job": "supplier-reliability"
+     },
+     {
+      "id": "b5",
+      "quote": "My supplier's phone line goes to voicemail every morning before 9.",
+      "source_url": "https://ig.example/p/xyz2",
+      "watering_hole": "ig:#bakerylife",
+      "author": "levain_lou",
+      "posted_on": "2026-05-08",
+      "job": "supplier-reliability"
+     },
+     {
+      "id": "b6",
+      "quote": "Paid for next-day delivery, got it three days later, with no refund.",
+      "source_url": "https://bakers.example/t/4/2",
+      "watering_hole": "bakers.example",
+      "author": "crumbqueen",
+      "posted_on": "2026-05-10",
+      "job": "supplier-reliability"
+     },
+     {
+      "id": "b7",
+      "quote": "Wrote a spreadsheet of backup suppliers after last month's mess.",
+      "source_url": "https://ig.example/p/xyz3",
+      "watering_hole": "ig:#bakerylife",
+      "author": "levain_lou",
+      "posted_on": "2026-05-11",
+      "job": "supplier-reliability"
+     },
+     {
+      "id": "b8",
+      "quote": "If one more pallet arrives damaged I'm switching wholesalers.",
+      "source_url": "https://bakers.example/t/5/7",
+      "watering_hole": "bakers.example",
+      "author": "doughboy_pt",
+      "posted_on": "2026-05-12",
+      "job": "supplier-reliability"
+     }
+    ]
+   },
+   "expected": {
+    "flagged": [],
+    "verdict": "fail"
+   },
+   "note": "Clean entries, but only three people behind the job. Loud voices, not a pattern."
+  },
+  {
+   "id": "pl-4",
+   "input": {
+    "founder_handle": "@dee_makes",
+    "audience": "Landlords with two to ten rental flats",
+    "entries": [
+     {
+      "id": "l1",
+      "quote": "Boiler went at 11pm, called four plumbers before anyone answered.",
+      "source_url": "https://landlords.example/t/31/2",
+      "watering_hole": "landlords.example",
+      "author": "smallportfolio",
+      "posted_on": "2026-08-01",
+      "job": "handle-repairs"
+     },
+     {
+      "id": "l2",
+      "quote": "Tenant reported a leak by WhatsApp and I only saw it two days later, buried in the chat.",
+      "source_url": "https://landlords.example/t/32/1",
+      "watering_hole": "landlords.example",
+      "author": "flat_mum",
+      "posted_on": "2026-08-02",
+      "job": "handle-repairs"
+     },
+     {
+      "id": "l3",
+      "quote": "Missed a gas safety renewal because the reminder was in my notes app. 150 quid fine.",
+      "source_url": "https://reddit.example/r/uklandlords/comments/b1",
+      "watering_hole": "r/uklandlords",
+      "author": "u/brickbybrick",
+      "posted_on": "2026-08-03",
+      "job": "handle-repairs"
+     },
+     {
+      "id": "l4",
+      "quote": "I keep a paper folder per flat for repairs and I still lose receipts.",
+      "source_url": "https://reddit.example/r/uklandlords/comments/b2",
+      "watering_hole": "r/uklandlords",
+      "author": "u/keyholder",
+      "posted_on": "2026-08-04",
+      "job": "handle-repairs"
+     },
+     {
+      "id": "l5",
+      "quote": "Paid an agency 12% just so someone else answers the repair calls. It hurts.",
+      "source_url": "https://landlords.example/t/33/4",
+      "watering_hole": "landlords.example",
+      "author": "three_flats_tom",
+      "posted_on": "2026-08-05",
+      "job": "handle-repairs"
+     },
+     {
+      "id": "l6",
+      "quote": "Landlords should really use a property management app, it saves so much time.",
+      "source_url": "https://reddit.example/r/uklandlords/comments/b3",
+      "watering_hole": "r/uklandlords",
+      "author": "u/proptech_fan",
+      "posted_on": "2026-08-06",
+      "job": "handle-repairs"
+     },
+     {
+      "id": "l7",
+      "quote": "Boiler went at 11pm, called four plumbers before anyone answered.",
+      "source_url": "https://landlords.example/t/31/2",
+      "watering_hole": "landlords.example",
+      "author": "smallportfolio",
+      "posted_on": "2026-08-01",
+      "job": "handle-repairs"
+     }
+    ]
+   },
+   "expected": {
+    "flagged": [
+     "l6",
+     "l7"
+    ],
+    "verdict": "pass"
+   },
+   "note": "Exactly five people across two places once the advice post and the duplicate are removed. Flagging a real pain by mistake flips the verdict."
+  },
+  {
+   "id": "pl-5",
+   "input": {
+    "founder_handle": "@eli_codes",
+    "audience": "School transport coordinators",
+    "entries": [
+     {
+      "id": "s1",
+      "quote": "Bus left eleven minutes early and three kids were left at the stop.",
+      "source_url": "https://edu-admin.example/t/7/1",
+      "watering_hole": "edu-admin.example",
+      "author": "coord_helena",
+      "posted_on": "2026-09-10",
+      "job": "track-buses"
+     },
+     {
+      "id": "s2",
+      "quote": "Our driver texts me when he leaves and I copy it into a sheet. It breaks weekly.",
+      "source_url": "https://edu-admin.example/t/7/3",
+      "watering_hole": "edu-admin.example",
+      "author": "m_santos",
+      "posted_on": "2026-09-11",
+      "job": "track-buses"
+     },
+     {
+      "id": "s3",
+      "quote": "Parents call me every morning asking where the bus is. I don't know either.",
+      "source_url": "https://edu-admin.example/t/8/2",
+      "watering_hole": "edu-admin.example",
+      "author": "rosa_escola",
+      "posted_on": "2026-09-12",
+      "job": "track-buses"
+     },
+     {
+      "id": "s4",
+      "quote": "Trialled a GPS app and the council refused a device on the bus.",
+      "source_url": "https://edu-admin.example/t/9/1",
+      "watering_hole": "edu-admin.example",
+      "author": "coord_helena2",
+      "posted_on": "2026-09-13",
+      "job": "track-buses"
+     },
+     {
+      "id": "s5",
+      "quote": "Spent an afternoon phoning parents after a route change nobody announced.",
+      "source_url": "https://edu-admin.example/t/9/4",
+      "watering_hole": "edu-admin.example",
+      "author": "pmendes",
+      "posted_on": "2026-09-14",
+      "job": "track-buses"
+     }
+    ]
+   },
+   "expected": {
+    "flagged": [],
+    "verdict": "fail"
+   },
+   "note": "Five clean authors, all from one forum. The rule needs two watering holes."
+  },
+  {
+   "id": "pl-6",
+   "input": {
+    "founder_handle": "@fin_tries",
+    "audience": "Café owners who schedule their own staff",
+    "entries": [
+     {
+      "id": "c1",
+      "quote": "Two baristas swapped shifts by text and the opener didn't show. Found out at 7:05.",
+      "source_url": "https://cafes.example/t/41/2",
+      "watering_hole": "cafes.example",
+      "author": "beanandleaf",
+      "posted_on": "2026-07-20",
+      "job": "staff-rota"
+     },
+     {
+      "id": "c2",
+      "quote": "Sunday night, still moving names round a paper rota.",
+      "source_url": "https://cafes.example/t/42/1",
+      "watering_hole": "cafes.example",
+      "author": "corner_cup",
+      "posted_on": "2026-07-21",
+      "job": "staff-rota"
+     },
+     {
+      "id": "c3",
+      "quote": "I rebuild the rota spreadsheet every week because availability changes constantly.",
+      "source_url": "https://reddit.example/r/cafeowners/comments/c1",
+      "watering_hole": "r/cafeowners",
+      "author": "u/steamwand",
+      "posted_on": "2026-07-22",
+      "job": "staff-rota"
+     },
+     {
+      "id": "c4",
+      "quote": "Replying to @fin_tries's question: yes, rotas take me about 3 hours a week.",
+      "source_url": "https://reddit.example/r/cafeowners/comments/c9/reply1",
+      "watering_hole": "r/cafeowners",
+      "author": "u/flatwhite88",
+      "posted_on": "2026-07-23",
+      "job": "staff-rota"
+     },
+     {
+      "id": "c5",
+      "quote": "Replying to @fin_tries's question: rota changes are the worst part of my week.",
+      "source_url": "https://reddit.example/r/cafeowners/comments/c9/reply2",
+      "watering_hole": "r/cafeowners",
+      "author": "u/oatmilkonly",
+      "posted_on": "2026-07-23",
+      "job": "staff-rota"
+     },
+     {
+      "id": "c6",
+      "quote": "Lost a good barista because I kept scheduling her on days she'd said she couldn't do.",
+      "source_url": "https://cafes.example/t/43/5",
+      "watering_hole": "cafes.example",
+      "author": "tamper_tales",
+      "posted_on": "2026-07-24",
+      "job": "staff-rota"
+     }
+    ]
+   },
+   "expected": {
+    "flagged": [
+     "c4",
+     "c5"
+    ],
+    "verdict": "fail"
+   },
+   "note": "Six authors, but two answered the founder's own question, so they were prompted. Four remain."
+  }
+ ]
+}

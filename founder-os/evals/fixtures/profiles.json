@@ -1,0 +1,31 @@
+{
+  "set": "profiles",
+  "stage": 3,
+  "description": "Founder's notes on one prospect after a discovery call. Judge Steve Blank's five earlyvangelist criteria from what the notes show. Synthetic, written for these evals.",
+  "items": [
+    {"id": "prof-1", "input": "Call with Dana, office manager at a 12-person architecture firm. She books all client site visits herself and in the last month three visits clashed because two partners used different calendars; she called it 'the thing that eats my Mondays'. She built a shared spreadsheet with colour codes in March, and last week she trialled two scheduling tools and dropped both because they could not handle site addresses. The firm already pays 45 euros a month for one of them and she says the partners approved up to 100 a month if something works.",
+     "expected": {"has_problem": true, "knows_problem": true, "searching": true, "has_workaround": true, "has_budget": true, "earlyvangelist": true},
+     "note": "All five, each with a concrete act behind it."},
+    {"id": "prof-2", "input": "Call with Leo, a yoga teacher. Very excited about the idea, said it was 'exactly what the world needs' and that he'd definitely pay for it. When asked how he handles class bookings today, he said students just turn up and it mostly works out. He has not looked for any booking tool. He thinks other teachers struggle more than he does.",
+     "expected": {"has_problem": false, "knows_problem": false, "searching": false, "has_workaround": false, "has_budget": false, "earlyvangelist": false},
+     "note": "Enthusiasm and a promise to pay, with no problem in his own work."},
+    {"id": "prof-3", "input": "Call with Nuno, owner of two bike repair shops. Parts orders go missing about twice a month and a customer waited nine days for a brake part in August; he says it is his biggest headache. He keeps a WhatsApp group with his mechanics where every order is posted and ticked off. He asked three other shop owners at a trade fair in September what they use and signed up for a demo of an inventory tool next week. He has no budget set aside and says money is tight this year.",
+     "expected": {"has_problem": true, "knows_problem": true, "searching": true, "has_workaround": true, "has_budget": false, "earlyvangelist": true},
+     "note": "Four of five: no budget, but everything else is shown by what he did."},
+    {"id": "prof-4", "input": "Call with Irene, finance lead at a language school. The founder noticed during the call that her team re-types every enrolment form into the accounting system by hand. Irene shrugged and said that is just how it is done and it does not bother anyone. She has not considered changing it. The school has a software budget of several thousand euros a year, mostly spent on the learning platform.",
+     "expected": {"has_problem": true, "knows_problem": false, "searching": false, "has_workaround": false, "has_budget": true, "earlyvangelist": false},
+     "note": "The founder sees the problem; she does not. Budget alone does not make an earlyvangelist."},
+    {"id": "prof-5", "input": "Call with Filipe, a freelance translator. Late payments are a real issue for him: two agencies paid him more than 60 days late this year and he had to dip into savings in June. He tracks every invoice in a spreadsheet with a 'days overdue' column. He has not looked for any tool and says he will deal with it when he has time. He does not want to spend money on software.",
+     "expected": {"has_problem": true, "knows_problem": true, "searching": false, "has_workaround": true, "has_budget": false, "earlyvangelist": false},
+     "note": "Three of five: the pain and the workaround are real, but he is not looking and will not pay."},
+    {"id": "prof-6", "input": "Call with Beatriz, operations at a food truck collective of seven trucks. Stock runs out mid-service at least once a week; last Friday two trucks ran out of bread by 13:00. She wrote a small script that texts each truck owner a stock checklist at 10:00. She has emailed two suppliers asking about automatic reorder and has a call booked with a third. The collective pays a part-time assistant 400 euros a month mostly to chase stock, and she controls that budget.",
+     "expected": {"has_problem": true, "knows_problem": true, "searching": true, "has_workaround": true, "has_budget": true, "earlyvangelist": true},
+     "note": "All five, told flatly with no enthusiasm at all."},
+    {"id": "prof-7", "input": "Call with Hugo, who runs a small dental practice. Patients no-show about four times a week and he estimates it costs him 1,500 euros a month. He pays a receptionist for an extra hour each day to phone patients the day before. He says he might look for a better system next year once the renovation is done, but has not looked at anything yet. He knows he has the money to fix it.",
+     "expected": {"has_problem": true, "knows_problem": true, "searching": false, "has_workaround": true, "has_budget": true, "earlyvangelist": true},
+     "note": "Four of five: searching 'next year' is not searching, but the paid workaround shows budget."},
+    {"id": "prof-8", "input": "Call with Clara, a consultant who advises restaurants. She said her clients 'all' struggle with staff scheduling and that it is a huge market. She does not schedule staff herself and runs a two-person firm. She offered to mention the product in her newsletter once it exists.",
+     "expected": {"has_problem": false, "knows_problem": false, "searching": false, "has_workaround": false, "has_budget": false, "earlyvangelist": false},
+     "note": "Talks about other people's problem. Not her own, so none of the criteria are hers."}
+  ]
+}
