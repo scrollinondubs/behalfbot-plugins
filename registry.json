@@ -45,6 +45,12 @@
       "min_chassis_version": "0.2.0"
     },
     {
+      "name": "founder-os",
+      "path": "founder-os",
+      "description": "Gated coach for early-stage founders: a fixed sequence of stages from founder fit through audience, pain research, customer discovery, solution test, positioning, content, validation and traction, each ending in a gate that needs ledger evidence rather than self-report. Content is markdown in git (core cards the coach loads, opt-in community contrib); founder state lives in a ledger behind a storage interface. Scaffold release: layout and checks only, no skills yet.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
       "name": "image-generation",
       "path": "image-generation",
       "description": "Generate images from a text prompt through either a local ComfyUI running FLUX.1 (free, private, minutes) or a hosted image API (paid, seconds, better at text inside the image). One CLI, a flag to switch. Ships the ComfyUI workflow graph with a three-node-id contract so the graph can be swapped without touching the script. Credentials come from the environment only; the script never reads a secret off disk.",
