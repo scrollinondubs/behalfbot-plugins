@@ -40,12 +40,12 @@ It's the wrong card if the job sentence or the foothold is still open. Finish th
 
 ## Artifacts produced
 
-- A `prfaq` artifact at version 2, with the headline and opener built from the job and foothold.
+- A `prfaq_versions` row at version 2, with the headline and opener built from the job and foothold.
 - Quote references on v2 that point to `interview` records in the ledger.
 - An external FAQ where each question is tagged with the interview or test records it came from.
 - An internal FAQ with a confirmed, still-assumed, or dropped status on every answer.
 - A `prfaq_diff` artifact comparing v2 with v0.
-- The untouched `prfaq` v0, still in the ledger.
+- The untouched version 0 row in `prfaq_versions`, still in the ledger.
 
 ## Anti-patterns
 

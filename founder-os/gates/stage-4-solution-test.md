@@ -18,7 +18,6 @@ fail_routes_to: 4
 ## Required evidence
 
 - One `mvp_choice` artifact in `artifacts`. It needs one assumption, one MVP type, numeric pass and fail lines, a deadline and a reshaping list. Its first version must predate the `sprint_plan`.
-- One `prfaq_versions` row at stage 4 whose `assumptions` mark that assumption "under test" and link to the `mvp_choice`.
 - One `sprint_plan` artifact with a named Decider and three to six sprint questions. Each question cites an `interviews` id.
 - One `sprint_sketches` artifact showing at least two alternatives to the current flow, the winning flow and a keep/change/cut mark for every existing screen.
 - One `prototype` artifact with a build link and a reshape log.
