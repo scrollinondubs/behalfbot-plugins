@@ -1,0 +1,61 @@
+{
+  "name": "pain-tagger",
+  "version": "v2",
+  "task": "pain_tag",
+  "based_on": "new-jaxity docs/founderos/laya/pain-tagger-v1.json and the #603 results in docs/founderos/603-laya-pain-tagger.md",
+  "purpose": "Sales Safari pre-filter and pain-log check. Laya scores each post or pain quote; Claude reads only the top of the funnel and does the clustering.",
+  "changes_from_v1": [
+    "is_pain and money_or_workaround keep the v1 wording word for word, so v1 labels and v2 labels train the same questions.",
+    "Checkpoint by language. On English text is_pain runs on the english checkpoint (AUC 0.78 vs 0.53 on multilingual). money_or_workaround stays on multilingual for every language (AUC 0.84 vs 0.67 on english).",
+    "pain_category is no longer fixed. v1's seven categories described AI coding tools, one founder's watering hole, and scored at the majority-class baseline. The categories are now the founder's own job clusters, filled in at run time, and the answer is advisory.",
+    "intensity is kept but advisory: in #603 it answered 1 on 21 of 24 pain posts, which is majority-class behaviour.",
+    "Long text is chunked to fit the checkpoint's window and aggregated, never truncated."
+  ],
+  "checkpoint": {
+    "en": "english",
+    "default": "multilingual"
+  },
+  "questions": {
+    "is_pain": {
+      "type": "noul",
+      "instructions": "Does the author describe a problem, frustration or struggle that they personally have (not a general opinion, a product announcement, or advice to others)?",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": {
+        "english": "measured",
+        "multilingual": "chance"
+      }
+    },
+    "money_or_workaround": {
+      "type": "noul",
+      "instructions": "Does the author mention paying for something, switching or cancelling a tool, or a workaround or hack they built themselves?",
+      "checkpoint": {
+        "default": "multilingual"
+      },
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": {
+        "english": "weak",
+        "multilingual": "measured"
+      }
+    },
+    "intensity": {
+      "type": "score",
+      "instructions": "How intense is the author's pain or frustration?",
+      "criteria": [
+        "mild annoyance or curiosity",
+        "real recurring frustration",
+        "severe: angry, desperate, quitting or blocked"
+      ],
+      "aggregate": "max",
+      "trust": "advisory"
+    },
+    "pain_category": {
+      "type": "choice",
+      "instructions": "Which of these jobs is the author mainly struggling with?",
+      "criteria": "runtime:jobs",
+      "aggregate": "mean",
+      "trust": "advisory"
+    }
+  }
+}

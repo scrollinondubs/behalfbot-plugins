@@ -226,6 +226,54 @@ class LintContentTest(unittest.TestCase):
         self.write("tight.yml", "default: 0\n")
         self.assertEqual(lint_content.main(["--root", str(self.root), "--budget", str(self.root / "tight.yml")]), 1)
 
+    # --- auditor skills and Laya question sets -------------------------------
+
+    AUDITOR_SECTIONS = ("When to run", "Laya pass", "Claude pass", "Without Laya", "Label capture", "Ledger writes")
+
+    def add_auditor(self, name: str = "founder-os-audit-x", question_set: str = "x-set",
+                    gate: str | None = None, drop: str | None = None) -> None:
+        gate_line = f"gate: {gate}\n" if gate else ""
+        body = "".join(f"## {s}\n\nText.\n\n" for s in self.AUDITOR_SECTIONS if s != drop)
+        self.write(f"skills/{name}/SKILL.md",
+                   f"---\nname: {name}\ndescription: An auditor.\nplugin: behalfbot-founder-os\n"
+                   f"type: auditor-skill\nstage: 1\nquestion_set: {question_set}\n{gate_line}---\n\n"
+                   f"# Auditor\n\n{body}")
+
+    def add_question_set(self, stem: str = "x-set", **overrides: object) -> None:
+        import json
+        data = {"name": stem, "version": "v1", "task": "x", "checkpoint": {"default": "multilingual"},
+                "questions": {"q": {"type": "noul", "instructions": "Is it?"}}}
+        data.update(overrides)
+        self.write(f"laya/{stem}.json", json.dumps(data))
+
+    def test_auditor_skill_passes(self) -> None:
+        self.add_question_set()
+        self.add_auditor(gate="stage-1-audience")
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_auditor_skill_needs_an_existing_question_set(self) -> None:
+        self.add_auditor(question_set="nowhere")
+        self.assertOneProblem("question_set 'nowhere' is not a question set in laya/")
+
+    def test_auditor_skill_missing_section(self) -> None:
+        self.add_question_set()
+        self.add_auditor(drop="Without Laya")
+        self.assertOneProblem("## Without Laya")
+
+    def test_auditor_skill_names_missing_gate(self) -> None:
+        self.add_question_set()
+        self.add_auditor(gate="stage-1-nowhere")
+        self.assertOneProblem("names gate 'stage-1-nowhere'")
+
+    def test_question_set_name_must_match_file(self) -> None:
+        self.add_question_set("x-set", name="other")
+        self.assertOneProblem("does not match the file name")
+
+    def test_malformed_question_set(self) -> None:
+        self.add_question_set(checkpoint={"en": "gpt"})
+        problems = lint_content.lint(self.root)
+        self.assertTrue(problems and all("laya/x-set.json" in p for p in problems), problems)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

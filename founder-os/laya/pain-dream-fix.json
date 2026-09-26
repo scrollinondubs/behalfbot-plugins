@@ -1,0 +1,34 @@
+{
+  "name": "pain-dream-fix",
+  "version": "v1",
+  "task": "pain_dream_fix",
+  "purpose": "Per-paragraph check of an e-bomb, sales page or email against Pain-Dream-Fix (Amy Hoy, 30x500). Laya tags each paragraph; founder_audit/pain_dream_fix.py works out the order and flags premature pitching; Claude writes the feedback.",
+  "notes": [
+    "section is a three-way choice. pitches_product is a separate question because a paragraph can describe the reader's pain and still slip in the product.",
+    "No accuracy has been measured on this set yet."
+  ],
+  "checkpoint": {
+    "en": "english",
+    "default": "multilingual"
+  },
+  "questions": {
+    "section": {
+      "type": "choice",
+      "instructions": "What is this paragraph mainly doing for the reader?",
+      "criteria": {
+        "pain": "describes a problem, frustration or cost the reader has today, in their own terms",
+        "dream": "describes what the reader's work or life looks like once the problem is gone, without naming a product",
+        "fix": "presents a solution, product, feature, offer, price or call to action"
+      },
+      "aggregate": "mean",
+      "trust": "unmeasured"
+    },
+    "pitches_product": {
+      "type": "noul",
+      "instructions": "Does this paragraph mention or promote the writer's own product, service, feature or offer?",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    }
+  }
+}

@@ -17,9 +17,28 @@ founder's ledger, not the founder's say-so.
 | 8 | Traction and PMF | PMF score, a metric that moves |
 | 9 | Fundraise (optional) | Only if 7 and 8 justify it |
 
-Status: **foundations only.** The layout, the authoring templates and the
-ledger are in place. No cards, gates or skills ship yet. The epic is
+Status: **foundations plus the auditors.** The layout, the authoring
+templates, the ledger, the first stage 3 card and draft gate, and four auditor
+skills are in place. Stage coaching skills do not ship yet. The epic is
 [behalfbot-plugins#22](https://github.com/scrollinondubs/behalfbot-plugins/issues/22).
+
+## Auditors
+
+Laya does the per-item tagging. Claude confirms the tags and writes the
+feedback. Every tag a founder accepts or rejects becomes a fine-tuning label.
+
+| Skill | Question set | What it checks |
+|---|---|---|
+| `founder-os-mom-test-auditor` | `laya/mom-test.json` | Each interview turn: compliment, hypothetical, pitching, past behaviour, commitment (time, intro, money) |
+| `founder-os-pain-tagger` | `laya/pain-tagger.json` | Ranks watering-hole posts by pain; checks the founder's pain log |
+| `founder-os-earlyvangelist-qualifier` | `laya/earlyvangelist.json` | Blank's five criteria; escalates at 4 or more |
+| `founder-os-pain-dream-fix-checker` | `laya/pain-dream-fix.json` | Each paragraph as pain, dream or fix; flags premature pitching |
+
+Laya is optional. Set `LAYA_URL` (and `LAYA_API_KEY` if the server wants a
+bearer token) to a laya-serve or Ollaya instance. Without it, or when it is
+down or slow, each auditor returns `"mode": "claude-only"` and Claude does the
+tagging. How the auditors route checkpoints, chunk long text and capture labels
+is in [`docs/laya-auditors.md`](docs/laya-auditors.md).
 
 ## Content vs state
 
@@ -73,7 +92,12 @@ founder-os/
   contrib/               community cards, opt-in
   gates/                 gate specs and rubrics
   skills/                stage, auditor and coach SKILL.md files
-  laya/                  Laya question sets
+  laya/                  Laya question sets (JSON)
+  founder_audit/         Laya client, chunking and the auditors' Laya half
+  scripts/audit.py       run an auditor; the skills call it
+  scripts/labels.py      accept or reject Laya tags
+  scripts/record_audit.py  write Claude's verdict as an audits row
+  scripts/export_labels.py  the fine-tune set, operator-only
   templates/authoring/   templates for cards, concept notes, stage skills and gate specs
   templates/examples/    one filled example of each, linted like real content
   scripts/lint_content.py  content lint, run by validate.sh

@@ -1,15 +1,15 @@
 {
   "id": "behalfbot-founder-os",
   "name": "Behalf.bot - FounderOS",
-  "description": "A gated coach for early-stage founders. It walks a founder through a fixed sequence of stages, from why and founder fit through audience, pain research, discovery, solution test, positioning, content, validation and traction. Each stage ends in a gate that needs ledger evidence, not self-report. Content (framework cards, concept notes, stage skills, gate specs) is markdown in git; founder state lives in a ledger behind a storage interface. This release ships the layout, the authoring templates with a content lint, and the ledger schema with its storage interface (Postgres and SQLite adapters). No skills, cards or gates ship yet.",
-  "version": "0.1.0",
+  "description": "A gated coach for early-stage founders. It walks a founder through a fixed sequence of stages, from why and founder fit through audience, pain research, discovery, solution test, positioning, content, validation and traction. Each stage ends in a gate that needs ledger evidence, not self-report. Content (framework cards, concept notes, skills, gate specs, Laya question sets) is markdown and JSON in git; founder state lives in a ledger behind a storage interface. This release adds four auditor skills (Mom Test interview audit, pain tagger and pain-log check, earlyvangelist qualifier, Pain-Dream-Fix checker). Laya does the per-item tagging over its /v1/systemone endpoint, Claude writes the feedback, and every tag a founder accepts or rejects is kept as a fine-tuning label. Without Laya the auditors fall back to a Claude-only audit.",
+  "version": "0.2.0",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
       "enabled": {
         "type": "boolean",
-        "description": "Master switch. The plugin ships no skills yet, so enabling it does nothing beyond running setup.sh and validate.sh.",
+        "description": "Master switch. Enables the auditor skills and runs setup.sh and validate.sh. Stage coaching skills are not shipped yet.",
         "default": false
       },
       "include_contrib": {
@@ -44,7 +44,12 @@
   },
   "contracts": {
     "tools": [],
-    "skills": [],
+    "skills": [
+      "founder-os-mom-test-auditor",
+      "founder-os-pain-tagger",
+      "founder-os-earlyvangelist-qualifier",
+      "founder-os-pain-dream-fix-checker"
+    ],
     "hooks": [],
     "env": {
       "FOUNDER_OS_DIR": "${PLUGIN_DIR}",
@@ -56,7 +61,7 @@
   },
   "activation": {
     "onStartup": false,
-    "_note": "Scaffold release. Stage skills are invoked on demand once they ship; there are no scheduled jobs."
+    "_note": "Auditor skills are invoked on demand from a founder session; there are no scheduled jobs."
   },
   "dependencies": {
     "system": [
@@ -69,6 +74,11 @@
         "name": "psycopg",
         "install": "pip install psycopg==3.2.3 (already in the chassis image)",
         "_explanation": "Postgres driver for the ledger's Postgres adapter. The chassis image ships psycopg 3.2.3, so setup.sh only checks for it and never installs it. It is a soft dependency: without it the SQLite backend still works, and setup.sh warns instead of failing."
+      },
+      {
+        "name": "laya",
+        "install": "Optional. A laya-serve or Ollaya instance reachable over HTTP. Set LAYA_URL (e.g. http://laya:8000), and LAYA_API_KEY if the server requires a bearer token. LAYA_TIMEOUT sets seconds per request (default 20).",
+        "_explanation": "The auditors send per-item questions to Laya's /v1/systemone endpoint. It is a soft dependency: with LAYA_URL unset, or the server down or timing out, every auditor returns mode claude-only and Claude does the tagging. Nothing is installed or started from this plugin."
       }
     ]
   }
