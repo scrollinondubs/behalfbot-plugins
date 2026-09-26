@@ -47,7 +47,7 @@
     {
       "name": "founder-os",
       "path": "founder-os",
-      "description": "Gated coach for early-stage founders: a fixed sequence of stages from founder fit through audience, pain research, customer discovery, solution test, positioning, content, validation and traction, each ending in a gate that needs ledger evidence rather than self-report. Content is markdown in git (core cards the coach loads, opt-in community contrib); founder state lives in a ledger behind a storage interface (Postgres and SQLite adapters). Ships four auditor skills: Mom Test interview audit, pain tagger and pain-log check, earlyvangelist qualifier and Pain-Dream-Fix checker. Laya tags each item, Claude writes the feedback, reviewed tags become fine-tuning labels, and the auditors fall back to Claude-only when Laya is unavailable.",
+      "description": "Gated coach for early-stage founders: a fixed sequence of stages from founder fit through audience, pain research, customer discovery, solution test, positioning, content, validation and traction, each ending in a gate that needs ledger evidence rather than self-report. Content is markdown in git (core cards the coach loads, opt-in community contrib); founder state lives in a ledger behind a storage interface (Postgres and SQLite adapters). Ships stage 0-9 cards with draft gates, four Laya-assisted auditor skills with a Claude-only fallback, coach skills, and a founder bundle export/import CLI with an opt-in signed progress webhook.",
       "min_chassis_version": "0.2.0"
     },
     {
