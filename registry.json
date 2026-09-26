@@ -47,7 +47,7 @@
     {
       "name": "founder-os",
       "path": "founder-os",
-      "description": "Gated coach for early-stage founders: a fixed sequence of stages from founder fit through audience, pain research, customer discovery, solution test, positioning, content, validation and traction, each ending in a gate that needs ledger evidence rather than self-report. Content is markdown in git (core cards the coach loads, opt-in community contrib); founder state lives in a ledger behind a storage interface (Postgres and SQLite adapters). Ships stage 0-9 cards with draft gates, four Laya-assisted auditor skills with a Claude-only fallback, coach skills, and a founder bundle export/import CLI with an opt-in signed progress webhook.",
+      "description": "Gated coach for early-stage founders: a fixed sequence of stages from founder fit through audience, pain research, customer discovery, solution test, positioning, content, validation and traction, each ending in a gate that needs ledger evidence rather than self-report. Content is markdown in git (core cards the coach loads, opt-in community contrib); founder state lives in a ledger behind a storage interface (Postgres and SQLite adapters). Ships stage 0-9 cards with draft gates, ten stage skills that walk a founder to each gate against the ledger, concept notes, four Laya-assisted auditor skills with a Claude-only fallback, coach skills, an eval harness that scores skills and cards against plain Claude, and a founder bundle export/import CLI with an opt-in signed progress webhook.",
       "min_chassis_version": "0.2.0"
     },
     {
