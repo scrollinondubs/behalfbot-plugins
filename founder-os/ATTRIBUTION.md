@@ -14,6 +14,13 @@ merged.
 |---|---|---|---|---|
 | The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself` (stage 3) | https://www.momtestbook.com |
 | Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3) | https://www.cindyalvarez.com/lean-customer-development/ |
+| Sprint | Jake Knapp, John Zeratsky, Braden Kowitz | `sprint` | `sprint-test-your-app` (stage 4) | https://www.thesprintbook.com |
+| Running Lean (2nd edition, and the 1st edition as a cross-check) | Ash Maurya | `running-lean`, `running-lean-1st-ed` | `solution-interview-reduce-mvp` (stage 4) | https://ashmaurya.com/books |
+| The Innovator's Solution (checked against the How To ES complete summary, https://howtoes.blog/2025/07/05/the-innovators-solution-complete-book-summary-all-key-ideas/) | Clayton Christensen, Michael Raynor | `innovators-solution` | `job-and-foothold` (stage 5) | https://store.hbr.org/product/the-innovator-s-solution-with-a-new-foreword-creating-and-sustaining-successful-growth/10707 |
+| Know Your Customers' Jobs to Be Done (HBR, September 2016) | Clayton Christensen, Taddy Hall, Karen Dillon, David Duncan | `hbr-jobs-to-be-done` | `job-and-foothold` (stage 5) | https://hbr.org/2016/09/know-your-customers-jobs-to-be-done |
+| Jobs to Be Done theory | Christensen Institute | `christensen-institute-jtbd` | `job-and-foothold` (stage 5) | https://www.christenseninstitute.org/theory/jobs-to-be-done/ |
+| Working Backwards (PR/FAQ) | Colin Bryar, Bill Carr | `working-backwards` | `prfaq-v2` (stage 5) | https://www.workingbackwards.com |
+| Zero to One | Peter Thiel, Blake Masters | `zero-to-one` | `small-market-first` (stage 5) | https://zerotoonebook.com |
 
 ## Sources to come
 
@@ -23,7 +30,6 @@ merged.
 | The Four Steps to the Epiphany (Customer Development) | Steve Blank | 3, 7 |
 | Jobs to be Done / Competing Against Luck | Clayton Christensen | 2, 5 |
 | Badass: Making Users Awesome | Kathy Sierra | 4 |
-| Sprint (GV design sprint) | Jake Knapp, John Zeratsky, Braden Kowitz | 4 |
 | Working Backwards (PR/FAQ) | Colin Bryar, Bill Carr | 0, 5 |
 | Start With Why | Simon Sinek | 0 |
 | Business Model Canvas | Alexander Osterwalder | 3 |
