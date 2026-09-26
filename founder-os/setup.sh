@@ -20,4 +20,13 @@ else
   exit 1
 fi
 
+# psycopg is a soft dependency: only the Postgres ledger backend needs it, and
+# the chassis image already ships it. Never installed from here.
+if python3 -c 'import psycopg' >/dev/null 2>&1; then
+  echo "[founder-os] psycopg present ($(python3 -c 'import psycopg; print(psycopg.__version__)'))"
+else
+  echo "[founder-os] WARN: psycopg not importable. The Postgres ledger backend will not" >&2
+  echo "[founder-os]       work; set ledger_backend: sqlite or install psycopg==3.2.3." >&2
+fi
+
 echo "[founder-os] setup complete."

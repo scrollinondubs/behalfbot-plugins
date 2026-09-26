@@ -29,4 +29,6 @@ merged.
 - Cards are written in our own words. Quoting a source beyond a short, attributed
   phrase is a review blocker.
 - Every card lists its sources with a "read the original" link.
+- Use each source's own coined terms and never rename its mechanisms. Keeping
+  their names is what lets a founder find and buy the original.
 - A new source gets a row here in the same PR as the first card that uses it.
