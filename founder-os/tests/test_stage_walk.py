@@ -222,7 +222,7 @@ class StageWalk(unittest.TestCase):
         sub = self.stage("submit", "--founder-id", self.fid)
         self.assertFalse(sub["ready"])
         self.assertEqual(set(sub["missing"]), {"interviews>=10", "interviews:audited>=10",
-                                               "interviews:committed>=3", "interviews:earlyvangelist>=1",
+                                               "interviews:committed>=5", "interviews:earlyvangelist>=1",
                                                "artifacts/big_questions>=1"})
         self.rule_all(sub, verdict="fail")
         err = self.stage("decide", "--founder-id", self.fid, "--decision", "pass", "--rationale", "x", ok=False)
@@ -238,7 +238,7 @@ class StageWalk(unittest.TestCase):
         # Attempt 2: every minimum met and every check passed by Claude. Still no
         # pass until Sean signs off, and only the operator can sign.
         for n in range(8):
-            self.interview(f"florist-{n + 3}", SOLID, commitment="time" if n < 3 else "none", ev=(n == 0))
+            self.interview(f"florist-{n + 3}", SOLID, commitment="time" if n < 5 else "none", ev=(n == 0))
         self.artifact("big_questions", "which questions got answered, with interview ids")
         sub = self.stage("submit", "--founder-id", self.fid)
         self.assertTrue(sub["ready"], sub["missing"])

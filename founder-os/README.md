@@ -18,10 +18,9 @@ founder's ledger, not the founder's say-so.
 | 9 | Fundraise (optional) | Only if 7 and 8 justify it |
 
 Status: **a founder can be walked from stage 0 to a gate submission using
-only the plugin.** The stage 0-9 cards with draft gates, the ten stage skills,
+only the plugin.** The stage 0-9 cards and gates, the ten stage skills,
 concept notes, four auditor skills, the coach skills, the ledger, the founder
-bundle and the eval harness are in place. Gate minimums are drafts pending
-Sean's ruling. The epic is
+bundle and the eval harness are in place. Gate minimums were ruled by Sean on 2026-09-26. The epic is
 [behalfbot-plugins#22](https://github.com/scrollinondubs/behalfbot-plugins/issues/22).
 
 ## Stage skills and gates
