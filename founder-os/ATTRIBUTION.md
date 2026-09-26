@@ -8,13 +8,19 @@ This file is the plugin-wide index of those sources. It is a placeholder until
 the first cards land; each entry gets filled in when a card that uses it is
 merged.
 
+## Sources in use
+
+| Source | Author(s) | Source id | Cards | Read the original |
+|---|---|---|---|---|
+| The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself` (stage 3) | https://www.momtestbook.com |
+| Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3) | https://www.cindyalvarez.com/lean-customer-development/ |
+
 ## Sources to come
 
 | Source | Author(s) | Used in stages |
 |---|---|---|
 | 30x500 (Sales Safari, e-bombs, Pain-Dream-Fix) | Amy Hoy, Alex Hillman | 1, 2, 6 |
 | The Four Steps to the Epiphany (Customer Development) | Steve Blank | 3, 7 |
-| The Mom Test | Rob Fitzpatrick | 3 |
 | Jobs to be Done / Competing Against Luck | Clayton Christensen | 2, 5 |
 | Badass: Making Users Awesome | Kathy Sierra | 4 |
 | Sprint (GV design sprint) | Jake Knapp, John Zeratsky, Braden Kowitz | 4 |
