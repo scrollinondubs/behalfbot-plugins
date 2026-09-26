@@ -16,13 +16,13 @@ Pick one small group inside your audience that you can win outright, and write d
 
 ## When to use
 
-Stage 1, once you have a named audience and a few active watering holes. It turns "freelance bookkeepers" into "bookkeepers in the UK who run payroll for restaurants", plus the next two groups to go after.
+Stage 1, once you have a named audience and a few active [[watering-hole|watering holes]]. It turns "freelance bookkeepers" into "bookkeepers in the UK who run payroll for restaurants", plus the next two groups to go after.
 
-Wrong card if you can't name the audience yet. Go to *Audience first, product second*. Don't know where they talk? Run *Watering holes: find where they already talk* first. How you pitch your foothold to the market is stage 5.
+Wrong card if you can't name the audience yet. Go to *Audience first, product second*. Don't know where they talk? Run *Watering holes: find where they already talk* first. How you pitch your [[foothold]] to the market is stage 5.
 
 ## Principles
 
-- The bowling pin strategy, in Chris Dixon's version of Geoffrey Moore's idea from *Crossing the Chasm*: win one tight group completely, then use that win to knock over the groups next to it.
+- The [[bowling-pin|bowling pin]] strategy, in Chris Dixon's version of Geoffrey Moore's idea from *Crossing the Chasm*: win one tight group completely, then use that win to knock over the groups next to it.
 - A pin is a group whose members know each other. A list of people who happen to share a job title is not a pin.
 - Winning a small group outright beats being a minor option in a big one. Fifty users who all talk to each other are worth more than five hundred scattered strangers.
 - The first pin has to hurt enough to put up with a rough early product.

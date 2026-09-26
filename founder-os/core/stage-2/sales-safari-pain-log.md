@@ -16,7 +16,7 @@ Build a log of real pains, each one backed by something your audience wrote in p
 
 ## When to use
 
-Stage 2, once stage 1 has given you a named audience and at least three active watering holes. You read before you build, and before you talk to anyone.
+Stage 2, once stage 1 has given you a named audience and at least three active [[watering-hole|watering holes]]. You read before you build, and before you talk to anyone.
 
 Wrong card if you have no watering holes yet. Back to stage 1. Also wrong if the log is already thick and you want to know what it adds up to. That's *Cluster pains into jobs* and *Problem hypothesis and when you have heard enough*.
 

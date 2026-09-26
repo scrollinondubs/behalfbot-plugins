@@ -16,7 +16,7 @@ Earn an audience's trust by fixing their small problems in public and for free, 
 
 ## When to use
 
-Use it at stage 6. By then the ledger should hold a quote-backed pain log from Sales Safari, Hoy and Hillman's method for researching an audience. It should also hold the active watering holes from stage 1. Watering holes is their term for the places online where an audience already gathers.
+Use it at stage 6. By then the ledger should hold a quote-backed pain log from Sales Safari, Hoy and Hillman's method for researching an audience. It should also hold the active [[watering-hole|watering holes]] from stage 1. Watering holes is their term for the places online where an audience already gathers.
 
 It is the wrong card if the pain log is thin or built from your own guesses. Go back to the stage 2 card 'Sales Safari: a quote-backed pain log' and read more threads first. If you are drafting a sales page, use 'Pain-Dream-Fix: the page that sells' instead.
 

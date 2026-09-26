@@ -12,7 +12,7 @@ sources: [zero-to-one]
 
 ## Purpose
 
-Test that your foothold segment is small enough to win outright. Then write down where you go once you have won it.
+Test that your [[foothold]] segment is small enough to win outright. Then write down where you go once you have won it.
 
 ## When to use
 

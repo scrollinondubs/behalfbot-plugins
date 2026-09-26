@@ -12,7 +12,7 @@ sources: [innovators-solution, hbr-jobs-to-be-done, christensen-institute-jtbd]
 
 ## Purpose
 
-Leave stage 5 with two things. One sentence that says what people hire your product for, using the Jobs to be Done idea from Christensen, Hall, Dillon and Duncan. And one first segment where you can win before any large player bothers to push back.
+Leave stage 5 with two things. One sentence that says what people hire your product for, using the [[job-to-be-done|Jobs to be Done]] idea from Christensen, Hall, Dillon and Duncan. And one first segment where you can win before any large player bothers to push back.
 
 ## When to use
 
@@ -24,7 +24,7 @@ It is the wrong card if stage 4 left no clear winner. Run another test instead o
 
 - A job sentence starts from a situation and the change someone wants out of it. Who they are comes second.
 - Know which door you are walking through. In The Innovator's Solution, Christensen and Raynor split disruptive innovation into low-end disruption, where overshot customers (a bookkeeper paying for a full accounting suite to categorise bank feeds) switch to something good enough and cheaper, and new-market disruption. That second door competes with nonconsumption: the landlord with three flats who logs repairs in text threads because property software is priced for firms with 200 units.
-- A foothold only holds if the big players would rather give that segment up than defend it.
+- A [[foothold]] only holds if the big players would rather give that segment up than defend it.
 - The list of what you refuse is part of your position. Without it, you have no position.
 - Your first segment can be tiny. It is where you start, not the whole market.
 
@@ -38,7 +38,7 @@ It is the wrong card if stage 4 left no clear winner. Run another test instead o
 
 4. **Test whether incumbents care.** List each serious incumbent. For each one, write down whether they would work to keep your segment or be glad to lose it because of low margins, heavy support or small contracts. If your offer is a better version of what any one incumbent sells to its best accounts, that incumbent will fight. Pick another foothold. Show: a table with three columns: incumbent, would they defend it, and why.
 
-5. **Name the segment.** Describe it by circumstance first and by a group you can actually find second. Then compare it with your stage 1 bowling-pin segment. The foothold may narrow that pin or replace it. Show: the segment in one line, plus a note on how it relates to the stage 1 pin.
+5. **Name the segment.** Describe it by circumstance first and by a group you can actually find second. Then compare it with your stage 1 [[bowling-pin]] segment. The foothold may narrow that pin or replace it. Show: the segment in one line, plus a note on how it relates to the stage 1 pin.
 
 6. **Write what it is not for.** List three to five customers or uses you will turn away for now. Show: the list, with a reason next to each entry.
 

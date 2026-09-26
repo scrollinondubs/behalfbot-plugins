@@ -23,7 +23,7 @@ It is the wrong card if you do not yet know who to talk to. That is stage 2 work
 ## Principles
 
 - Rob Fitzpatrick calls it the Mom Test: ask questions that someone who loves you can't answer with a kind lie, because they're about the person's life, not your idea.
-- Past behaviour counts as evidence. Predictions about next month do not.
+- [[past-behaviour-not-opinions|Past behaviour]] counts as evidence. Predictions about next month do not.
 - What someone already pays for a workaround tells you more than any price they name for your product.
 - A feature request is a clue to a motive. Chase the motive.
 - A conversation that ends with no concrete next step taught you less than it felt like it did.
@@ -62,7 +62,7 @@ It is the wrong card if you do not yet know who to talk to. That is stage 2 work
 
 ## Gate criteria
 
-The `stage-3-discovery` gate asks for audited interviews, commitment signals and earlyvangelists identified. This card supplies the first: interview records where compliments are struck, fluff and leading-question answers are flagged, facts carry dates, and each record names its next step or says none was offered. Those recorded next steps feed the other two items, which are judged with *Earlyvangelist criteria and commitment signals*.
+The `stage-3-discovery` gate asks for audited interviews, [[commitment-signal|commitment signals]] and [[earlyvangelist|earlyvangelists]] identified. This card supplies the first: interview records where compliments are struck, fluff and leading-question answers are flagged, facts carry dates, and each record names its next step or says none was offered. Those recorded next steps feed the other two items, which are judged with *Earlyvangelist criteria and commitment signals*.
 
 ## Sources
 

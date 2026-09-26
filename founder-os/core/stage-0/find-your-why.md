@@ -25,7 +25,7 @@ Wrong card if you already have a why with dated evidence behind it. Go to *PR/FA
 - Simon Sinek's golden circle has three rings: why, how, what. FounderOS uses it as a founder-fit check and nothing more.
 - Sinek's rule, Start With Why, means the belief comes first and the product comes after. At stage 0 the founder does not have a product yet, so the belief is all there is to test.
 - Revenue is something you hope to get. It is not a reason, so a why that mentions money or a market size has not been written yet.
-- Believe your history over your pitch. Past behaviour is evidence. How excited you feel today is not.
+- Believe your history over your pitch. [[past-behaviour-not-opinions|Past behaviour]] is evidence. How excited you feel today is not.
 - A why that sits comfortably next to any problem or any audience is too loose to guide anything.
 
 ## Procedure

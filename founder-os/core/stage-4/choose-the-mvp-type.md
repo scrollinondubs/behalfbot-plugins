@@ -12,7 +12,7 @@ sources: [lean-customer-development]
 
 ## Purpose
 
-Your riskiest assumption is really a question you haven't asked yet. This card picks the cheapest test that can answer it and fixes the kill result on paper before anyone sees the test.
+Your [[riskiest-assumption|riskiest assumption]] is really a question you haven't asked yet. This card picks the cheapest test that can answer it and fixes the kill result on paper before anyone sees the test.
 
 Say you spent a weekend building a booking tool for dog groomers. You can strip that code down, fake parts of it or put a price on it. If you ship it unchanged, you learn nothing.
 

@@ -12,7 +12,7 @@ sources: [thirty-x-500, lean-customer-development]
 
 ## Purpose
 
-Say you plan to sell to freelance bookkeepers who serve restaurants. This card ends with the subreddits, Slack groups and review pages where those bookkeepers already complain to each other about month-end close, with no founder in the room. In their 30x500 course, Amy Hoy and Alex Hillman name such spots watering holes. You leave with three or more, each confirmed as lively and relevant, with the evidence written down.
+Say you plan to sell to freelance bookkeepers who serve restaurants. This card ends with the subreddits, Slack groups and review pages where those bookkeepers already complain to each other about month-end close, with no founder in the room. In their 30x500 course, Amy Hoy and Alex Hillman name such spots [[watering-hole|watering holes]]. You leave with three or more, each confirmed as lively and relevant, with the evidence written down.
 
 ## When to use
 
@@ -58,7 +58,7 @@ Wrong card if the audience is still "small businesses" or "creators". Narrow it 
 
 ## Gate criteria
 
-The `stage-1-audience` gate needs a named audience, three or more active watering holes, and a first bowling-pin segment. This card supplies the watering holes: at least three ledger entries marked keep, each with a URL, an activity note dated within the last 30 days showing member-to-member replies, and a reason it is on topic. The named audience comes from *Audience first, product second*, and the segment from *First bowling-pin segment*.
+The `stage-1-audience` gate needs a named audience, three or more active watering holes, and a first [[bowling-pin]] segment. This card supplies the watering holes: at least three ledger entries marked keep, each with a URL, an activity note dated within the last 30 days showing member-to-member replies, and a reason it is on topic. The named audience comes from *Audience first, product second*, and the segment from *First bowling-pin segment*.
 
 ## Sources
 
