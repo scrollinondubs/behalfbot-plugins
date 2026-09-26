@@ -18,8 +18,9 @@
         evals/results/<run-id>.md (the table). Commit all three, wins and
         null results alike.
 
-    run_evals.py report --run-id RUN
-        Rewrite the markdown from a results file.
+    run_evals.py report --run-id RUN [--notes "..."]
+        Re-score from RUN.calls.jsonl and rewrite RUN.json and RUN.md. Use it
+        after a change to the scoring or summary code; it makes no model calls.
 
 Manual only: it costs money and needs a logged-in claude CLI. CI never runs it.
 """
@@ -69,7 +70,7 @@ def cmd_live(args) -> int:
     sets = args.sets.split(",") if args.sets else None
     out = runner.run(subject_list, model, repeats=args.repeats, jobs=args.jobs, laya_url=args.laya_url,
                      sets=sets, log=lambda s: print(s, flush=True))
-    models = sorted({c["model"] for c in out["calls"] if c["model"]})
+    models = sorted({m for c in out["calls"] if c["model"] for m in c["model"].split(",")})
     results = runner.summarise(out["calls"], subject_list, run_id=args.run_id, mode="live",
                                model=", ".join(models) or args.model, repeats=args.repeats,
                                laya=args.laya_url and "laya 0.3.20 via Router.predict", notes=args.notes or "")
@@ -85,7 +86,16 @@ def cmd_live(args) -> int:
 
 
 def cmd_report(args) -> int:
-    results = json.loads((RESULTS / f"{args.run_id}.json").read_text(encoding="utf-8"))
+    old = json.loads((RESULTS / f"{args.run_id}.json").read_text(encoding="utf-8"))
+    calls = [json.loads(line) for line in
+             (RESULTS / f"{args.run_id}.calls.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    subject_list = subjects(laya=any(s.get("laya") for s in old["subjects"].values()))
+    results = runner.summarise(calls, subject_list, run_id=old["run_id"], mode=old["mode"], model=old["model"],
+                               repeats=old["repeats"], laya=old["laya"],
+                               notes=args.notes if args.notes is not None else old.get("notes", ""))
+    results["date"] = old["date"]
+    (RESULTS / f"{args.run_id}.json").write_text(json.dumps(results, indent=1, ensure_ascii=False) + "\n",
+                                                 encoding="utf-8")
     (RESULTS / f"{args.run_id}.md").write_text(runner.markdown(results), encoding="utf-8")
     print(runner.markdown(results))
     return 0
@@ -110,6 +120,7 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(func=cmd_live)
     p = sub.add_parser("report")
     p.add_argument("--run-id", required=True)
+    p.add_argument("--notes")
     p.set_defaults(func=cmd_report)
     args = ap.parse_args(argv)
     return args.func(args)

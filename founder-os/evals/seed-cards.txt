@@ -23,7 +23,6 @@ job-and-foothold
 one-metric-that-matters
 pain-dream-fix
 pitch-traction-team-social-proof
-plan-a-riskiest-assumption
 prfaq-v0
 prfaq-v2
 problem-hypothesis-heard-enough

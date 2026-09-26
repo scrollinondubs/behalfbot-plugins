@@ -196,7 +196,38 @@ class MockedRunTest(unittest.TestCase):
         out = runner.run(subs, broken, repeats=1, jobs=2)
         self.assertTrue(all(c["score"] == 0.0 and c["error"] for c in out["calls"]))
         res = runner.summarise(out["calls"], subs, run_id="mock", mode="mock", model="mock", repeats=1, laya=None)
-        self.assertEqual(res["baselines"]["audiences"]["parse_failures"], 6)
+        self.assertEqual(set(res["subjects"]), {s.id for s in subs})
+        for s in res["subjects"].values():
+            self.assertEqual((s["verdict"], s["errors"]), ("incomplete", 6))
+
+    def test_errored_calls_leave_the_score_not_the_record(self):
+        subs = [s for s in subjects() if s.id == "card:audience-first"]
+        first = {}
+
+        def flaky(system, user):
+            if system != BASE_SYSTEM and not first:
+                first["done"] = True
+                raise RuntimeError("API usage limit")
+            return {"text": json.dumps(self.key[user]), "model": "mock", "cost_usd": 0.0}
+
+        out = runner.run(subs, flaky, repeats=1, jobs=1)
+        res = runner.summarise(out["calls"], subs, run_id="mock", mode="mock", model="mock", repeats=1, laya=None)
+        s = res["subjects"]["card:audience-first"]
+        self.assertEqual((s["errors"], s["n_calls"], s["n_items"], s["verdict"]), (1, 5, 5, "null"))
+        self.assertIn("(1 errored)", runner.markdown(res))
+
+    def test_unparseable_answers_score_zero(self):
+        subs = [s for s in subjects() if s.id == "card:audience-first"]
+
+        def rambling(system, user):
+            if system == BASE_SYSTEM:
+                return {"text": json.dumps(self.key[user]), "model": "mock", "cost_usd": 0.0}
+            return {"text": "I would rather not answer in JSON.", "model": "mock", "cost_usd": 0.0}
+
+        out = runner.run(subs, rambling, repeats=1, jobs=2)
+        res = runner.summarise(out["calls"], subs, run_id="mock", mode="mock", model="mock", repeats=1, laya=None)
+        s = res["subjects"]["card:audience-first"]
+        self.assertEqual((s["score"], s["parse_failures"], s["verdict"]), (0.0, 6, "loss"))
 
     def test_lint_reads_the_result(self):
         tmp = tempfile.TemporaryDirectory()
@@ -239,7 +270,8 @@ class PublishedResultsTest(unittest.TestCase):
                 stages = {s["stage"] for s in run["subjects"].values() if s["kind"] == "stage"}
                 self.assertTrue({0, 1, 2, 3} <= stages)
                 for sid, s in run["subjects"].items():
-                    self.assertEqual(s["verdict"], runner.decide(s["delta"]), sid)
+                    if s["verdict"] != "incomplete":
+                        self.assertEqual(s["verdict"], runner.decide(s["delta"]), sid)
                 calls = (RESULTS / f"{run['run_id']}.calls.jsonl").read_text(encoding="utf-8").splitlines()
                 self.assertEqual(len(calls), run["calls"])
 

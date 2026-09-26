@@ -1,0 +1,718 @@
+{
+ "run_id": "2026-09-26-live",
+ "mode": "live",
+ "date": "2026-09-26",
+ "model": "sonnet alias via claude -p 2.1.283 (modelUsage reported claude-sonnet-5 on every answered call, plus claude-fable-5-1 on 298 of them)",
+ "laya": "laya 0.3.20 via Router.predict",
+ "repeats": 2,
+ "decision_rule": {
+  "win_margin": 0.05,
+  "rule": "win if mean score minus plain Claude's is at least the margin, loss if it is at most minus the margin, null otherwise"
+ },
+ "notes": "Fixtures and expected labels were written by the same author as the stage skills, before this run, and were not changed after it.\n\nPlain Claude scored 1.0 on three of the six sets (interviews, profiles, pain logs). The task text spells out the definitions, and on these synthetic items that is enough. Those sets have no headroom, so every subject on them can only tie or lose; they need harder or more ambiguous items before they can show a win.\n\nThe three wins rest on thin ground. The stage 0 card and skill won only on 'riskiest', the most judgment-heavy label in the fixtures: they got as-1 and as-4 right where plain Claude did not, and lost as-5 (picked the pricing assumption e4 over client acceptance e3). The stage 1 skill won on one item, au-2, where plain Claude and the audience-first card both called a reachable Lisbon bookkeeper pin not narrower.\n\nThe only miss by the Mom Test auditor and the stage 3 skill was int-5 in one repeat: they counted the closing turn (a booked screen-share) as a second fact and gave pass instead of flag. The Laya earlyvangelist arm marked has_budget false on prof-4, where the notes say the school has a software budget; the question set asks whether the person spends on this problem, so the label there is arguable.\n\nThe two errored calls are stage 3 skill calls on int-8. The API refused both with a usage-limit error at the end of the run (the API key's limit was reached; it resets 2026-10-01). They are counted and left out of the scores. The +laya subjects used a local Laya 0.3.20 (english and multilingual checkpoints) behind a throwaway /v1/systemone wrapper around Router.predict; no subject's verdict differed with Laya on or off.",
+ "baselines": {
+  "assumptions": {
+   "score": 0.7,
+   "n_calls": 10,
+   "parse_failures": 0,
+   "errors": 0
+  },
+  "audiences": {
+   "score": 0.8889,
+   "n_calls": 12,
+   "parse_failures": 0,
+   "errors": 0
+  },
+  "ebombs": {
+   "score": 0.974,
+   "n_calls": 12,
+   "parse_failures": 0,
+   "errors": 0
+  },
+  "interviews": {
+   "score": 1.0,
+   "n_calls": 16,
+   "parse_failures": 0,
+   "errors": 0
+  },
+  "pain-logs": {
+   "score": 1.0,
+   "n_calls": 12,
+   "parse_failures": 0,
+   "errors": 0
+  },
+  "profiles": {
+   "score": 1.0,
+   "n_calls": 16,
+   "parse_failures": 0,
+   "errors": 0
+  }
+ },
+ "subjects": {
+  "skill:founder-os-mom-test-auditor": {
+   "kind": "auditor",
+   "fixture_set": "interviews",
+   "stage": 3,
+   "laya": false,
+   "n_items": 8,
+   "repeats": 2,
+   "n_calls": 16,
+   "score": 0.9833,
+   "baseline": 1.0,
+   "delta": -0.0167,
+   "delta_per_repeat": [
+    0.0,
+    -0.0333
+   ],
+   "items_better": 0,
+   "items_worse": 1,
+   "parts": {
+    "commitment": 1.0,
+    "fact_turns": 0.9792,
+    "pitched_before_first_fact": 1.0,
+    "struck_turns": 1.0,
+    "verdict": 0.9375
+   },
+   "baseline_parts": {
+    "commitment": 1.0,
+    "fact_turns": 1.0,
+    "pitched_before_first_fact": 1.0,
+    "struck_turns": 1.0,
+    "verdict": 1.0
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "skills/founder-os-mom-test-auditor/SKILL.md",
+    "laya/mom-test.json"
+   ],
+   "verdict": "null"
+  },
+  "skill:founder-os-earlyvangelist-qualifier": {
+   "kind": "auditor",
+   "fixture_set": "profiles",
+   "stage": 3,
+   "laya": false,
+   "n_items": 8,
+   "repeats": 2,
+   "n_calls": 16,
+   "score": 1.0,
+   "baseline": 1.0,
+   "delta": 0.0,
+   "delta_per_repeat": [
+    0.0,
+    0.0
+   ],
+   "items_better": 0,
+   "items_worse": 0,
+   "parts": {
+    "criteria": 1.0,
+    "earlyvangelist": 1.0
+   },
+   "baseline_parts": {
+    "criteria": 1.0,
+    "earlyvangelist": 1.0
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "skills/founder-os-earlyvangelist-qualifier/SKILL.md",
+    "laya/earlyvangelist.json"
+   ],
+   "verdict": "null"
+  },
+  "skill:founder-os-pain-tagger": {
+   "kind": "auditor",
+   "fixture_set": "pain-logs",
+   "stage": 2,
+   "laya": false,
+   "n_items": 6,
+   "repeats": 2,
+   "n_calls": 12,
+   "score": 1.0,
+   "baseline": 1.0,
+   "delta": 0.0,
+   "delta_per_repeat": [
+    0.0,
+    0.0
+   ],
+   "items_better": 0,
+   "items_worse": 0,
+   "parts": {
+    "flagged": 1.0,
+    "verdict": 1.0
+   },
+   "baseline_parts": {
+    "flagged": 1.0,
+    "verdict": 1.0
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "skills/founder-os-pain-tagger/SKILL.md",
+    "laya/pain-tagger.json"
+   ],
+   "verdict": "null"
+  },
+  "skill:founder-os-pain-dream-fix-checker": {
+   "kind": "auditor",
+   "fixture_set": "ebombs",
+   "stage": 6,
+   "laya": false,
+   "n_items": 6,
+   "repeats": 2,
+   "n_calls": 12,
+   "score": 1.0,
+   "baseline": 0.974,
+   "delta": 0.026,
+   "delta_per_repeat": [
+    0.0521,
+    0.0
+   ],
+   "items_better": 1,
+   "items_worse": 0,
+   "parts": {
+    "fix_before_dream": 1.0,
+    "premature_pitch": 1.0,
+    "product_paragraphs": 1.0,
+    "sections": 1.0
+   },
+   "baseline_parts": {
+    "fix_before_dream": 0.9167,
+    "premature_pitch": 1.0,
+    "product_paragraphs": 1.0,
+    "sections": 0.9792
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "skills/founder-os-pain-dream-fix-checker/SKILL.md",
+    "laya/pain-dream-fix.json"
+   ],
+   "verdict": "null"
+  },
+  "skill:founder-os-mom-test-auditor+laya": {
+   "kind": "auditor",
+   "fixture_set": "interviews",
+   "stage": 3,
+   "laya": true,
+   "n_items": 8,
+   "repeats": 2,
+   "n_calls": 16,
+   "score": 0.9833,
+   "baseline": 1.0,
+   "delta": -0.0167,
+   "delta_per_repeat": [
+    0.0,
+    -0.0333
+   ],
+   "items_better": 0,
+   "items_worse": 1,
+   "parts": {
+    "commitment": 1.0,
+    "fact_turns": 0.9792,
+    "pitched_before_first_fact": 1.0,
+    "struck_turns": 1.0,
+    "verdict": 0.9375
+   },
+   "baseline_parts": {
+    "commitment": 1.0,
+    "fact_turns": 1.0,
+    "pitched_before_first_fact": 1.0,
+    "struck_turns": 1.0,
+    "verdict": 1.0
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "skills/founder-os-mom-test-auditor/SKILL.md",
+    "laya/mom-test.json"
+   ],
+   "verdict": "null"
+  },
+  "skill:founder-os-earlyvangelist-qualifier+laya": {
+   "kind": "auditor",
+   "fixture_set": "profiles",
+   "stage": 3,
+   "laya": true,
+   "n_items": 8,
+   "repeats": 2,
+   "n_calls": 16,
+   "score": 0.9875,
+   "baseline": 1.0,
+   "delta": -0.0125,
+   "delta_per_repeat": [
+    -0.0125,
+    -0.0125
+   ],
+   "items_better": 0,
+   "items_worse": 1,
+   "parts": {
+    "criteria": 0.975,
+    "earlyvangelist": 1.0
+   },
+   "baseline_parts": {
+    "criteria": 1.0,
+    "earlyvangelist": 1.0
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "skills/founder-os-earlyvangelist-qualifier/SKILL.md",
+    "laya/earlyvangelist.json"
+   ],
+   "verdict": "null"
+  },
+  "skill:founder-os-pain-tagger+laya": {
+   "kind": "auditor",
+   "fixture_set": "pain-logs",
+   "stage": 2,
+   "laya": true,
+   "n_items": 6,
+   "repeats": 2,
+   "n_calls": 12,
+   "score": 1.0,
+   "baseline": 1.0,
+   "delta": 0.0,
+   "delta_per_repeat": [
+    0.0,
+    0.0
+   ],
+   "items_better": 0,
+   "items_worse": 0,
+   "parts": {
+    "flagged": 1.0,
+    "verdict": 1.0
+   },
+   "baseline_parts": {
+    "flagged": 1.0,
+    "verdict": 1.0
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "skills/founder-os-pain-tagger/SKILL.md",
+    "laya/pain-tagger.json"
+   ],
+   "verdict": "null"
+  },
+  "skill:founder-os-pain-dream-fix-checker+laya": {
+   "kind": "auditor",
+   "fixture_set": "ebombs",
+   "stage": 6,
+   "laya": true,
+   "n_items": 6,
+   "repeats": 2,
+   "n_calls": 12,
+   "score": 1.0,
+   "baseline": 0.974,
+   "delta": 0.026,
+   "delta_per_repeat": [
+    0.0521,
+    0.0
+   ],
+   "items_better": 1,
+   "items_worse": 0,
+   "parts": {
+    "fix_before_dream": 1.0,
+    "premature_pitch": 1.0,
+    "product_paragraphs": 1.0,
+    "sections": 1.0
+   },
+   "baseline_parts": {
+    "fix_before_dream": 0.9167,
+    "premature_pitch": 1.0,
+    "product_paragraphs": 1.0,
+    "sections": 0.9792
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "skills/founder-os-pain-dream-fix-checker/SKILL.md",
+    "laya/pain-dream-fix.json"
+   ],
+   "verdict": "null"
+  },
+  "card:plan-a-riskiest-assumption": {
+   "kind": "card",
+   "fixture_set": "assumptions",
+   "stage": 0,
+   "laya": false,
+   "n_items": 5,
+   "repeats": 2,
+   "n_calls": 10,
+   "score": 0.8,
+   "baseline": 0.7,
+   "delta": 0.1,
+   "delta_per_repeat": [
+    0.1,
+    0.1
+   ],
+   "items_better": 2,
+   "items_worse": 1,
+   "parts": {
+    "falsifiable": 1.0,
+    "riskiest": 0.6
+   },
+   "baseline_parts": {
+    "falsifiable": 1.0,
+    "riskiest": 0.4
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "core/stage-0/plan-a-riskiest-assumption.md",
+    "core/concepts/riskiest-assumption.md"
+   ],
+   "verdict": "win"
+  },
+  "card:audience-first": {
+   "kind": "card",
+   "fixture_set": "audiences",
+   "stage": 1,
+   "laya": false,
+   "n_items": 6,
+   "repeats": 2,
+   "n_calls": 12,
+   "score": 0.8889,
+   "baseline": 0.8889,
+   "delta": 0.0,
+   "delta_per_repeat": [
+    0.0,
+    0.0
+   ],
+   "items_better": 0,
+   "items_worse": 0,
+   "parts": {
+    "audience_is_people": 1.0,
+    "pin_is_narrower": 0.8333,
+    "verdict": 0.8333
+   },
+   "baseline_parts": {
+    "audience_is_people": 1.0,
+    "pin_is_narrower": 0.8333,
+    "verdict": 0.8333
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "core/stage-1/audience-first.md",
+    "core/concepts/bowling-pin.md",
+    "core/concepts/watering-hole.md"
+   ],
+   "verdict": "null"
+  },
+  "card:sales-safari-pain-log": {
+   "kind": "card",
+   "fixture_set": "pain-logs",
+   "stage": 2,
+   "laya": false,
+   "n_items": 6,
+   "repeats": 2,
+   "n_calls": 12,
+   "score": 1.0,
+   "baseline": 1.0,
+   "delta": 0.0,
+   "delta_per_repeat": [
+    0.0,
+    0.0
+   ],
+   "items_better": 0,
+   "items_worse": 0,
+   "parts": {
+    "flagged": 1.0,
+    "verdict": 1.0
+   },
+   "baseline_parts": {
+    "flagged": 1.0,
+    "verdict": 1.0
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "core/stage-2/sales-safari-pain-log.md",
+    "core/concepts/watering-hole.md"
+   ],
+   "verdict": "null"
+  },
+  "card:interviews-without-fooling-yourself": {
+   "kind": "card",
+   "fixture_set": "interviews",
+   "stage": 3,
+   "laya": false,
+   "n_items": 8,
+   "repeats": 2,
+   "n_calls": 16,
+   "score": 1.0,
+   "baseline": 1.0,
+   "delta": 0.0,
+   "delta_per_repeat": [
+    0.0,
+    0.0
+   ],
+   "items_better": 0,
+   "items_worse": 0,
+   "parts": {
+    "commitment": 1.0,
+    "fact_turns": 1.0,
+    "pitched_before_first_fact": 1.0,
+    "struck_turns": 1.0,
+    "verdict": 1.0
+   },
+   "baseline_parts": {
+    "commitment": 1.0,
+    "fact_turns": 1.0,
+    "pitched_before_first_fact": 1.0,
+    "struck_turns": 1.0,
+    "verdict": 1.0
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "core/stage-3/interviews-without-fooling-yourself.md",
+    "core/concepts/commitment-signal.md",
+    "core/concepts/earlyvangelist.md",
+    "core/concepts/past-behaviour-not-opinions.md"
+   ],
+   "verdict": "null"
+  },
+  "card:earlyvangelists-and-commitment": {
+   "kind": "card",
+   "fixture_set": "profiles",
+   "stage": 3,
+   "laya": false,
+   "n_items": 8,
+   "repeats": 2,
+   "n_calls": 16,
+   "score": 1.0,
+   "baseline": 1.0,
+   "delta": 0.0,
+   "delta_per_repeat": [
+    0.0,
+    0.0
+   ],
+   "items_better": 0,
+   "items_worse": 0,
+   "parts": {
+    "criteria": 1.0,
+    "earlyvangelist": 1.0
+   },
+   "baseline_parts": {
+    "criteria": 1.0,
+    "earlyvangelist": 1.0
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "core/stage-3/earlyvangelists-and-commitment.md",
+    "core/concepts/commitment-signal.md",
+    "core/concepts/earlyvangelist.md"
+   ],
+   "verdict": "null"
+  },
+  "card:pain-dream-fix": {
+   "kind": "card",
+   "fixture_set": "ebombs",
+   "stage": 6,
+   "laya": false,
+   "n_items": 6,
+   "repeats": 2,
+   "n_calls": 12,
+   "score": 0.974,
+   "baseline": 0.974,
+   "delta": 0.0,
+   "delta_per_repeat": [
+    0.0521,
+    -0.0521
+   ],
+   "items_better": 0,
+   "items_worse": 0,
+   "parts": {
+    "fix_before_dream": 0.9167,
+    "premature_pitch": 1.0,
+    "product_paragraphs": 1.0,
+    "sections": 0.9792
+   },
+   "baseline_parts": {
+    "fix_before_dream": 0.9167,
+    "premature_pitch": 1.0,
+    "product_paragraphs": 1.0,
+    "sections": 0.9792
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "core/stage-6/pain-dream-fix.md"
+   ],
+   "verdict": "null"
+  },
+  "skill:founder-os-stage-0-why": {
+   "kind": "stage",
+   "fixture_set": "assumptions",
+   "stage": 0,
+   "laya": false,
+   "n_items": 5,
+   "repeats": 2,
+   "n_calls": 10,
+   "score": 0.8,
+   "baseline": 0.7,
+   "delta": 0.1,
+   "delta_per_repeat": [
+    0.1,
+    0.1
+   ],
+   "items_better": 2,
+   "items_worse": 1,
+   "parts": {
+    "falsifiable": 1.0,
+    "riskiest": 0.6
+   },
+   "baseline_parts": {
+    "falsifiable": 1.0,
+    "riskiest": 0.4
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "skills/founder-os-stage-0-why/SKILL.md",
+    "core/stage-0/find-your-why.md",
+    "core/stage-0/plan-a-riskiest-assumption.md",
+    "core/stage-0/prfaq-v0.md",
+    "core/concepts/evidence-not-self-report.md",
+    "core/concepts/past-behaviour-not-opinions.md",
+    "core/concepts/riskiest-assumption.md"
+   ],
+   "verdict": "win"
+  },
+  "skill:founder-os-stage-1-audience": {
+   "kind": "stage",
+   "fixture_set": "audiences",
+   "stage": 1,
+   "laya": false,
+   "n_items": 6,
+   "repeats": 2,
+   "n_calls": 12,
+   "score": 1.0,
+   "baseline": 0.8889,
+   "delta": 0.1111,
+   "delta_per_repeat": [
+    0.1111,
+    0.1111
+   ],
+   "items_better": 1,
+   "items_worse": 0,
+   "parts": {
+    "audience_is_people": 1.0,
+    "pin_is_narrower": 1.0,
+    "verdict": 1.0
+   },
+   "baseline_parts": {
+    "audience_is_people": 1.0,
+    "pin_is_narrower": 0.8333,
+    "verdict": 0.8333
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "skills/founder-os-stage-1-audience/SKILL.md",
+    "core/stage-1/audience-first.md",
+    "core/stage-1/find-the-watering-holes.md",
+    "core/stage-1/first-bowling-pin.md",
+    "core/concepts/bowling-pin.md",
+    "core/concepts/evidence-not-self-report.md",
+    "core/concepts/foothold.md",
+    "core/concepts/watering-hole.md"
+   ],
+   "verdict": "win"
+  },
+  "skill:founder-os-stage-2-pain-research": {
+   "kind": "stage",
+   "fixture_set": "pain-logs",
+   "stage": 2,
+   "laya": false,
+   "n_items": 6,
+   "repeats": 2,
+   "n_calls": 12,
+   "score": 1.0,
+   "baseline": 1.0,
+   "delta": 0.0,
+   "delta_per_repeat": [
+    0.0,
+    0.0
+   ],
+   "items_better": 0,
+   "items_worse": 0,
+   "parts": {
+    "flagged": 1.0,
+    "verdict": 1.0
+   },
+   "baseline_parts": {
+    "flagged": 1.0,
+    "verdict": 1.0
+   },
+   "parse_failures": 0,
+   "errors": 0,
+   "files": [
+    "skills/founder-os-stage-2-pain-research/SKILL.md",
+    "core/stage-2/cluster-pains-into-jobs.md",
+    "core/stage-2/problem-hypothesis-heard-enough.md",
+    "core/stage-2/sales-safari-pain-log.md",
+    "core/concepts/evidence-not-self-report.md",
+    "core/concepts/job-to-be-done.md",
+    "core/concepts/watering-hole.md",
+    "skills/founder-os-pain-tagger/SKILL.md",
+    "laya/pain-tagger.json"
+   ],
+   "verdict": "null"
+  },
+  "skill:founder-os-stage-3-discovery": {
+   "kind": "stage",
+   "fixture_set": "interviews",
+   "stage": 3,
+   "laya": false,
+   "n_items": 7,
+   "repeats": 2,
+   "n_calls": 14,
+   "score": 0.9809,
+   "baseline": 1.0,
+   "delta": -0.0191,
+   "delta_per_repeat": [
+    0.0,
+    -0.0381
+   ],
+   "items_better": 0,
+   "items_worse": 1,
+   "parts": {
+    "commitment": 1.0,
+    "fact_turns": 0.9762,
+    "pitched_before_first_fact": 1.0,
+    "struck_turns": 1.0,
+    "verdict": 0.9286
+   },
+   "baseline_parts": {
+    "commitment": 1.0,
+    "fact_turns": 1.0,
+    "pitched_before_first_fact": 1.0,
+    "struck_turns": 1.0,
+    "verdict": 1.0
+   },
+   "parse_failures": 0,
+   "errors": 2,
+   "files": [
+    "skills/founder-os-stage-3-discovery/SKILL.md",
+    "core/stage-3/earlyvangelists-and-commitment.md",
+    "core/stage-3/interviews-without-fooling-yourself.md",
+    "core/stage-3/problem-interview-exit-criteria.md",
+    "core/concepts/commitment-signal.md",
+    "core/concepts/earlyvangelist.md",
+    "core/concepts/evidence-not-self-report.md",
+    "core/concepts/past-behaviour-not-opinions.md",
+    "skills/founder-os-mom-test-auditor/SKILL.md",
+    "laya/mom-test.json"
+   ],
+   "verdict": "null"
+  }
+ },
+ "cost_usd": 52.4847,
+ "calls": 318
+}

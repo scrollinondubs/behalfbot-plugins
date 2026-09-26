@@ -6,6 +6,7 @@ stage: 0
 gate: stage-0-why
 tier: core
 sources: [running-lean, running-lean-1st-ed, lean-customer-development, love-the-problem]
+eval: 2026-09-26-live
 ---
 
 # Plan A on a Lean Canvas, riskiest assumption first

@@ -109,30 +109,46 @@ def summarise(calls: list[dict], subject_list: list[Subject], *, run_id: str, mo
     def mean(xs: list[float]) -> float:
         return round(sum(xs) / len(xs), 4) if xs else 0.0
 
+    # A call that errored (the CLI or API failed, no answer came back) is not a
+    # model answer. It is counted and published, and left out of the scores on
+    # both sides. An answer that came back but does not parse is a model answer
+    # and scores 0.
     by_arm: dict[tuple[str, str], list[dict]] = {}
+    errors: dict[tuple[str, str], int] = {}
     for c in calls:
-        by_arm.setdefault((c["arm"], c["fixture_set"]), []).append(c)
+        key = (c["arm"], c["fixture_set"])
+        if c.get("error"):
+            errors[key] = errors.get(key, 0) + 1
+        else:
+            by_arm.setdefault(key, []).append(c)
 
     baselines = {}
     for (arm, fs), rows in sorted(by_arm.items()):
         if arm == BASELINE:
             baselines[fs] = {"score": mean([r["score"] for r in rows]), "n_calls": len(rows),
-                             "parse_failures": sum(1 for r in rows if not r["parsed"])}
+                             "parse_failures": sum(1 for r in rows if not r["parsed"]),
+                             "errors": errors.get((arm, fs), 0)}
 
     subjects_out = {}
     for s in subject_list:
-        rows = by_arm.get((s.id, s.fixture_set))
-        if not rows or s.fixture_set not in baselines:
+        key = (s.id, s.fixture_set)
+        rows = by_arm.get(key, [])
+        if key not in by_arm and key not in errors:
             continue
-        base_rows = by_arm[(BASELINE, s.fixture_set)]
+        if not rows or s.fixture_set not in baselines:
+            subjects_out[s.id] = {"kind": s.kind, "fixture_set": s.fixture_set, "stage": s.stage, "laya": s.laya,
+                                  "errors": errors.get(key, 0), "verdict": "incomplete"}
+            continue
+        items = sorted({r["item"] for r in rows})
+        base_rows = [r for r in by_arm[(BASELINE, s.fixture_set)] if r["item"] in items]
         subject_score = mean([r["score"] for r in rows])
-        delta = round(subject_score - baselines[s.fixture_set]["score"], 4)
+        base_score = mean([r["score"] for r in base_rows])
+        delta = round(subject_score - base_score, 4)
         per_repeat = []
         for r in range(repeats):
-            a = mean([x["score"] for x in rows if x["repeat"] == r])
-            b = mean([x["score"] for x in base_rows if x["repeat"] == r])
-            per_repeat.append(round(a - b, 4))
-        items = sorted({r["item"] for r in rows})
+            a = [x["score"] for x in rows if x["repeat"] == r]
+            b = [x["score"] for x in base_rows if x["repeat"] == r and x["item"] in {y["item"] for y in rows if y["repeat"] == r}]
+            per_repeat.append(round(mean(a) - mean(b), 4) if a and b else None)
         wins = sum(1 for i in items
                    if mean([r["score"] for r in rows if r["item"] == i])
                    > mean([r["score"] for r in base_rows if r["item"] == i]))
@@ -149,12 +165,13 @@ def summarise(calls: list[dict], subject_list: list[Subject], *, run_id: str, mo
                 base_parts.setdefault(k, []).append(v)
         subjects_out[s.id] = {
             "kind": s.kind, "fixture_set": s.fixture_set, "stage": s.stage, "laya": s.laya,
-            "n_items": len(items), "repeats": repeats,
-            "score": subject_score, "baseline": baselines[s.fixture_set]["score"], "delta": delta,
+            "n_items": len(items), "repeats": repeats, "n_calls": len(rows),
+            "score": subject_score, "baseline": base_score, "delta": delta,
             "delta_per_repeat": per_repeat, "items_better": wins, "items_worse": losses,
             "parts": {k: mean(v) for k, v in sorted(parts.items())},
             "baseline_parts": {k: mean(v) for k, v in sorted(base_parts.items())},
             "parse_failures": sum(1 for r in rows if not r["parsed"]),
+            "errors": errors.get(key, 0),
             "files": list(s.files),
             "verdict": decide(delta),
         }
@@ -179,16 +196,25 @@ def markdown(results: dict) -> str:
              f"cost ${results['cost_usd']}.", "",
              "Every subject is scored against plain Claude on the same fixture set, the same task text and "
              f"the same items. Win: at least +{results['decision_rule']['win_margin']} over plain Claude. "
-             "Loss: at most minus that. Anything between is a null result, published the same as a win.", "",
-             "| Subject | Kind | Stage | Set | Items | Score | Plain Claude | Delta | Per repeat | Items better/worse | Verdict |",
-             "|---|---|---|---|---|---|---|---|---|---|---|"]
+             "Loss: at most minus that. Anything between is a null result, published the same as a win. "
+             "A call that errored (no answer came back) is counted in Calls and left out of the scores on "
+             "both sides; plain Claude is compared on the same items the subject answered.", "",
+             "| Subject | Kind | Stage | Set | Items | Calls | Score | Plain Claude | Delta | Per repeat | Items better/worse | Verdict |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for sid, s in sorted(results["subjects"].items(), key=lambda kv: (kv[1]["stage"], kv[0])):
-        lines.append(f"| `{sid}` | {s['kind']} | {s['stage']} | {s['fixture_set']} | {s['n_items']} | "
-                     f"{s['score']:.3f} | {s['baseline']:.3f} | {s['delta']:+.3f} | "
-                     f"{', '.join(f'{d:+.3f}' for d in s['delta_per_repeat'])} | "
+        if s["verdict"] == "incomplete":
+            lines.append(f"| `{sid}` | {s['kind']} | {s['stage']} | {s['fixture_set']} | - | 0 | - | - | - | - | - "
+                         f"| **incomplete** ({s['errors']} errored calls) |")
+            continue
+        calls = f"{s['n_calls']}" + (f" ({s['errors']} errored)" if s.get("errors") else "")
+        per = ", ".join("n/a" if d is None else f"{d:+.3f}" for d in s["delta_per_repeat"])
+        lines.append(f"| `{sid}` | {s['kind']} | {s['stage']} | {s['fixture_set']} | {s['n_items']} | {calls} | "
+                     f"{s['score']:.3f} | {s['baseline']:.3f} | {s['delta']:+.3f} | {per} | "
                      f"{s['items_better']}/{s['items_worse']} | **{s['verdict']}** |")
     lines += ["", "## Where the points came from", ""]
     for sid, s in sorted(results["subjects"].items(), key=lambda kv: (kv[1]["stage"], kv[0])):
+        if s["verdict"] == "incomplete":
+            continue
         comps = ", ".join(f"{k} {v:.2f} vs {s['baseline_parts'].get(k, 0):.2f}" for k, v in s["parts"].items())
         lines.append(f"- `{sid}`: {comps}.")
     if results.get("notes"):
