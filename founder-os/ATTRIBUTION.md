@@ -21,7 +21,7 @@ merged.
 | How to Pitch Your Company (YC library) | Michael Seibel | `yc-how-to-pitch` | `should-you-raise` (stage 9) | https://www.ycombinator.com/library/4b-how-to-pitch-your-company |
 | How to Raise Money | Paul Graham | `pg-how-to-raise-money` | `should-you-raise` (stage 9) | http://paulgraham.com/fr.html |
 | Pitching Hacks | Venture Hacks (Babak Nivi, Naval Ravikant) | `pitching-hacks` | `pitch-traction-team-social-proof` (stage 9) | https://venturehacks.com/pitching-hacks |
-| Angel | Jason Calacanis | `angel` | `what-angels-screen-for` (stage 9) | https://www.angelthebook.com |
+| Angel | Jason Calacanis | `angel` | `what-angels-screen-for` (stage 9) | https://www.harpercollins.com/products/angel-jason-calacanis |
 | Extreme Ownership | Jocko Willink, Leif Babin | `extreme-ownership` | coach skill `extreme-ownership` | https://echelonfront.com/extreme-ownership/ |
 | The ONE Thing | Gary Keller, Jay Papasan | `the-one-thing` | coach skill `the-one-thing` | https://www.the1thing.com |
 | The Great Mental Models, Volume 1 | Shane Parrish, Rhiannon Beaubien | `great-mental-models` | coach skill `mental-models` | https://fs.blog/tgmm/ |

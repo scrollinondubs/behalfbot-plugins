@@ -70,7 +70,7 @@ If the stage 7 and 8 evidence does not support a raise, the gate fails however s
 
 ## Sources
 
-- Angel, Jason Calacanis. This card takes the book's view of how angels pick founders, test traction and judge timing, why regular updates matter, and the syndicate model, and turns it around for the founder. Read the original: https://www.angelthebook.com
+- Angel, Jason Calacanis. This card takes the book's view of how angels pick founders, test traction and judge timing, why regular updates matter, and the syndicate model, and turns it around for the founder. Read the original: https://www.harpercollins.com/products/angel-jason-calacanis
 
 ## Sean's notes
 
