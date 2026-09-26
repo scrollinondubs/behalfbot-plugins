@@ -10,6 +10,7 @@ import concurrent.futures as futures
 import datetime as dt
 import hashlib
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -227,6 +228,12 @@ def claude_cli(model: str, workdir: pathlib.Path, timeout: int = 300) -> ModelFn
     replaced system prompt, from an empty working directory."""
     workdir.mkdir(parents=True, exist_ok=True)
 
+    def _subscription_env() -> dict:
+        # Drop ANTHROPIC_API_KEY so `claude -p` bills the Claude subscription
+        # (OAuth), never PAYG API credits. With the key inherited, the
+        # 2026-09-26 live eval spent $52.48 of API credit.
+        return {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+
     def call(system: str, user: str) -> dict:
         prompt_file = workdir / f"system-{_sha(system)}.txt"
         if not prompt_file.exists():
@@ -236,7 +243,8 @@ def claude_cli(model: str, workdir: pathlib.Path, timeout: int = 300) -> ModelFn
             proc = subprocess.run(
                 ["claude", "-p", "--model", model, "--system-prompt-file", str(prompt_file),
                  "--tools", "", "--strict-mcp-config", "--no-session-persistence", "--output-format", "json"],
-                input=user, capture_output=True, text=True, cwd=workdir, timeout=timeout)
+                input=user, capture_output=True, text=True, cwd=workdir, timeout=timeout,
+                env=_subscription_env())
             if proc.returncode == 0:
                 try:
                     data = json.loads(proc.stdout)
