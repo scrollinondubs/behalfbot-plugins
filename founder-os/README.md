@@ -68,7 +68,10 @@ founder-os/
   gates/                 gate specs and rubrics
   skills/                stage, auditor and coach SKILL.md files
   laya/                  Laya question sets
-  templates/             authoring and founder-facing templates
+  templates/authoring/   templates for cards, concept notes, stage skills and gate specs
+  templates/examples/    one filled example of each, linted like real content
+  scripts/lint_content.py  content lint, run by validate.sh
+  tests/                 offline test suites, run by CI
   schema/                ledger schema and migrations
   evals/                 evals that gate promotion into core
   ATTRIBUTION.md         every source the cards draw on
