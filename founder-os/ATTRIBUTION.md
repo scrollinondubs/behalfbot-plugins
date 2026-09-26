@@ -14,6 +14,19 @@ merged.
 |---|---|---|---|---|
 | The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself` (stage 3) | https://www.momtestbook.com |
 | Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3) | https://www.cindyalvarez.com/lean-customer-development/ |
+| Running Lean (2nd edition) | Ash Maurya | `running-lean` | `sean-ellis-test`, `cohort-dashboard-aarrr` (stage 8) | https://ashmaurya.com/books |
+| Lean Analytics (One Metric That Matters) | Alistair Croll, Benjamin Yoskovitz | `lean-analytics` | `sean-ellis-test`, `one-metric-that-matters`, `cohort-dashboard-aarrr` (stage 8) | https://leananalyticsbook.com |
+| Using Product/Market Fit to Drive Sustainable Growth (the Sean Ellis test) | Sean Ellis | `sean-ellis-pmf` | `sean-ellis-test` (stage 8) | https://medium.com/growthhackers/using-product-market-fit-to-drive-sustainable-growth-58e9124ee8db |
+| A Guide to Seed Fundraising (YC library) | Geoff Ralston | `yc-seed-guide` | `should-you-raise` (stage 9) | https://www.ycombinator.com/library/4A-a-guide-to-seed-fundraising |
+| How to Pitch Your Company (YC library) | Michael Seibel | `yc-how-to-pitch` | `should-you-raise` (stage 9) | https://www.ycombinator.com/library/4b-how-to-pitch-your-company |
+| How to Raise Money | Paul Graham | `pg-how-to-raise-money` | `should-you-raise` (stage 9) | http://paulgraham.com/fr.html |
+| Pitching Hacks | Venture Hacks (Babak Nivi, Naval Ravikant) | `pitching-hacks` | `pitch-traction-team-social-proof` (stage 9) | https://venturehacks.com/pitching-hacks |
+| Angel | Jason Calacanis | `angel` | `what-angels-screen-for` (stage 9) | https://www.angelthebook.com |
+| Extreme Ownership | Jocko Willink, Leif Babin | `extreme-ownership` | coach skill `extreme-ownership` | https://echelonfront.com/extreme-ownership/ |
+| The ONE Thing | Gary Keller, Jay Papasan | `the-one-thing` | coach skill `the-one-thing` | https://www.the1thing.com |
+| The Great Mental Models, Volume 1 | Shane Parrish, Rhiannon Beaubien | `great-mental-models` | coach skill `mental-models` | https://fs.blog/tgmm/ |
+| Super Thinking | Gabriel Weinberg, Lauren McCann | `super-thinking` | coach skill `mental-models` | https://www.penguinrandomhouse.com/books/562091/super-thinking-by-gabriel-weinberg-and-lauren-mccann/ |
+| Paul Graham's essays | Paul Graham | `pg-essays` | coach skill `pg-essays` | https://paulgraham.com/articles.html |
 
 ## Sources to come
 
@@ -27,8 +40,6 @@ merged.
 | Working Backwards (PR/FAQ) | Colin Bryar, Bill Carr | 0, 5 |
 | Start With Why | Simon Sinek | 0 |
 | Business Model Canvas | Alexander Osterwalder | 3 |
-| Sean Ellis PMF test, AARRR | Sean Ellis, Dave McClure | 8 |
-| YC startup library | Y Combinator | 9 |
 
 ## Rules
 
