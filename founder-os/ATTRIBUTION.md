@@ -15,7 +15,7 @@ merged.
 | The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself` (stage 3) | https://www.momtestbook.com |
 | Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3) | https://www.cindyalvarez.com/lean-customer-development/ |
 | 30x500 (Sales Safari, e-bombs, Pain-Dream-Fix) | Amy Hoy, Alex Hillman | `thirty-x-500` | `e-bombs`, `pain-dream-fix` (stage 6) | https://stackingthebricks.com/30x500/ |
-| Traction (Bullseye) | Gabriel Weinberg, Justin Mares | `traction` | `bullseye-one-channel` (stage 6) | https://www.tractionbook.com |
+| Traction (Bullseye) | Gabriel Weinberg, Justin Mares | `traction` | `bullseye-one-channel` (stage 6) | https://www.penguinrandomhouse.com/books/319121/traction-by-gabriel-weinberg-and-justin-mares/ |
 | The Startup Owner's Manual (Customer Development, customer validation) | Steve Blank, Bob Dorf | `startup-owners-manual` | `customer-validation-roadmap` (stage 7) | https://www.steveblank.com/books-for-startups/ |
 | The Ultimate Startup Guide to Outbound Sales | Steli Efti (Close) | `outbound-sales-guide` | `founder-led-outbound` (stage 7) | https://www.close.com/resources |
 | Running Lean (2nd edition) | Ash Maurya | `running-lean` | `ask-for-money` (stage 7) | https://ashmaurya.com/books |

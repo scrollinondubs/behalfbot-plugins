@@ -55,4 +55,4 @@ Each check writes one `audits` row with `target_table`, `target_id`, `check_name
 - Selling done by a hire or an agency: stage 7, `founder-led-outbound`. The founder reruns steps 3 to 6 personally.
 - Roadmap still at v0 or not matching the deal log: stage 7, `customer-validation-roadmap`, step 6.
 - Pass bar missing, undated or set after the results: stage 7, `customer-validation-roadmap`, step 7. Set a new bar and score it against a fresh round of deals. Old deals cannot be rescored.
-- New customer type, or the stage 3 shortlist would not pay: return to stage 3 and redo the list with `earlyvangelists-and-commitment` (in the stage 3 PR, not yet merged).
+- New customer type, or the stage 3 shortlist would not pay: return to stage 3 and redo the list with `earlyvangelists-and-commitment`.

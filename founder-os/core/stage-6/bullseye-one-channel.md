@@ -68,7 +68,7 @@ The `stage-6-content-and-audience` gate needs a responsive list and a published 
 
 ## Sources
 
-- Traction, Gabriel Weinberg and Justin Mares. This card takes the Bullseye framework, the idea of traction channels, the traction goal with its critical path, and the even split of time between product and traction. Read the original: https://www.tractionbook.com
+- Traction, Gabriel Weinberg and Justin Mares. This card takes the Bullseye framework, the idea of traction channels, the traction goal with its critical path, and the even split of time between product and traction. Read the original: https://www.penguinrandomhouse.com/books/319121/traction-by-gabriel-weinberg-and-justin-mares/
 
 ## Sean's notes
 
