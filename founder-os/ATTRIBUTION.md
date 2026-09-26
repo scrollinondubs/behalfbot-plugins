@@ -12,15 +12,16 @@ merged.
 
 | Source | Author(s) | Source id | Cards | Read the original |
 |---|---|---|---|---|
-| The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself` (stage 3) | https://www.momtestbook.com |
+| The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself`, `earlyvangelists-and-commitment` (stage 3) | https://www.momtestbook.com |
 | Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3) | https://www.cindyalvarez.com/lean-customer-development/ |
+| Running Lean (2nd edition, and the 1st edition as a cross-check) | Ash Maurya | `running-lean`, `running-lean-1st-ed` | `problem-interview-exit-criteria` (stage 3) | https://ashmaurya.com/books |
+| The Startup Owner's Manual (Customer Development, earlyvangelists) | Steve Blank, Bob Dorf | `startup-owners-manual` | `earlyvangelists-and-commitment` (stage 3) | https://steveblank.com/books-for-startups/ |
 
 ## Sources to come
 
 | Source | Author(s) | Used in stages |
 |---|---|---|
 | 30x500 (Sales Safari, e-bombs, Pain-Dream-Fix) | Amy Hoy, Alex Hillman | 1, 2, 6 |
-| The Four Steps to the Epiphany (Customer Development) | Steve Blank | 3, 7 |
 | Jobs to be Done / Competing Against Luck | Clayton Christensen | 2, 5 |
 | Badass: Making Users Awesome | Kathy Sierra | 4 |
 | Sprint (GV design sprint) | Jake Knapp, John Zeratsky, Braden Kowitz | 4 |
