@@ -5,6 +5,7 @@ title: <short title>
 stage: <0-9>
 gate: <id of the gate in gates/ this card serves; required in core>
 tier: <core | contrib>
+status: <optional. contrib: draft | candidate. core: core>
 sources: [<source-id>, <source-id>]
 ---
 

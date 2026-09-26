@@ -10,6 +10,8 @@ and checks:
   - every core framework card names a gate, and that gate exists in gates/
   - every stage skill names a gate that exists
   - every [[wiki-link]] resolves, and core never links into contrib
+  - no stage has more core lead cards than budget.yml allows
+  - a card's status is a known value, and status: core only appears under core/
 
 The format rules live in templates/authoring/README.md. Stdlib only, so it runs
 in CI with no install step. That is also why frontmatter is a restricted subset
@@ -56,6 +58,9 @@ REQUIRED_SECTIONS = {
 }
 
 SIGNOFF_VALUES = ("claude", "claude+sean")
+STATUS_VALUES = ("draft", "candidate", "core")
+BUDGET_FILE = "budget.yml"
+BUDGET_STAGE_KEY = re.compile(r"^stage-(\d)$")
 PLUGIN_ID = "behalfbot-founder-os"
 
 WIKI_LINK = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\]")
@@ -72,13 +77,21 @@ def parse_frontmatter(text: str) -> tuple[dict[str, object] | None, str, str | N
     except StopIteration:
         return None, text, "frontmatter opened with --- but never closed"
 
+    fields, err = parse_fields(lines[1:end], first_lineno=2)
+    if err:
+        return None, text, err
+    return fields, "\n".join(lines[end + 1:]), None
+
+
+def parse_fields(lines: list[str], first_lineno: int = 1) -> tuple[dict[str, object], str | None]:
+    """Parse the flat `key: value` / `key: [a, b]` subset. Returns (fields, error)."""
     fields: dict[str, object] = {}
-    for n, raw in enumerate(lines[1:end], start=2):
+    for n, raw in enumerate(lines, start=first_lineno):
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
         if ":" not in line:
-            return None, text, f"line {n}: expected 'key: value', got {raw!r}"
+            return {}, f"line {n}: expected 'key: value', got {raw!r}"
         key, _, value = line.partition(":")
         key, value = key.strip(), value.strip()
         if value.startswith("[") and value.endswith("]"):
@@ -86,7 +99,7 @@ def parse_frontmatter(text: str) -> tuple[dict[str, object] | None, str, str | N
             fields[key] = [_unquote(v.strip()) for v in inner.split(",")] if inner else []
         else:
             fields[key] = _unquote(value)
-    return fields, "\n".join(lines[end + 1:]), None
+    return fields, None
 
 
 def _unquote(v: str) -> str:
@@ -182,6 +195,18 @@ def check_item(item: Item, problems: list[str]) -> None:
         if stage is not None and stage >= 3 and f.get("signoff") != "claude+sean":
             problems.append(f"{rel}: gates from stage 3 onward need signoff: claude+sean")
 
+    if item.kind == "framework-card" and "status" in f:
+        status = f["status"]
+        if status not in STATUS_VALUES:
+            problems.append(f"{rel}: status {status!r} must be one of {', '.join(STATUS_VALUES)}")
+        elif status == "core" and item.tier != "core":
+            problems.append(
+                f"{rel}: status: core but the card lives under {item.tier}/. "
+                "Promotion moves the file into core/ (see CONTRIBUTING.md)"
+            )
+        elif item.tier == "core" and status != "core":
+            problems.append(f"{rel}: status {status!r} under core/; a core card is status: core or leaves it out")
+
     if item.kind == "stage-skill" and f.get("plugin") != PLUGIN_ID:
         problems.append(f"{rel}: plugin must be {PLUGIN_ID!r}")
 
@@ -217,21 +242,93 @@ def check_references(items: list[Item], problems: list[str]) -> None:
                 problems.append(f"{item.rel}: [[{target_id}]] links into contrib/, which core content must not depend on")
 
 
-def lint(root: pathlib.Path) -> list[str]:
+def resolve_budget_path(root: pathlib.Path) -> pathlib.Path:
+    local = root / BUDGET_FILE
+    return local if local.exists() else PLUGIN_DIR / BUDGET_FILE
+
+
+def load_budget(path: pathlib.Path, problems: list[str]) -> dict[int, int] | None:
+    """Return {stage: max core lead cards}, or None after recording why it is unusable.
+
+    A missing or malformed budget fails the lint rather than falling back to a
+    default, so the budget check can never pass by not running.
+    """
+    if not path.is_file():
+        problems.append(f"{BUDGET_FILE}: not found at {path}")
+        return None
+    fields, err = parse_fields(path.read_text(encoding="utf-8").splitlines())
+    if err:
+        problems.append(f"{BUDGET_FILE}: {err}")
+        return None
+
+    def count(key: str, value: object) -> int | None:
+        if isinstance(value, str) and value.isdigit():
+            return int(value)
+        problems.append(f"{BUDGET_FILE}: {key} must be a whole number, got {value!r}")
+        return None
+
+    if "default" not in fields:
+        problems.append(f"{BUDGET_FILE}: missing required key 'default'")
+        return None
+    default = count("default", fields["default"])
+    if default is None:
+        return None
+    budget = {stage: default for stage in STAGES}
+    for key, value in fields.items():
+        if key == "default":
+            continue
+        m = BUDGET_STAGE_KEY.match(key)
+        if not m:
+            problems.append(f"{BUDGET_FILE}: unknown key {key!r} (expected 'default' or 'stage-0' .. 'stage-9')")
+            return None
+        n = count(key, value)
+        if n is None:
+            return None
+        budget[int(m.group(1))] = n
+    return budget
+
+
+def check_budget(items: list[Item], budget: dict[int, int], problems: list[str]) -> None:
+    """A lead card is a core framework card. Concept notes do not count."""
+    by_stage: dict[int, list[str]] = {}
+    for item in items:
+        if item.kind != "framework-card" or item.tier != "core":
+            continue
+        stage = as_stage(item.fields.get("stage", ""))
+        if stage is not None:
+            by_stage.setdefault(stage, []).append(item.ident)
+    for stage, cards in sorted(by_stage.items()):
+        if len(cards) > budget[stage]:
+            problems.append(
+                f"stage {stage}: {len(cards)} core lead cards, budget is {budget[stage]} "
+                f"({', '.join(sorted(cards))}). Promoting a card means demoting another"
+            )
+
+
+def lint(root: pathlib.Path, budget_path: pathlib.Path | None = None) -> list[str]:
     problems: list[str] = []
     items = collect(root, problems)
     for item in items:
         check_item(item, problems)
     check_references(items, problems)
+    budget = load_budget(budget_path or resolve_budget_path(root), problems)
+    if budget is not None:
+        check_budget(items, budget, problems)
     return problems
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--root", type=pathlib.Path, default=PLUGIN_DIR, help="content root (default: the plugin dir)")
+    ap.add_argument(
+        "--budget",
+        type=pathlib.Path,
+        default=None,
+        help=f"card budget file (default: ROOT/{BUDGET_FILE}, else the plugin's {BUDGET_FILE})",
+    )
     args = ap.parse_args(argv)
 
-    problems = lint(args.root)
+    problems = lint(args.root, args.budget)
     if problems:
         print(f"FAIL: {len(problems)} content problem(s) under {args.root}")
         for p in problems:
