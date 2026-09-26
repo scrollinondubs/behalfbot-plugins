@@ -13,7 +13,11 @@ merged.
 | Source | Author(s) | Source id | Cards | Read the original |
 |---|---|---|---|---|
 | The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself` (stage 3) | https://www.momtestbook.com |
-| Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3) | https://www.cindyalvarez.com/lean-customer-development/ |
+| Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3), `plan-a-riskiest-assumption` (stage 0) | https://www.cindyalvarez.com/lean-customer-development/ |
+| Working Backwards (PR/FAQ) | Colin Bryar, Bill Carr | `working-backwards` | `prfaq-v0` (stage 0) | https://www.workingbackwards.com |
+| Running Lean (2nd edition, and the 1st edition as a cross-check) | Ash Maurya | `running-lean`, `running-lean-1st-ed` | `plan-a-riskiest-assumption` (stage 0) | https://ashmaurya.com/books |
+| Love the problem, not your solution (LEANSTACK blog) | Ash Maurya | `love-the-problem` | `plan-a-riskiest-assumption` (stage 0) | https://blog.leanstack.com/love-the-problem-not-your-solution/ |
+| How great leaders inspire action (TED talk; Start With Why, the golden circle) | Simon Sinek | `start-with-why-talk` | `find-your-why` (stage 0) | https://www.ted.com/talks/simon_sinek_how_great_leaders_inspire_action |
 
 ## Sources to come
 
@@ -22,10 +26,7 @@ merged.
 | 30x500 (Sales Safari, e-bombs, Pain-Dream-Fix) | Amy Hoy, Alex Hillman | 1, 2, 6 |
 | The Four Steps to the Epiphany (Customer Development) | Steve Blank | 3, 7 |
 | Jobs to be Done / Competing Against Luck | Clayton Christensen | 2, 5 |
-| Badass: Making Users Awesome | Kathy Sierra | 4 |
 | Sprint (GV design sprint) | Jake Knapp, John Zeratsky, Braden Kowitz | 4 |
-| Working Backwards (PR/FAQ) | Colin Bryar, Bill Carr | 0, 5 |
-| Start With Why | Simon Sinek | 0 |
 | Business Model Canvas | Alexander Osterwalder | 3 |
 | Sean Ellis PMF test, AARRR | Sean Ellis, Dave McClure | 8 |
 | YC startup library | Y Combinator | 9 |
