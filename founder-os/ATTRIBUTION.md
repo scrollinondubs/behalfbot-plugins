@@ -13,13 +13,15 @@ merged.
 | Source | Author(s) | Source id | Cards | Read the original |
 |---|---|---|---|---|
 | The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself` (stage 3) | https://www.momtestbook.com |
-| Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3) | https://www.cindyalvarez.com/lean-customer-development/ |
+| Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3), `find-the-watering-holes` (stage 1) | https://www.cindyalvarez.com/lean-customer-development/ |
+| 30x500 (Sales Safari, painstorming, watering holes, audience first) | Amy Hoy, Alex Hillman | `thirty-x-500` | `audience-first`, `find-the-watering-holes` (stage 1) | https://stackingthebricks.com/30x500/ |
+| The bowling pin strategy (after Geoffrey Moore, Crossing the Chasm) | Chris Dixon | `bowling-pin-strategy` | `first-bowling-pin` (stage 1) | https://cdixon.org/2010/08/21/the-bowling-pin-strategy |
+| Running Lean (2nd edition, and the 1st edition as a cross-check) | Ash Maurya | `running-lean`, `running-lean-1st-ed` | `first-bowling-pin` (stage 1) | https://ashmaurya.com/books |
 
 ## Sources to come
 
 | Source | Author(s) | Used in stages |
 |---|---|---|
-| 30x500 (Sales Safari, e-bombs, Pain-Dream-Fix) | Amy Hoy, Alex Hillman | 1, 2, 6 |
 | The Four Steps to the Epiphany (Customer Development) | Steve Blank | 3, 7 |
 | Jobs to be Done / Competing Against Luck | Clayton Christensen | 2, 5 |
 | Badass: Making Users Awesome | Kathy Sierra | 4 |
