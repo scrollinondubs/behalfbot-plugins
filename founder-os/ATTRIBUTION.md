@@ -13,15 +13,19 @@ merged.
 | Source | Author(s) | Source id | Cards | Read the original |
 |---|---|---|---|---|
 | The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself` (stage 3) | https://www.momtestbook.com |
-| Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3) | https://www.cindyalvarez.com/lean-customer-development/ |
+| Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3), `problem-hypothesis-heard-enough` (stage 2) | https://www.cindyalvarez.com/lean-customer-development/ |
+| 30x500 (Sales Safari, painstorming, watering holes, audience first) | Amy Hoy, Alex Hillman | `thirty-x-500` | `sales-safari-pain-log` (stage 2) | https://stackingthebricks.com/30x500/ |
+| Sales Safari updated for 2023 (Stacking the Bricks) | Amy Hoy, Alex Hillman | `sales-safari-2023` | `sales-safari-pain-log` (stage 2) | https://shorts.stackingthebricks.com/updating-sales-safari-2023/ |
+| Sales Safari 101 (Stacking the Bricks) | Amy Hoy, Alex Hillman | `sales-safari-101` | `sales-safari-pain-log` (stage 2) | https://shop.stackingthebricks.com/sales-safari-101 |
+| Know Your Customers' Jobs to Be Done (HBR, September 2016) | Clayton Christensen, Taddy Hall, Karen Dillon, David Duncan | `hbr-jobs-to-be-done` | `cluster-pains-into-jobs` (stage 2) | https://hbr.org/2016/09/know-your-customers-jobs-to-be-done |
+| Jobs to Be Done theory | Christensen Institute | `christensen-institute-jtbd` | `cluster-pains-into-jobs` (stage 2) | https://www.christenseninstitute.org/theory/jobs-to-be-done/ |
+| jobstobedone.org | Bob Moesta, Chris Spiek | `jobs-to-be-done-org` | `cluster-pains-into-jobs` (stage 2) | https://jobstobedone.org/ |
 
 ## Sources to come
 
 | Source | Author(s) | Used in stages |
 |---|---|---|
-| 30x500 (Sales Safari, e-bombs, Pain-Dream-Fix) | Amy Hoy, Alex Hillman | 1, 2, 6 |
 | The Four Steps to the Epiphany (Customer Development) | Steve Blank | 3, 7 |
-| Jobs to be Done / Competing Against Luck | Clayton Christensen | 2, 5 |
 | Badass: Making Users Awesome | Kathy Sierra | 4 |
 | Sprint (GV design sprint) | Jake Knapp, John Zeratsky, Braden Kowitz | 4 |
 | Working Backwards (PR/FAQ) | Colin Bryar, Bill Carr | 0, 5 |
