@@ -9,12 +9,7 @@ fail_routes_to: 5
 
 # Stage 5 gate: one job, one foothold, one rewritten launch
 
-> DRAFT - needs Sean ruling. No founder is held to this gate until Sean signs
-> it off. Numeric minimums that need his call: 5 `pains` rows behind the job;
-> 1 stage 4 test result; 2 incumbents in the table; 3 rows placing the segment
-> on its fork; 5 interviews in the foothold segment; 3 to 5 `not_for` entries;
-> 2 or 3 expansion markets; 1 dead assumption in the diff; 1 internal FAQ
-> answer still assumed; 10 segment members the founder can name.
+> Ruled by Sean on 2026-09-26. The minimums below are in force.
 
 ## Required evidence
 

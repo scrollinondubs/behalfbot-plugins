@@ -9,8 +9,7 @@ fail_routes_to: 0
 
 # Stage 0 gate: a problem you care about, written down
 
-> Draft. Needs Sean's ruling, including every minimum count, before a founder
-> is held to it.
+> Ruled by Sean on 2026-09-26. The minimums below are in force.
 
 ## Required evidence
 

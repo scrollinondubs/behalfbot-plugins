@@ -9,11 +9,7 @@ fail_routes_to: 7
 
 # Stage 7 gate: money changed hands, or a pilot was signed
 
-> DRAFT - needs Sean ruling. No founder is held to this gate until Sean signs
-> it off. Numeric minimums that need his call: 2 money or signature
-> commitments from 2 different buyers; 10 priced asks in the offer log; 30
-> prospects in the outreach log; 1 committed buyer who was a stage 3
-> earlyvangelist. Sean also rules on whether a single commitment can pass.
+> Ruled by Sean on 2026-09-26. The minimums below are in force.
 
 ## Required evidence
 
