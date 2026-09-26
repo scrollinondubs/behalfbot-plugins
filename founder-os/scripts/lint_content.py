@@ -9,6 +9,9 @@ and checks:
   - ids are unique and match the filename (or the skill directory name)
   - every core framework card names a gate, and that gate exists in gates/
   - every stage skill names a gate that exists
+  - every auditor skill names a Laya question set in laya/ that exists, and
+    any gate it names exists
+  - every question set in laya/ is well formed and named after its file
   - every [[wiki-link]] resolves, and core never links into contrib
   - no stage has more core lead cards than budget.yml allows
   - a card's status is a known value, and status: core only appears under core/
@@ -24,6 +27,7 @@ Exit 0 when clean, 1 with every problem printed otherwise.
 from __future__ import annotations
 
 import argparse
+import json
 import pathlib
 import re
 import sys
@@ -38,7 +42,9 @@ REQUIRED_FIELDS = {
     "concept": ("id", "type", "title", "tier"),
     "gate": ("id", "type", "title", "stage", "signoff", "fail_routes_to"),
     "stage-skill": ("name", "description", "plugin", "type", "stage", "gate"),
+    "auditor-skill": ("name", "description", "plugin", "type", "stage", "question_set"),
 }
+SKILL_KINDS = ("stage-skill", "auditor-skill")
 
 REQUIRED_SECTIONS = {
     "framework-card": (
@@ -54,6 +60,7 @@ REQUIRED_SECTIONS = {
     ),
     "gate": ("Required evidence", "Auditor checks", "Pass/fail rubric", "Failure routing"),
     "stage-skill": ("Read the founder context first", "Current stage only", "Procedure", "Ledger writes"),
+    "auditor-skill": ("When to run", "Laya pass", "Claude pass", "Without Laya", "Label capture", "Ledger writes"),
     "concept": (),
 }
 
@@ -126,7 +133,7 @@ class Item:
 
     @property
     def ident(self) -> str:
-        return str(self.fields.get("name" if self.kind == "stage-skill" else "id", ""))
+        return str(self.fields.get("name" if self.kind in SKILL_KINDS else "id", ""))
 
 
 def collect(root: pathlib.Path, problems: list[str]) -> list[Item]:
@@ -171,7 +178,7 @@ def check_item(item: Item, problems: list[str]) -> None:
     ident = item.ident
     if ident and not ID_SHAPE.match(ident):
         problems.append(f"{rel}: id {ident!r} must be lowercase kebab-case")
-    expected = item.path.parent.name if item.kind == "stage-skill" else item.path.stem
+    expected = item.path.parent.name if item.kind in SKILL_KINDS else item.path.stem
     if ident and ident != expected:
         problems.append(f"{rel}: id {ident!r} does not match its file or directory name {expected!r}")
 
@@ -207,7 +214,7 @@ def check_item(item: Item, problems: list[str]) -> None:
         elif item.tier == "core" and status != "core":
             problems.append(f"{rel}: status {status!r} under core/; a core card is status: core or leaves it out")
 
-    if item.kind == "stage-skill" and f.get("plugin") != PLUGIN_ID:
+    if item.kind in SKILL_KINDS and f.get("plugin") != PLUGIN_ID:
         problems.append(f"{rel}: plugin must be {PLUGIN_ID!r}")
 
 
@@ -230,7 +237,7 @@ def check_references(items: list[Item], problems: list[str]) -> None:
                 problems.append(f"{item.rel}: core cards must name the gate they serve")
             elif gate and gate not in gates:
                 problems.append(f"{item.rel}: names gate {gate!r}, which does not exist in gates/")
-        if item.kind == "stage-skill" and gate and gate not in gates:
+        if item.kind in SKILL_KINDS and gate and gate not in gates:
             problems.append(f"{item.rel}: names gate {gate!r}, which does not exist in gates/")
 
         for m in WIKI_LINK.finditer(item.body):
@@ -305,12 +312,39 @@ def check_budget(items: list[Item], budget: dict[int, int], problems: list[str])
             )
 
 
+def check_question_sets(root: pathlib.Path, items: list[Item], problems: list[str]) -> None:
+    """Every laya/*.json is a valid question set named after its file, and
+    every auditor skill's question_set is one of them."""
+    sys.path.insert(0, str(PLUGIN_DIR))
+    from founder_audit.questions import validate
+
+    found: set[str] = set()
+    for path in sorted((root / "laya").glob("*.json")):
+        rel = str(path.relative_to(root))
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except ValueError as e:
+            problems.append(f"{rel}: not valid JSON ({e})")
+            continue
+        for p in validate(data):
+            problems.append(f"{rel}: {p}")
+        if isinstance(data, dict) and data.get("name") != path.stem:
+            problems.append(f"{rel}: name {data.get('name')!r} does not match the file name")
+        found.add(path.stem)
+    for item in items:
+        if item.kind == "auditor-skill":
+            qs = item.fields.get("question_set")
+            if qs and qs not in found:
+                problems.append(f"{item.rel}: question_set {qs!r} is not a question set in laya/")
+
+
 def lint(root: pathlib.Path, budget_path: pathlib.Path | None = None) -> list[str]:
     problems: list[str] = []
     items = collect(root, problems)
     for item in items:
         check_item(item, problems)
     check_references(items, problems)
+    check_question_sets(root, items, problems)
     budget = load_budget(budget_path or resolve_budget_path(root), problems)
     if budget is not None:
         check_budget(items, budget, problems)

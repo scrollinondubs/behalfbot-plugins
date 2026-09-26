@@ -1,0 +1,108 @@
+{
+  "_note": "Synthetic fixtures, written for these tests. Expected tags are the author's reading of each item. The mocked Laya in the tests is built to agree with them; the optional live test reports how far a real Laya does.",
+  "mom-test": {
+    "interview-pitchy.txt": {
+      "founder": "Founder",
+      "turns": {
+        "1": {
+          "pitching": true
+        },
+        "2": {
+          "compliment": true
+        },
+        "3": {
+          "hypothetical": true
+        },
+        "4": {
+          "hypothetical": true,
+          "past_behaviour": false
+        },
+        "5": {
+          "hypothetical": true
+        },
+        "6": {
+          "hypothetical": true
+        },
+        "9": {
+          "pitching": true
+        },
+        "10": {
+          "compliment": true
+        }
+      },
+      "summary": {
+        "suggested_commitment": "none",
+        "pitched_before_first_fact": true
+      }
+    },
+    "interview-solid.txt": {
+      "founder": "Founder",
+      "turns": {
+        "2": {
+          "past_behaviour": true,
+          "compliment": false
+        },
+        "4": {
+          "past_behaviour": true
+        },
+        "6": {
+          "past_behaviour": true
+        },
+        "8": {
+          "commitment_intro": true
+        },
+        "10": {
+          "commitment_time": true
+        }
+      },
+      "summary": {
+        "suggested_commitment": "reputation",
+        "pitched_before_first_fact": false
+      }
+    }
+  },
+  "earlyvangelist": {
+    "earlyvangelist-strong.txt": {
+      "escalate": true,
+      "met_at_least": 4
+    },
+    "earlyvangelist-weak.txt": {
+      "escalate": false
+    }
+  },
+  "pain-dream-fix": {
+    "ebomb-premature.md": {
+      "premature_pitch": [
+        1
+      ],
+      "findings_include": [
+        "premature_pitch"
+      ]
+    },
+    "ebomb-ordered.md": {
+      "sequence": [
+        "pain",
+        "pain",
+        "dream",
+        "fix"
+      ],
+      "premature_pitch": []
+    }
+  },
+  "pain-tagger": {
+    "posts.json": {
+      "is_pain": {
+        "p1": true,
+        "p2": false,
+        "p3": false,
+        "p4": true,
+        "p5": true
+      },
+      "money_or_workaround": {
+        "p1": false,
+        "p4": true,
+        "p5": true
+      }
+    }
+  }
+}

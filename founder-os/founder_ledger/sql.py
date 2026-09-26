@@ -19,8 +19,8 @@ from datetime import datetime, timezone
 from typing import Any, Iterator
 
 from .interface import (
-    AUDIT_TARGETS, AUDITORS, COMMITMENTS, DECIDERS, DECISIONS, EVIDENCE_TABLES,
-    LABEL_TARGETS, SEAN_SIGNOFF_FROM_STAGE, STAGES, VERDICTS,
+    AUDIT_TARGETS, AUDITORS, BUNDLE_TABLES, COMMITMENTS, DECIDERS, DECISIONS, EVIDENCE_TABLES,
+    LABEL_TARGETS, SEAN_SIGNOFF_FROM_STAGE, STAGES, TABLE_COLUMNS, VERDICTS,
     Ledger, LedgerError, NotFound, Row,
 )
 
@@ -454,3 +454,81 @@ class SqlLedger(Ledger):
             sql += " AND task = ?"
             params.append(task)
         return self._rows("labels", sql + " ORDER BY corrected_at", tuple(params))
+
+    # --- founder bundle import ----------------------------------------------
+
+    def _encode(self, table: str, row: Row) -> dict[str, Any]:
+        out = dict(row)
+        for col in JSON_COLUMNS.get(table, ()):
+            if out.get(col) is not None:
+                out[col] = _dump(out[col])
+        for col in BOOL_COLUMNS.get(table, ()):
+            if out.get(col) is not None:
+                out[col] = 1 if out[col] else 0
+        return out
+
+    def import_founder_rows(self, founder_id, tables, *, replace=False):
+        _check_text(founder_id, "founder_id")
+        unknown = set(tables) - set(BUNDLE_TABLES)
+        if unknown:
+            raise LedgerError(f"unknown ledger tables in import: {', '.join(sorted(unknown))}")
+        if len(tables.get("founders", [])) != 1:
+            raise LedgerError("an import carries exactly one founders row")
+        for table in BUNDLE_TABLES:
+            pk = "founder_id" if table == "founders" else "id"
+            for row in tables.get(table, []):
+                if not isinstance(row, dict):
+                    raise LedgerError(f"{table}: rows are objects, got {type(row).__name__}")
+                extra = set(row) - set(TABLE_COLUMNS[table])
+                if extra:
+                    raise LedgerError(
+                        f"{table}: unknown columns {', '.join(sorted(extra))} - the bundle is from a newer schema")
+                if row.get("founder_id") != founder_id:
+                    raise LedgerError(f"{table} row {row.get(pk)!r} belongs to another founder")
+                if not isinstance(row.get(pk), str) or not row[pk]:
+                    raise LedgerError(f"{table}: every row needs a string {pk}")
+
+        counts = {t: {"inserted": 0, "unchanged": 0} for t in BUNDLE_TABLES}
+        conflicts: list[str] = []
+        with self._tx():
+            if replace and self.get_founder(founder_id) is not None:
+                self.delete_founder(founder_id)
+            for table in BUNDLE_TABLES:
+                pk = "founder_id" if table == "founders" else "id"
+                for row in tables.get(table, []):
+                    existing = self._one(table, f"SELECT * FROM {table} WHERE {pk} = ?", (row[pk],))
+                    if existing is not None:
+                        wanted = {c: row.get(c) for c in existing}
+                        if existing["founder_id"] != founder_id:
+                            conflicts.append(f"{table}/{row[pk]} is owned by another founder")
+                        elif existing != wanted:
+                            diff = sorted(c for c in existing if existing[c] != wanted[c])
+                            conflicts.append(f"{table}/{row[pk]} differs locally ({', '.join(diff)})")
+                        else:
+                            counts[table]["unchanged"] += 1
+                        continue
+                    values = self._encode(table, row)
+                    cols = ", ".join(values)
+                    marks = ", ".join("?" for _ in values)
+                    try:
+                        self._execute(f"INSERT INTO {table} ({cols}) VALUES ({marks})", tuple(values.values()))
+                    except LedgerError:
+                        raise
+                    except Exception as exc:
+                        raise LedgerError(f"{table}/{row[pk]} was rejected by the database: {exc}") from exc
+                    counts[table]["inserted"] += 1
+            if conflicts:
+                raise LedgerError(
+                    "import refused, nothing written. Rows already present with different content:\n  "
+                    + "\n  ".join(conflicts)
+                    + "\nre-run with replace to discard this founder's local rows and load the bundle")
+
+            refs = [("audits", r["id"], r["target_table"], r["target_id"]) for r in tables.get("audits", [])]
+            refs += [("labels", r["id"], r["target_table"], r["target_id"]) for r in tables.get("labels", [])]
+            for r in tables.get("gate_decisions", []):
+                refs += [("gate_decisions", r["id"], e.get("table"), e.get("id")) for e in r["evidence"]]
+            for table, row_id, target_table, target_id in refs:
+                if target_table not in EVIDENCE_TABLES or not self._owns(target_table, founder_id, target_id):
+                    raise LedgerError(
+                        f"{table}/{row_id} points at {target_table}/{target_id}, which this founder does not own")
+        return counts

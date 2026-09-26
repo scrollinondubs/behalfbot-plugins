@@ -1,7 +1,7 @@
 # Authoring templates
 
-FounderOS content comes in four kinds. Each has a template in this directory.
-There is a filled example of each in [`../examples/`](../examples/).
+FounderOS content comes in five kinds. Each has a template in this directory.
+There is a filled example of each in [`../examples/`](../examples/), except the auditor skill: the four real ones in [`../../skills/`](../../skills/) are its examples.
 
 | Kind | Template | Lives in | `type:` |
 |---|---|---|---|
@@ -9,6 +9,7 @@ There is a filled example of each in [`../examples/`](../examples/).
 | Concept note | [`concept-note.md`](concept-note.md) | `core/` or `contrib/` | `concept` |
 | Stage skill | [`stage-skill.md`](stage-skill.md) | `skills/<name>/SKILL.md` | `stage-skill` |
 | Gate spec | [`gate-spec.md`](gate-spec.md) | `gates/` | `gate` |
+| Auditor skill | [`auditor-skill.md`](auditor-skill.md) | `skills/<name>/SKILL.md` | `auditor-skill` |
 
 Copy the template, fill every section, and delete the guidance in angle
 brackets. `scripts/lint_content.py` enforces the rules below. `validate.sh` runs
@@ -36,6 +37,7 @@ Required fields by kind:
 | Concept note | `id`, `type`, `title`, `tier` |
 | Stage skill | `name`, `description`, `plugin`, `type`, `stage`, `gate` |
 | Gate spec | `id`, `type`, `title`, `stage`, `signoff`, `fail_routes_to` |
+| Auditor skill | `name`, `description`, `plugin`, `type`, `stage`, `question_set`. `gate` is optional. |
 
 Rules on those fields:
 
@@ -57,7 +59,9 @@ Rules on those fields:
   `claude+sean`.
 - `fail_routes_to` is the stage a failed founder goes back to. It can be the
   gate's own stage, never a later one.
-- A stage skill's `plugin` is `behalfbot-founder-os`.
+- A stage or auditor skill's `plugin` is `behalfbot-founder-os`.
+- An auditor skill's `question_set` names a file in `laya/` without `.json`.
+  Every question set in `laya/` must be well formed and named after its file.
 
 ## Required sections
 
@@ -70,6 +74,8 @@ need them, but never drop or rename one of these.
   routing
 - **Stage skill:** Read the founder context first, Current stage only,
   Procedure, Ledger writes
+- **Auditor skill:** When to run, Laya pass, Claude pass, Without Laya,
+  Label capture, Ledger writes
 - **Concept note:** none. It is one idea in a few paragraphs.
 
 ## Wiki-links

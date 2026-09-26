@@ -1,0 +1,76 @@
+{
+  "name": "mom-test",
+  "version": "v1",
+  "task": "mom_test",
+  "purpose": "Per-turn tags for the interview audit in interviews-without-fooling-yourself, step 7. Laya tags every turn; Claude confirms the tags and writes the feedback, citing turn numbers.",
+  "notes": [
+    "Founder turns and interviewee turns get different questions. Each question says which with applies_to.",
+    "Every tag is its own noul question, because one turn can be two things at once, such as a compliment followed by a dated story.",
+    "Bare yes/no openers and leading yes/no questions are found by pattern in founder_audit/mom_test.py, not by Laya.",
+    "commitment_time was reworded after a probe on the english checkpoint (8 synthetic lines, not a measurement): the first wording scored 0.63-0.69 on hypothetical price talk ('I'd definitely use it if it was cheap'), the current one 0.08-0.13, with the real booking at 0.77.",
+    "commitment_money still fires on any turn that talks about money, including 'everyone hates chasing money' (0.94). founder_audit/mom_test.py therefore never counts a commitment on a turn that is hypothetical, by tag or by wording.",
+    "No accuracy has been measured on this set yet. Treat every tag as a pre-tag for Claude to confirm."
+  ],
+  "checkpoint": {
+    "en": "english",
+    "default": "multilingual"
+  },
+  "questions": {
+    "compliment": {
+      "type": "noul",
+      "instructions": "Is the speaker praising the idea, the product or the interviewer (for example calling it great, cool or useful) rather than describing their own situation?",
+      "applies_to": "interviewee",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    },
+    "hypothetical": {
+      "type": "noul",
+      "instructions": "Is the speaker talking about what they would, might or will do, or about what people usually do, rather than about something that already happened?",
+      "applies_to": "both",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    },
+    "past_behaviour": {
+      "type": "noul",
+      "instructions": "Does the speaker describe something specific that already happened to them or that they already did, such as a dated event, money or hours already spent, or a tool they use today?",
+      "applies_to": "interviewee",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    },
+    "pitching": {
+      "type": "noul",
+      "instructions": "Is the speaker describing, explaining or promoting their own product, idea or feature, rather than asking about the other person's experience?",
+      "applies_to": "founder",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    },
+    "commitment_time": {
+      "type": "noul",
+      "instructions": "Does the speaker agree to a specific next meeting, trial or session with the interviewer, with a date or time?",
+      "applies_to": "interviewee",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    },
+    "commitment_intro": {
+      "type": "noul",
+      "instructions": "Does the speaker offer to introduce the interviewer to another specific person, such as a colleague, their boss or a decision maker?",
+      "applies_to": "interviewee",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    },
+    "commitment_money": {
+      "type": "noul",
+      "instructions": "Does the speaker offer money now, such as a pre-order, a deposit, a signed letter of intent or paying for a pilot?",
+      "applies_to": "interviewee",
+      "aggregate": "max",
+      "threshold": 0.5,
+      "trust": "unmeasured"
+    }
+  }
+}
