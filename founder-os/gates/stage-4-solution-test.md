@@ -9,11 +9,7 @@ fail_routes_to: 4
 
 # Stage 4 gate: tested with customers, reshaped by what they did
 
-> DRAFT - needs Sean ruling. No founder is held to this gate until Sean signs
-> it off. Numeric minimums that need his call: 5 Sprint testers, all stage 3
-> earlyvangelists; 10 solution interviews, no more than 3 of them new to the
-> ledger; 3 to 6 sprint questions; a finding needs 3 of 5 testers; at least 2
-> sketched alternatives; at least 1 feature deleted or backlogged.
+> Ruled by Sean on 2026-09-26. The minimums below are in force.
 
 ## Required evidence
 

@@ -9,20 +9,17 @@ fail_routes_to: 3
 
 # Stage 3 gate: interviews that could have said no
 
-> Draft. It exists so the first stage 3 core card has a gate to serve. The
-> minimum counts are placeholders until the other two stage 3 cards land: the
-> problem interview and its exit criteria (Running Lean) and earlyvangelist
-> criteria and commitment signals (Startup Owner's Manual).
+> Ruled by Sean on 2026-09-26. The minimums below are in force.
 
 ## Required evidence
 
 - **Audited interviews.** At least 10 rows in `interviews` from the founder's
-  target segment (placeholder count). Each one has `audits` rows from the
+  target segment. Each one has `audits` rows from the
   line-by-line audit in `interviews-without-fooling-yourself`, step 7.
 - **A next step on every interview.** The interview notes record what the
   person agreed to do next, or say "none offered".
-- **Commitment signals.** At least 3 interviews where `commitment` is `time`,
-  `reputation` or `money` (placeholder count). The notes say what the step
+- **Commitment signals.** At least 5 interviews where `commitment` is `time`,
+  `reputation` or `money`. The notes say what the step
   cost the interviewee.
 - **Earlyvangelists identified.** At least 1 interview with `earlyvangelist`
   set, backed by an audit that checks it against the earlyvangelist criteria.

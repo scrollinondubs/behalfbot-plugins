@@ -9,12 +9,7 @@ fail_routes_to: 6
 
 # Stage 6 gate: content people answer, on a channel that works
 
-> DRAFT - needs Sean ruling. No founder is held to this gate until Sean signs
-> it off. Numeric minimums that need his call: 4 published e-bombs; 3 distinct
-> quoted sources behind each e-bomb's pain; 5 to 8 sourced pain lines on the
-> sales page; a segment test to 50 to 200 subscribers; 2 channel tests; and
-> "responsive" set at more than zero replies, clicks or signups, which is
-> almost certainly too low for a pass.
+> Ruled by Sean on 2026-09-26. The minimums below are in force.
 
 ## Required evidence
 
@@ -43,7 +38,7 @@ fail_routes_to: 6
 
 ## Pass/fail rubric
 
-- **Pass:** every item is present and every check holds. The list is responsive, meaning people replied, clicked or signed up. The decision cites the ids of each artifact and `audits` row it rests on.
+- **Pass:** every item is present and every check holds. The list is responsive, meaning at least 10% of the segment test's recipients replied or clicked. The decision cites the ids of each artifact and `audits` row it rests on.
 - **Fail:** a required artifact is missing. An e-bomb has no quoted pain. An e-bomb pitches the product. A pain line has no source. A pass mark was set after the results came in. Or the only proof of response is opens, views or subscriber count.
 - **Borderline:** clicks but zero replies. Pass only if the signups trace to e-bombs, and name the silence in the rationale.
 - **Borderline:** a channel passed its test, but list growth came from somewhere else. Fail until growth after the choice date follows the chosen channel.

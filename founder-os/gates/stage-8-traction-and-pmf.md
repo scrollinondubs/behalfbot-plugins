@@ -9,13 +9,7 @@ fail_routes_to: 8
 
 # Stage 8 gate: fit you can measure, a number that moves
 
-> DRAFT - needs Sean ruling. No founder is held to this gate until Sean signs
-> it off. Numeric minimums that need his call: 2 Sean Ellis survey runs of 30
-> or more responses each, with 100 or more before a score is more than
-> directional; whether the 40% very-disappointed line is required to pass or
-> only advises; users active within 14 days of the survey; 4 weekly OMTM
-> points; 4 cohort rows; 1 logged change followed by movement; 3 flat weeks
-> with no change counted as a fail.
+> Ruled by Sean on 2026-09-26. The minimums below are in force.
 
 ## Required evidence
 
@@ -47,6 +41,7 @@ Each check writes an `audits` row with `check_name` and `verdict`.
 
 - **Pass:** every piece of evidence is present, every check passes, and the metric moved across several weeks after a named change. Claude recommends a ruling on the PMF score and Sean makes it. The decision cites every artifact id and `audits` row it relies on.
 - **Fail:** a missing artifact, any survey under 30 responses, a line in the sand dated after the data, a cumulative metric, or no movement tied to a logged change.
+- **The 40% very-disappointed line is advisory, not a pass condition.** At cohort-sized samples it is noise. Claude reports the score and Sean weighs it.
 - **Borderline, 30 to 99 responses:** the score is directional. Claude notes it and Sean decides whether it counts.
 - **Borderline, under 40% overall with a segment well above it:** passes only if the core-user statement names that segment and the rerun targeted it. Sean rules.
 - **Borderline, metric moved but stayed under the line:** passes if the series and `omtm_change` show an honest record and what came next. If it has been flat for three weeks or more with nothing changed, fail.

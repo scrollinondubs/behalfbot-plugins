@@ -9,8 +9,7 @@ fail_routes_to: 1
 
 # Stage 1 gate: a named audience you can go and read
 
-> Draft. Needs Sean's ruling, including every minimum count, before a founder
-> is held to it.
+> Ruled by Sean on 2026-09-26. The minimums below are in force.
 
 ## Required evidence
 

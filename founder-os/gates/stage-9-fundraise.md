@@ -9,11 +9,7 @@ fail_routes_to: 8
 
 # Stage 9 gate: raise only if the numbers already say so
 
-> DRAFT - needs Sean ruling. No founder is held to this gate until Sean signs
-> it off. Numeric minimums that need his call: 3 paying customers in the
-> ledger; 8 weekly readings of one metric; 2 funded plans beside the
-> zero-dollar plan; 8 to 12 angels on the shortlist; 3 warm routes; 1 sent
-> investor update.
+> Ruled by Sean on 2026-09-26. The minimums below are in force.
 
 This stage is optional. Revenue first is the default, and a founder who
 decides "not yet" has finished FounderOS. The gate only asks for pitch and
