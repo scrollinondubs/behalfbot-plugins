@@ -21,3 +21,7 @@
 /.github/             @scrollinondubs
 /LICENSE              @scrollinondubs
 /SECURITY.md          @scrollinondubs
+
+# FounderOS core is the only content the coach loads. Listed explicitly so the
+# review request survives if the catch-all above is ever narrowed (behalfbot-plugins#22).
+/founder-os/core/     @scrollinondubs
