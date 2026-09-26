@@ -60,7 +60,7 @@ The gate fails if the audience is a market category or a demographic, or if the 
 
 ## Sources
 
-- 30x500, Amy Hoy and Alex Hillman. This card takes the audience first ordering and the tests for choosing a group you can reach and understand. Read the original: https://stackingthebricks.com/30x500/
+- 30x500, Amy Hoy and Alex Hillman. This card takes the audience first ordering and the tests for choosing a group you can reach and understand. Read the original: https://30x500.com/academy/
 
 ## Sean's notes
 

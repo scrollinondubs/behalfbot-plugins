@@ -101,5 +101,6 @@
         "_explanation": "The auditors send per-item questions to Laya's /v1/systemone endpoint. It is a soft dependency: with LAYA_URL unset, or the server down or timing out, every auditor returns mode claude-only and Claude does the tagging. Nothing is installed or started from this plugin."
       }
     ]
-  }
+  },
+  "license": "MIT (code) + CC-BY-NC-SA-4.0 (content), see LICENSE.md"
 }

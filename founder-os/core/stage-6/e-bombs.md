@@ -67,7 +67,7 @@ The `stage-6-content-and-audience` gate asks for a published content wall and a 
 
 ## Sources
 
-- 30x500, Amy Hoy and Alex Hillman. This card takes their e-bomb: a free fix drawn from Sales Safari research, delivered in the audience's watering holes and used to grow a list before any product exists. Read the original: https://stackingthebricks.com/30x500/
+- 30x500, Amy Hoy and Alex Hillman. This card takes their e-bomb: a free fix drawn from Sales Safari research, delivered in the audience's watering holes and used to grow a list before any product exists. Read the original: https://30x500.com/academy/
 
 ## Sean's notes
 
