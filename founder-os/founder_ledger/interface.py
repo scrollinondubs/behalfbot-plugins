@@ -33,6 +33,35 @@ EVIDENCE_TABLES = ("artifacts", "pains", "interviews", "prfaq_versions", "audits
 AUDIT_TARGETS = ("artifacts", "pains", "interviews", "prfaq_versions")
 LABEL_TARGETS = ("artifacts", "pains", "interviews", "prfaq_versions")
 
+# Every table that holds founder rows, in the order an import loads them:
+# parents first, then rows other rows point at, then the rows that point.
+BUNDLE_TABLES = (
+    "founders", "stage_progress", "artifacts", "pains", "interviews",
+    "prfaq_versions", "audits", "gate_decisions", "labels",
+)
+
+# Columns per table, as schema/migrations defines them. An import refuses a row
+# with a column outside this set, which is how a bundle from a newer schema
+# fails with a clear message rather than a driver error.
+TABLE_COLUMNS = {
+    "founders": ("founder_id", "display_name", "cohort", "current_stage", "context",
+                 "created_at", "updated_at"),
+    "stage_progress": ("id", "founder_id", "stage", "status", "started_at", "passed_at", "updated_at"),
+    "artifacts": ("id", "founder_id", "stage", "kind", "version", "title", "body", "meta", "created_at"),
+    "pains": ("id", "founder_id", "quote", "source_url", "watering_hole", "segment", "job", "tags",
+              "created_at"),
+    "interviews": ("id", "founder_id", "interviewee", "segment", "conducted_on", "notes", "commitment",
+                   "earlyvangelist", "created_at"),
+    "prfaq_versions": ("id", "founder_id", "version", "stage", "body", "assumptions", "created_at"),
+    "audits": ("id", "founder_id", "target_table", "target_id", "auditor", "check_name", "verdict",
+               "findings", "created_at"),
+    "gate_decisions": ("id", "founder_id", "stage", "gate_id", "decision", "decided_by", "sean_signoff",
+                       "evidence", "rationale", "routes_to_stage", "created_at"),
+    "labels": ("id", "founder_id", "task", "target_table", "target_id", "input_text", "model_label",
+               "model_version", "confidence", "corrected_label", "corrected_by", "corrected_at",
+               "created_at"),
+}
+
 COMMITMENTS = ("none", "time", "reputation", "money")
 AUDITORS = ("laya", "claude", "sean")
 VERDICTS = ("pass", "fail", "flag")
@@ -197,6 +226,33 @@ class Ledger(abc.ABC):
     def export_corrected_labels(self, *, task: str | None = None) -> list[Row]:
         """Every corrected label across all founders: the fine-tuning set.
         Cross-tenant, so operator-only. Never expose it to a founder session."""
+
+    # --- founder bundle import ----------------------------------------------
+
+    @abc.abstractmethod
+    def import_founder_rows(
+        self, founder_id: str, tables: dict[str, list[Row]], *, replace: bool = False,
+    ) -> dict[str, dict[str, int]]:
+        """Load one founder's rows verbatim, ids and timestamps included.
+
+        The one write path that does not generate ids or timestamps, because a
+        founder bundle (docs/bundle-format.md) has to round-trip exactly. Export
+        needs no counterpart: get_founder plus the list_* calls read every table.
+
+        tables maps each of BUNDLE_TABLES to rows shaped like the list_* calls
+        return them (JSON decoded, booleans as bool). Every row must carry this
+        founder_id, and there must be exactly one founders row.
+
+        All or nothing, in one transaction. A row whose id is already present
+        with identical content is skipped, so importing the same bundle twice
+        is a no-op. A row whose id is present with different content, or owned
+        by another founder, is a conflict: nothing is written and LedgerError
+        names the rows. replace=True deletes this founder first, then loads.
+
+        After loading, every audit and label target and every gate evidence ref
+        must point at a row this founder owns. Returns
+        {table: {"inserted": n, "unchanged": m}}.
+        """
 
     # --- lifecycle ----------------------------------------------------------
 

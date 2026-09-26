@@ -47,7 +47,19 @@ bundle exported from VCL will not import into a self-hosted install.
 4. **Conformance.** Port `tests/ledger_conformance.py` case for case. The raw
    `CHECK`-constraint cases (`test_schema_rejects_*`) matter most. They prove
    the rules hold even when the adapter is bypassed.
-5. **Tenancy.** A VCL request resolves the student's `founder_id` from their
+5. **Founder bundle.** The student dashboard's export writes the format in
+   [`bundle-format.md`](bundle-format.md) with `source: "vcl"`. Read with the
+   `list*` methods and follow the spec's JSON encoding and sort order exactly:
+   the self-hosted import checks every file's sha256, and the round-trip test
+   compares bytes. Implement `importFounderRows` too, so a founder can move back.
+   To check the exporter, import its bundle with `founder-os import` into a
+   SQLite ledger, export again, and diff the two directories. Only
+   `exported_at` may differ.
+6. **Progress webhook receiver.** The instructor dashboard receives the opt-in
+   webhook from self-hosted graduates. Issue each student their own URL and
+   signing secret, and verify every request as the spec describes, rejecting
+   timestamps more than 300 seconds old.
+7. **Tenancy.** A VCL request resolves the student's `founder_id` from their
    session and passes it on every call. `export_corrected_labels` is the only
    cross-founder call. Keep it behind an instructor or admin check, never
    reachable from a student session.

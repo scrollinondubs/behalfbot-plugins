@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+"""founder-os - move a founder between installs, and report progress to an instructor.
+
+    founder-os export --founder-id ID --out alice.zip [--source self-hosted|vcl]
+    founder-os import alice.zip [--as-founder ID] [--replace]
+    founder-os progress --founder-id ID [--print]
+
+Reads the same environment as founder_ledger.open_ledger():
+
+    FOUNDER_OS_LEDGER_BACKEND   postgres (default) | sqlite
+    BEHALFBOT_PG_DSN / CHASSIS_PG_DSN, FOUNDER_OS_PG_SCHEMA, FOUNDER_OS_SQLITE_PATH
+    FOUNDER_OS_FILES_DIR        where attached artifact files live (content-addressed)
+    FOUNDER_OS_PROGRESS_WEBHOOK_URL     instructor URL; unset means the webhook is off
+    FOUNDER_OS_PROGRESS_WEBHOOK_SECRET  shared HMAC key, required whenever the URL is set
+
+The bundle format is docs/bundle-format.md. Exit 0 on success, 1 on a refused
+bundle or ledger error, 2 on bad usage.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import pathlib
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+from founder_bundle import SOURCES, export_bundle, import_bundle, progress_payload, send_progress  # noqa: E402
+from founder_bundle.progress import webhook_config  # noqa: E402
+from founder_ledger import LedgerError, open_ledger  # noqa: E402
+
+
+def files_dir(args: argparse.Namespace) -> str | None:
+    return args.files_dir or os.environ.get("FOUNDER_OS_FILES_DIR") or None
+
+
+def cmd_export(args: argparse.Namespace) -> int:
+    with open_ledger() as ledger:
+        manifest = export_bundle(ledger, args.founder_id, args.out, source=args.source,
+                                 files_dir=files_dir(args))
+    counts = ", ".join(f"{t} {n}" for t, n in manifest["counts"].items() if n)
+    print(f"exported {args.founder_id} to {args.out} (format {manifest['format_version']}): {counts}")
+    return 0
+
+
+def cmd_import(args: argparse.Namespace) -> int:
+    with open_ledger(migrate=True) as ledger:
+        result = import_bundle(ledger, args.bundle, as_founder=args.as_founder, replace=args.replace,
+                               files_dir=files_dir(args))
+    inserted = sum(c["inserted"] for c in result["counts"].values())
+    unchanged = sum(c["unchanged"] for c in result["counts"].values())
+    print(f"imported {result['founder_id']} from {result['manifest']['source']}: "
+          f"{inserted} rows inserted, {unchanged} already present, {result['files']} files copied")
+    return 0
+
+
+def cmd_progress(args: argparse.Namespace) -> int:
+    with open_ledger() as ledger:
+        payload = progress_payload(ledger, args.founder_id)
+    if args.print:
+        print(json.dumps(payload, sort_keys=True))
+        return 0
+    config = webhook_config()
+    if config is None:
+        print("progress webhook is off (progress_webhook_url not configured); nothing sent")
+        return 0
+    status = send_progress(payload, *config)
+    print(f"progress sent: stage {payload['stage']} {payload['gate_status']} (HTTP {status})")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="founder-os", description=__doc__.split("\n\n")[0])
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p = sub.add_parser("export", help="write one founder's bundle")
+    p.add_argument("--founder-id", required=True)
+    p.add_argument("--out", required=True, help="new directory, or a path ending .zip")
+    p.add_argument("--source", choices=SOURCES, default="self-hosted")
+    p.add_argument("--files-dir", help="attached-file store (default $FOUNDER_OS_FILES_DIR)")
+    p.set_defaults(func=cmd_export)
+
+    p = sub.add_parser("import", help="load a bundle into this install's ledger")
+    p.add_argument("bundle", help="bundle directory or .zip")
+    p.add_argument("--as-founder", help="import under this founder_id, remapping every row id")
+    p.add_argument("--replace", action="store_true",
+                   help="delete this founder's local rows first, then load the bundle")
+    p.add_argument("--files-dir", help="attached-file store (default $FOUNDER_OS_FILES_DIR)")
+    p.set_defaults(func=cmd_import)
+
+    p = sub.add_parser("progress", help="POST stage and gate status to the instructor webhook, if configured")
+    p.add_argument("--founder-id", required=True)
+    p.add_argument("--print", action="store_true", help="print the payload instead of sending it")
+    p.set_defaults(func=cmd_progress)
+
+    args = parser.parse_args(argv)
+    try:
+        return args.func(args)
+    except (LedgerError, ValueError, OSError, RuntimeError) as exc:
+        print(f"founder-os {args.command}: {exc}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

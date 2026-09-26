@@ -10,6 +10,10 @@ goes in here.
 - Adapters: Postgres (self-hosted) and SQLite (tests, and the reference for
   Turso). VCL implements the same interface on Turso, see
   [`../docs/ledger-on-turso.md`](../docs/ledger-on-turso.md).
+- Founder bundle: every table here is exported and imported as
+  `ledger/<table>.json`, see [`../docs/bundle-format.md`](../docs/bundle-format.md).
+  A new column or table needs the matching change to `TABLE_COLUMNS` and
+  `BUNDLE_TABLES` in `interface.py`, or an import refuses it.
 
 ## Tables
 
