@@ -1,0 +1,12 @@
+# budget.yml - the most core lead cards each stage may hold.
+#
+# A lead card is a framework card in core/. Concept notes do not count. The
+# budget keeps core lean: once a stage is full, promoting a card into it means
+# demoting one out of it in the same PR. scripts/lint_content.py enforces this,
+# and a missing or malformed file fails the lint.
+#
+# Same flat subset as card frontmatter: `key: value`, one per line.
+# `default` applies to every stage. Override one stage with `stage-N`, e.g.
+#   stage-4: 4
+
+default: 3

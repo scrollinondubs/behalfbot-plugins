@@ -57,6 +57,9 @@ Rules that keep core lean:
 3. Promotion from contrib to core is eval-gated.
 4. A founder sees only the cards for their current stage.
 
+The lint enforces 1 and 2. The budget is in [`budget.yml`](budget.yml), and the
+full contribution rules are in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## Layout
 
 ```
@@ -64,6 +67,8 @@ founder-os/
   openclaw.plugin.json   manifest
   setup.sh               dependency check, idempotent
   validate.sh            layout and manifest smoke check
+  budget.yml             most core lead cards each stage may hold
+  CONTRIBUTING.md        core vs contrib, the budget, promotion, attribution
   core/                  canonical cards and concept notes (the coach loads only this)
   contrib/               community cards, opt-in
   gates/                 gate specs and rubrics

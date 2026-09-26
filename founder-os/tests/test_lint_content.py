@@ -124,10 +124,107 @@ class LintContentTest(unittest.TestCase):
         self.write("core/concepts/broken.md", "---\nid: broken\n\nno closing fence\n")
         self.assertOneProblem("never closed")
 
+    # Governance (behalfbot-plugins#29): card budget and card status.
+
+    def add_core_card(self, ident: str, stage: int = 1) -> None:
+        text = (self.root / CARD).read_text(encoding="utf-8")
+        text = text.replace("id: map-the-watering-holes", f"id: {ident}")
+        if stage != 1:
+            text = text.replace("stage: 1\n", f"stage: {stage}\n", 1)
+        self.write(f"core/cards/{ident}.md", text)
+
+    def add_contrib_card(self, ident: str, status: str | None) -> None:
+        text = (self.root / CARD).read_text(encoding="utf-8")
+        text = text.replace("id: map-the-watering-holes", f"id: {ident}").replace("tier: core", "tier: contrib")
+        if status is not None:
+            text = text.replace("tier: contrib\n", f"tier: contrib\nstatus: {status}\n")
+        self.write(f"contrib/{ident}.md", text)
+
+    def test_real_budget_file_parses(self) -> None:
+        problems: list[str] = []
+        budget = lint_content.load_budget(PLUGIN_DIR / "budget.yml", problems)
+        self.assertEqual(problems, [])
+        self.assertEqual(sorted(budget), list(range(10)))
+
+    def test_stage_at_budget_passes(self) -> None:
+        self.add_core_card("second-card")
+        self.add_core_card("third-card")
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_stage_over_budget(self) -> None:
+        for ident in ("second-card", "third-card", "fourth-card"):
+            self.add_core_card(ident)
+        self.assertOneProblem("stage 1: 4 core lead cards, budget is 3")
+
+    def test_budget_is_per_stage(self) -> None:
+        for ident in ("second-card", "third-card"):
+            self.add_core_card(ident)
+        self.add_core_card("stage-two-card", stage=2)
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_concept_notes_do_not_count(self) -> None:
+        self.write("budget.yml", "default: 1\n")
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_contrib_cards_do_not_count(self) -> None:
+        self.write("budget.yml", "default: 1\n")
+        self.add_contrib_card("community-card", status="candidate")
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_budget_default_is_configurable(self) -> None:
+        self.write("budget.yml", "# tighter\ndefault: 0\n")
+        self.assertOneProblem("stage 1: 1 core lead cards, budget is 0")
+
+    def test_budget_stage_override(self) -> None:
+        self.write("budget.yml", "default: 1\nstage-1: 2\n")
+        self.add_core_card("second-card")
+        self.assertEqual(lint_content.lint(self.root), [])
+        self.add_core_card("third-card")
+        self.assertOneProblem("stage 1: 3 core lead cards, budget is 2")
+
+    def test_budget_missing_fails(self) -> None:
+        problems = lint_content.lint(self.root, budget_path=self.root / "nope.yml")
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("budget.yml: not found", problems[0])
+
+    def test_budget_needs_default(self) -> None:
+        self.write("budget.yml", "stage-1: 2\n")
+        self.assertOneProblem("missing required key 'default'")
+
+    def test_budget_rejects_non_number(self) -> None:
+        self.write("budget.yml", "default: three\n")
+        self.assertOneProblem("default must be a whole number")
+
+    def test_budget_rejects_unknown_key(self) -> None:
+        self.write("budget.yml", "default: 3\nstage-10: 2\n")
+        self.assertOneProblem("unknown key 'stage-10'")
+
+    def test_contrib_card_cannot_claim_core_status(self) -> None:
+        self.add_contrib_card("self-promoted", status="core")
+        self.assertOneProblem("status: core but the card lives under contrib/")
+
+    def test_contrib_card_statuses_pass(self) -> None:
+        self.add_contrib_card("drafted", status="draft")
+        self.add_contrib_card("nominated", status="candidate")
+        self.add_contrib_card("unset", status=None)
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_unknown_status(self) -> None:
+        self.add_contrib_card("odd", status="promoted")
+        self.assertOneProblem("status 'promoted' must be one of")
+
+    def test_core_card_status_must_be_core(self) -> None:
+        self.edit(CARD, "tier: core\n", "tier: core\nstatus: candidate\n")
+        self.assertOneProblem("status 'candidate' under core/")
+
     def test_cli_exit_codes(self) -> None:
         self.assertEqual(lint_content.main(["--root", str(self.root)]), 0)
         self.edit(CARD, "gate: stage-1-audience", "gate: stage-1-nowhere")
         self.assertEqual(lint_content.main(["--root", str(self.root)]), 1)
+
+    def test_cli_budget_flag(self) -> None:
+        self.write("tight.yml", "default: 0\n")
+        self.assertEqual(lint_content.main(["--root", str(self.root), "--budget", str(self.root / "tight.yml")]), 1)
 
 
 if __name__ == "__main__":

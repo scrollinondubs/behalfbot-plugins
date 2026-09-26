@@ -47,6 +47,12 @@ Rules on those fields:
 - `gate` names the id of a gate spec in `gates/`. **Every core card names the
   gate it serves.** A contrib card may leave it out, but if it names one, the
   gate must exist.
+- `status` is optional on framework cards: `draft`, `candidate` or `core`.
+  A card under `contrib/` is `draft` (the default) or `candidate`. A card under
+  `core/` is `core` or leaves it out. `status: core` in contrib fails: promotion
+  moves the file, it is not a field edit. See [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md).
+- No stage may hold more core framework cards than [`budget.yml`](../../budget.yml)
+  allows. Concept notes do not count against it.
 - `signoff` is `claude` or `claude+sean`. Gates at stage 3 and later must be
   `claude+sean`.
 - `fail_routes_to` is the stage a failed founder goes back to. It can be the

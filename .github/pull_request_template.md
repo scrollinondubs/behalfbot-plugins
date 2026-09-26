@@ -26,6 +26,21 @@ perfectly good answer. -->
 <!-- What you actually ran or observed. For a new plugin: did you run setup.sh
 twice on a clean Linux box and confirm the second run is a no-op? -->
 
+## FounderOS
+
+<!-- Only for changes to founder-os/ content. Delete this section otherwise.
+The rules are in founder-os/CONTRIBUTING.md. -->
+
+**Which gate does this move a founder through?**
+
+<!-- The gate id in founder-os/gates/. If there isn't one, the card belongs in contrib/. -->
+
+**Which core card does this displace, if it's going into core?**
+
+<!-- Each stage has a card budget (founder-os/budget.yml). A promotion into a
+full stage names the card it demotes back to contrib/, and links the passing
+eval (behalfbot-plugins#28). Write "not going into core" for contrib cards. -->
+
 ## Checklist
 
 <!-- The sign-off is one line, not a CLA. `git commit -s` adds it; for a branch
