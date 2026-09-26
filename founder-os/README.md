@@ -136,3 +136,7 @@ founder-os/
 Cards are original synthesis. No text from a book or course enters this
 directory. Each card credits its sources and links to the original; the
 plugin-wide list is in [`ATTRIBUTION.md`](ATTRIBUTION.md).
+
+## License
+
+Content (cards, concept notes, gates, template prose, Laya question wording) is CC BY-NC-SA 4.0; code is MIT. See [LICENSE.md](LICENSE.md).

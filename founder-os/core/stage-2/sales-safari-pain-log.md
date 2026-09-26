@@ -79,7 +79,7 @@ The clustering into jobs comes from the painstorming handoff, not from this card
 
 ## Sources
 
-- 30x500, Amy Hoy and Alex Hillman. This card takes Sales Safari as a research method from them, along with painstorming as the step that follows it and the practice of noting the audience's language, worldview and purchases next to each pain. Read the original: https://stackingthebricks.com/30x500/
+- 30x500, Amy Hoy and Alex Hillman. This card takes Sales Safari as a research method from them, along with painstorming as the step that follows it and the practice of noting the audience's language, worldview and purchases next to each pain. Read the original: https://30x500.com/academy/
 - Sales Safari updated for 2023, Amy Hoy and Alex Hillman (Stacking the Bricks). This card takes the point that Safari now works in chat servers, groups and social feeds as well as forums, and that any note-taking tool will do. Read the original: https://shorts.stackingthebricks.com/updating-sales-safari-2023/
 - Sales Safari 101, Stacking the Bricks. This card takes the framing of Safari as observation of public behaviour rather than cold outreach or surveys. Read the original: https://shop.stackingthebricks.com/sales-safari-101
 

@@ -67,7 +67,7 @@ The `stage-6-content-and-audience` gate needs a responsive list and a published 
 
 ## Sources
 
-- 30x500, Amy Hoy and Alex Hillman. This card takes its Pain-Dream-Fix page structure from 30x500, along with the practice of sourcing copy from Sales Safari research. Read the original: https://stackingthebricks.com/30x500/
+- 30x500, Amy Hoy and Alex Hillman. This card takes its Pain-Dream-Fix page structure from 30x500, along with the practice of sourcing copy from Sales Safari research. Read the original: https://30x500.com/academy/
 
 ## Sean's notes
 
