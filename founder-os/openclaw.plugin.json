@@ -1,0 +1,45 @@
+{
+  "id": "behalfbot-founder-os",
+  "name": "Behalf.bot - FounderOS",
+  "description": "A gated coach for early-stage founders. It walks a founder through a fixed sequence of stages, from why and founder fit through audience, pain research, discovery, solution test, positioning, content, validation and traction. Each stage ends in a gate that needs ledger evidence, not self-report. Content (framework cards, concept notes, stage skills, gate specs) is markdown in git; founder state lives in a ledger behind a storage interface. This release is the scaffold only: no skills, cards or gates ship yet.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Master switch. The plugin ships no skills yet, so enabling it does nothing beyond running setup.sh and validate.sh.",
+        "default": false
+      },
+      "include_contrib": {
+        "type": "boolean",
+        "description": "Load community cards from contrib/ in addition to core/. Off by default: the coach loads only core/, and founders never see contrib content unless the operator opts in.",
+        "default": false
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": [],
+    "skills": [],
+    "hooks": [],
+    "env": {
+      "FOUNDER_OS_DIR": "${PLUGIN_DIR}"
+    },
+    "triggers": []
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "Scaffold release. Stage skills are invoked on demand once they ship; there are no scheduled jobs."
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "python3",
+        "install": "apt-get install python3 (Debian) / your platform's package manager",
+        "_explanation": "validate.sh parses the manifest with python3. Later releases add a stdlib-only content lint and the ledger storage interface, both Python."
+      }
+    ]
+  }
+}
