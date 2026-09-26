@@ -1,6 +1,6 @@
 # Authoring templates
 
-FounderOS content comes in five kinds. Each has a template in this directory.
+FounderOS content comes in six kinds. Each has a template in this directory.
 There is a filled example of each in [`../examples/`](../examples/), except the auditor skill: the four real ones in [`../../skills/`](../../skills/) are its examples.
 
 | Kind | Template | Lives in | `type:` |
@@ -10,6 +10,7 @@ There is a filled example of each in [`../examples/`](../examples/), except the 
 | Stage skill | [`stage-skill.md`](stage-skill.md) | `skills/<name>/SKILL.md` | `stage-skill` |
 | Gate spec | [`gate-spec.md`](gate-spec.md) | `gates/` | `gate` |
 | Auditor skill | [`auditor-skill.md`](auditor-skill.md) | `skills/<name>/SKILL.md` | `auditor-skill` |
+| Coach skill | none; see [`../../skills/README.md`](../../skills/README.md) | `skills/founder-os-coach-<name>/SKILL.md` | `coach-skill` |
 
 Copy the template, fill every section, and delete the guidance in angle
 brackets. `scripts/lint_content.py` enforces the rules below. `validate.sh` runs
@@ -36,8 +37,9 @@ Required fields by kind:
 | Framework card | `id`, `type`, `title`, `stage`, `tier`, `sources`. Core cards also need `gate`. |
 | Concept note | `id`, `type`, `title`, `tier` |
 | Stage skill | `name`, `description`, `plugin`, `type`, `stage`, `gate` |
-| Gate spec | `id`, `type`, `title`, `stage`, `signoff`, `fail_routes_to` |
+| Gate spec | `id`, `type`, `title`, `stage`, `signoff`, `fail_routes_to`, `evidence` |
 | Auditor skill | `name`, `description`, `plugin`, `type`, `stage`, `question_set`. `gate` is optional. |
+| Coach skill | `name`, `description`, `plugin`, `type`. Never `gate` or `stage`. |
 
 Rules on those fields:
 
@@ -55,6 +57,17 @@ Rules on those fields:
   moves the file, it is not a field edit. See [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md).
 - No stage may hold more core framework cards than [`budget.yml`](../../budget.yml)
   allows. Concept notes do not count against it.
+- `evidence` on a gate lists the minimums a query can count, one per item:
+  `<table>[/<kind>][:<filter>]>=<n>`, e.g.
+  `evidence: [artifacts/why_statement>=1, interviews:committed>=3]`. The
+  grammar is in `founder_stage/evidence.py`. The judgment calls stay in the
+  gate's Auditor checks section.
+- Every gate has exactly one stage skill naming it, at the gate's stage.
+- `eval` on a card names a results file in `evals/results/`. A core card needs
+  a winning one, or must be a seed card (`evals/seed-cards.txt`).
+- Every concept note is linked from somewhere.
+- Skills live at `skills/<name>/SKILL.md` and nowhere deeper. When the root has
+  `openclaw.plugin.json`, its `contracts.skills` lists exactly those skills.
 - `signoff` is `claude` or `claude+sean`. Gates at stage 3 and later must be
   `claude+sean`.
 - `fail_routes_to` is the stage a failed founder goes back to. It can be the
@@ -73,7 +86,7 @@ need them, but never drop or rename one of these.
 - **Gate spec:** Required evidence, Auditor checks, Pass/fail rubric, Failure
   routing
 - **Stage skill:** Read the founder context first, Current stage only,
-  Procedure, Ledger writes
+  Procedure, Gate submission, Ledger writes
 - **Auditor skill:** When to run, Laya pass, Claude pass, Without Laya,
   Label capture, Ledger writes
 - **Concept note:** none. It is one idea in a few paragraphs.

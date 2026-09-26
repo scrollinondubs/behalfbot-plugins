@@ -6,6 +6,7 @@ stage: 1
 gate: stage-1-audience
 tier: core
 sources: [thirty-x-500]
+eval: example-run
 ---
 
 # Map the watering holes

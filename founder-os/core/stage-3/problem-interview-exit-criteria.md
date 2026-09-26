@@ -73,7 +73,7 @@ This card supplies the following evidence for `stage-3-discovery`:
 - Complete problem interview records, enough to fill the exit statement. The gate audits them with `interviews-without-fooling-yourself`.
 - The batch tallies and the exit statement, with every claim traced back to records.
 - The follow-up and referral answers from each close, as raw input for the sibling card *Earlyvangelist criteria and commitment signals* That card scores commitment. This card only records it.
-- The early-adopter profile, which is where the gate starts looking for earlyvangelists.
+- The early-adopter profile, which is where the gate starts looking for [[earlyvangelist|earlyvangelists]].
 
 ## Sources
 

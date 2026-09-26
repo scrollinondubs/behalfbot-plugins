@@ -5,6 +5,7 @@ title: "Stage 0 gate: a problem you care about, written down"
 stage: 0
 signoff: claude
 fail_routes_to: 0
+evidence: [artifacts/why_statement>=1, artifacts/why_evidence>=1, artifacts/fit_check>=1, prfaq_versions>=1, artifacts/lean_canvas>=1, artifacts/riskiest_assumption>=1]
 ---
 
 # Stage 0 gate: a problem you care about, written down

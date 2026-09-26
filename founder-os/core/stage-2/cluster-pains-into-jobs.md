@@ -22,7 +22,7 @@ Wrong card if the log is thin or full of your own paraphrases. Collect more quot
 
 ## Principles
 
-- A job is progress in a situation. Who the person is matters less than the moment they are stuck in. This is the core of Jobs to be Done, the theory Clayton Christensen and his co-authors set out in HBR.
+- A job is progress in a situation. Who the person is matters less than the moment they are stuck in. This is the core of [[job-to-be-done|Jobs to be Done]], the theory Clayton Christensen and his co-authors set out in HBR.
 - People hire something to get a job done, and they fire it when it lets them down. Christensen's word "hire" covers any fix: a tool, a spreadsheet, a freelancer, or putting it off.
 - Every job has three sides. The functional side is the task. The social side is how they want to look to others. The emotional side is how they want to feel.
 - Doing nothing is a real competitor. A job with no current hire is still a job, and often the widest one.

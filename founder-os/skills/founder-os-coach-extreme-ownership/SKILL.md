@@ -1,5 +1,5 @@
 ---
-name: extreme-ownership
+name: founder-os-coach-extreme-ownership
 description: FounderOS coach skill, usable at any stage and never a gate. Helps a founder take ownership of a result that went wrong instead of explaining it away, using Jocko Willink and Leif Babin's Extreme Ownership. Triggers when a founder blames customers, a co-founder, a contractor, the market or bad luck for a missed goal, or asks "whose fault was this?"
 plugin: behalfbot-founder-os
 enabled_when: "chassis.config.yaml modules.founder-os.enabled == true"

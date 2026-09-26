@@ -16,7 +16,7 @@ Turn the launch announcement you guessed at in stage 0 into one that holds up. E
 
 ## When to use
 
-Use this card at stage 5. By now you have a PR/FAQ v0, a ledger of interviews and tests, and a one-sentence job and foothold segment from the sibling card "One sentence for the job, one segment for the foothold".
+Use this card at stage 5. By now you have a PR/FAQ v0, a ledger of interviews and tests, and a one-sentence job and [[foothold]] segment from the sibling card "One sentence for the job, one segment for the foothold".
 
 It's the wrong card if the job sentence or the foothold is still open. Finish those first. If you have no v0 at all, go back to "PR/FAQ v0: write the launch before the product" at stage 0.
 

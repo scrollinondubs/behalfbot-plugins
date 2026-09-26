@@ -8,13 +8,23 @@ and checks:
   - framework cards and gate specs carry every required section heading
   - ids are unique and match the filename (or the skill directory name)
   - every core framework card names a gate, and that gate exists in gates/
-  - every stage skill names a gate that exists
+  - every stage skill names a gate that exists, at the same stage, and every
+    gate has exactly one stage skill
+  - coach skills name no gate and no stage: they gate nothing
+  - skills sit at skills/<name>/SKILL.md, the only place chassis discovery
+    looks, and when the root has a manifest its contracts.skills lists
+    exactly the skills on disk
+  - every gate lists its machine-checkable minimums in `evidence:`
   - every auditor skill names a Laya question set in laya/ that exists, and
     any gate it names exists
   - every question set in laya/ is well formed and named after its file
   - every [[wiki-link]] resolves, and core never links into contrib
   - no stage has more core lead cards than budget.yml allows
   - a card's status is a known value, and status: core only appears under core/
+  - a card's `eval:` names a results file in evals/results/ with an entry for
+    that card, and a core card either has a winning eval or is one of the seed
+    cards in evals/seed-cards.txt (promotion into core is eval-gated)
+  - every concept note is linked from somewhere, so none sits unused
 
 The format rules live in templates/authoring/README.md. Stdlib only, so it runs
 in CI with no install step. That is also why frontmatter is a restricted subset
@@ -43,8 +53,9 @@ REQUIRED_FIELDS = {
     "gate": ("id", "type", "title", "stage", "signoff", "fail_routes_to"),
     "stage-skill": ("name", "description", "plugin", "type", "stage", "gate"),
     "auditor-skill": ("name", "description", "plugin", "type", "stage", "question_set"),
+    "coach-skill": ("name", "description", "plugin", "type"),
 }
-SKILL_KINDS = ("stage-skill", "auditor-skill")
+SKILL_KINDS = ("stage-skill", "auditor-skill", "coach-skill")
 
 REQUIRED_SECTIONS = {
     "framework-card": (
@@ -59,9 +70,11 @@ REQUIRED_SECTIONS = {
         "Sean's notes",
     ),
     "gate": ("Required evidence", "Auditor checks", "Pass/fail rubric", "Failure routing"),
-    "stage-skill": ("Read the founder context first", "Current stage only", "Procedure", "Ledger writes"),
+    "stage-skill": ("Read the founder context first", "Current stage only", "Procedure", "Gate submission",
+                    "Ledger writes"),
     "auditor-skill": ("When to run", "Laya pass", "Claude pass", "Without Laya", "Label capture", "Ledger writes"),
     "concept": (),
+    "coach-skill": (),
 }
 
 SIGNOFF_VALUES = ("claude", "claude+sean")
@@ -69,6 +82,10 @@ STATUS_VALUES = ("draft", "candidate", "core")
 BUDGET_FILE = "budget.yml"
 BUDGET_STAGE_KEY = re.compile(r"^stage-(\d)$")
 PLUGIN_ID = "behalfbot-founder-os"
+MANIFEST = "openclaw.plugin.json"
+EVAL_RESULTS_DIR = "evals/results"
+SEED_CARDS = "evals/seed-cards.txt"
+EVAL_WIN = "win"
 
 WIKI_LINK = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\]")
 ID_SHAPE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -143,6 +160,11 @@ def collect(root: pathlib.Path, problems: list[str]) -> list[Item]:
         sources += [(p, tier) for p in sorted((root / tier).rglob("*.md"))]
     sources += [(p, None) for p in sorted((root / "gates").rglob("*.md"))]
     sources += [(p, None) for p in sorted((root / "skills").glob("*/SKILL.md"))]
+    for nested in sorted((root / "skills").glob("*/*/**/SKILL.md")):
+        problems.append(
+            f"{nested.relative_to(root)}: skills live at skills/<name>/SKILL.md; "
+            "chassis discovery does not look deeper"
+        )
 
     for path, tier in sources:
         if path.name == "README.md":
@@ -161,6 +183,10 @@ def collect(root: pathlib.Path, problems: list[str]) -> list[Item]:
             continue
         items.append(Item(path, rel, kind, fields, body, tier))
     return items
+
+
+if str(PLUGIN_DIR) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_DIR))
 
 
 def check_item(item: Item, problems: list[str]) -> None:
@@ -217,6 +243,18 @@ def check_item(item: Item, problems: list[str]) -> None:
     if item.kind in SKILL_KINDS and f.get("plugin") != PLUGIN_ID:
         problems.append(f"{rel}: plugin must be {PLUGIN_ID!r}")
 
+    if item.kind == "coach-skill":
+        for field in ("gate", "stage"):
+            if field in f:
+                problems.append(f"{rel}: a coach skill gates nothing and works at any stage; drop '{field}'")
+
+    if item.kind == "gate":
+        from founder_stage.evidence import parse_evidence
+        try:
+            parse_evidence(f.get("evidence"))
+        except ValueError as e:
+            problems.append(f"{rel}: evidence: {e}")
+
 
 def check_references(items: list[Item], problems: list[str]) -> None:
     by_id: dict[str, Item] = {}
@@ -229,6 +267,9 @@ def check_references(items: list[Item], problems: list[str]) -> None:
             by_id[item.ident] = item
 
     gates = {i.ident for i in items if i.kind == "gate"}
+    gate_stage = {i.ident: as_stage(i.fields.get("stage", "")) for i in items if i.kind == "gate"}
+    stage_skills: dict[str, list[str]] = {}
+    linked: set[str] = set()
 
     for item in items:
         gate = item.fields.get("gate")
@@ -239,14 +280,93 @@ def check_references(items: list[Item], problems: list[str]) -> None:
                 problems.append(f"{item.rel}: names gate {gate!r}, which does not exist in gates/")
         if item.kind in SKILL_KINDS and gate and gate not in gates:
             problems.append(f"{item.rel}: names gate {gate!r}, which does not exist in gates/")
+        if item.kind == "stage-skill" and gate in gates:
+            stage_skills.setdefault(str(gate), []).append(item.ident)
+            if gate_stage[gate] != as_stage(item.fields.get("stage", "")):
+                problems.append(f"{item.rel}: stage {item.fields.get('stage')} but its gate {gate!r} "
+                                f"is at stage {gate_stage[gate]}")
 
         for m in WIKI_LINK.finditer(item.body):
             target_id = m.group(1).strip()
             target = by_id.get(target_id)
+            if target_id != item.ident:
+                linked.add(target_id)
             if target is None or target.kind not in ("concept", "framework-card"):
                 problems.append(f"{item.rel}: [[{target_id}]] does not resolve to a concept note or card")
             elif item.tier != "contrib" and target.tier == "contrib":
                 problems.append(f"{item.rel}: [[{target_id}]] links into contrib/, which core content must not depend on")
+
+    for gate in sorted(gates):
+        skills = stage_skills.get(gate, [])
+        if len(skills) != 1:
+            problems.append(f"gates: {gate!r} needs exactly one stage skill naming it, found "
+                            f"{len(skills)}{' (' + ', '.join(sorted(skills)) + ')' if skills else ''}")
+
+    for item in items:
+        if item.kind == "concept" and item.ident and item.ident not in linked:
+            problems.append(f"{item.rel}: no content links to [[{item.ident}]]; "
+                            "a concept note earns its place by being linked")
+
+
+def check_manifest(root: pathlib.Path, items: list[Item], problems: list[str]) -> None:
+    """contracts.skills is how the chassis discovers skills. A skill on disk
+    that is not listed never loads; a listed skill that is missing breaks it."""
+    path = root / MANIFEST
+    if not path.is_file():
+        return
+    try:
+        listed = json.loads(path.read_text(encoding="utf-8"))["contracts"]["skills"]
+    except (ValueError, KeyError, TypeError) as e:
+        problems.append(f"{MANIFEST}: cannot read contracts.skills ({e})")
+        return
+    on_disk = {i.ident for i in items if i.kind in SKILL_KINDS}
+    for name in sorted(on_disk - set(listed)):
+        problems.append(f"{MANIFEST}: skill {name!r} is on disk but not in contracts.skills")
+    for name in sorted(set(listed) - on_disk):
+        problems.append(f"{MANIFEST}: contracts.skills lists {name!r}, which has no skills/{name}/SKILL.md")
+
+
+def check_evals(root: pathlib.Path, items: list[Item], problems: list[str]) -> None:
+    """Promotion into core is eval-gated (behalfbot-plugins#28).
+
+    `eval: <run-id>` on a card names evals/results/<run-id>.json, which must
+    hold subjects["card:<id>"]. A core card needs that entry's verdict to be a
+    win, unless it is a seed card: one that was in core before the eval
+    harness existed, listed in evals/seed-cards.txt.
+    """
+    seed_path = root / SEED_CARDS
+    seeds: set[str] = set()
+    if seed_path.is_file():
+        seeds = {ln.strip() for ln in seed_path.read_text(encoding="utf-8").splitlines()
+                 if ln.strip() and not ln.startswith("#")}
+    core_cards = {i.ident for i in items if i.kind == "framework-card" and i.tier == "core"}
+    for stale in sorted(seeds - core_cards):
+        problems.append(f"{SEED_CARDS}: {stale!r} is not a core card; take it off the seed list")
+
+    for item in items:
+        if item.kind != "framework-card":
+            continue
+        run = item.fields.get("eval")
+        if not run:
+            if item.tier == "core" and item.ident not in seeds:
+                problems.append(f"{item.rel}: a core card needs `eval:` naming a winning eval run "
+                                f"(or must be a seed card in {SEED_CARDS})")
+            continue
+        results = root / EVAL_RESULTS_DIR / f"{run}.json"
+        try:
+            subjects = json.loads(results.read_text(encoding="utf-8"))["subjects"]
+        except OSError:
+            problems.append(f"{item.rel}: eval {run!r} has no results file {EVAL_RESULTS_DIR}/{run}.json")
+            continue
+        except (ValueError, KeyError, TypeError) as e:
+            problems.append(f"{EVAL_RESULTS_DIR}/{run}.json: unreadable results ({e})")
+            continue
+        entry = subjects.get(f"card:{item.ident}") if isinstance(subjects, dict) else None
+        if not isinstance(entry, dict):
+            problems.append(f"{item.rel}: eval {run!r} has no entry for card:{item.ident}")
+        elif item.tier == "core" and item.ident not in seeds and entry.get("verdict") != EVAL_WIN:
+            problems.append(f"{item.rel}: eval {run!r} verdict is {entry.get('verdict')!r}; "
+                            f"core needs {EVAL_WIN!r} over plain Claude")
 
 
 def resolve_budget_path(root: pathlib.Path) -> pathlib.Path:
@@ -345,6 +465,8 @@ def lint(root: pathlib.Path, budget_path: pathlib.Path | None = None) -> list[st
         check_item(item, problems)
     check_references(items, problems)
     check_question_sets(root, items, problems)
+    check_manifest(root, items, problems)
+    check_evals(root, items, problems)
     budget = load_budget(budget_path or resolve_budget_path(root), problems)
     if budget is not None:
         check_budget(items, budget, problems)

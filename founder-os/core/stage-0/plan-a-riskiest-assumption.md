@@ -6,6 +6,7 @@ stage: 0
 gate: stage-0-why
 tier: core
 sources: [running-lean, running-lean-1st-ed, lean-customer-development, love-the-problem]
+eval: 2026-09-26-live
 ---
 
 # Plan A on a Lean Canvas, riskiest assumption first
@@ -65,7 +66,7 @@ The `stage-0-why` gate asks for a problem you care about and a PR/FAQ v0 with it
 
 - A Plan A canvas whose problem box matches the problem you named.
 - The PR/FAQ's assumptions, rewritten falsifiable and tagged uncertain or risky.
-- One riskiest assumption, stated plainly, with the reason it ranks first.
+- One [[riskiest-assumption|riskiest assumption]], stated plainly, with the reason it ranks first.
 
 ## Sources
 

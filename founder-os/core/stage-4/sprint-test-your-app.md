@@ -18,7 +18,7 @@ By the end of the week you have proof a reviewer can inspect and a build that lo
 
 ## When to use
 
-Use this card at stage 4, after the stage 3 gate has passed and you hold a short list of earlyvangelists who described the pain in their own words. It fits best when you arrive with a vibecoded app and a strong urge to demo it.
+Use this card at stage 4, after the stage 3 gate has passed and you hold a short list of [[earlyvangelist|earlyvangelists]] who described the pain in their own words. It fits best when you arrive with a vibecoded app and a strong urge to demo it.
 
 It is the wrong card if you still can't say who has the problem. Go back to stage 3. It is also wrong if your open question is which kind of MVP to run. That belongs to 'Choose the MVP type that tests your riskiest assumption'. Pricing and trimming the release come later, in 'The solution interview and cutting the MVP to what was proven'.
 

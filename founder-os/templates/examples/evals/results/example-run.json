@@ -1,0 +1,22 @@
+{
+  "_note": "Illustrative example for the authoring templates. A real results file is written by scripts/run_evals.py and lives in evals/results/.",
+  "run_id": "example-run",
+  "mode": "example",
+  "date": "2026-01-01",
+  "model": "example-model",
+  "repeats": 1,
+  "decision_rule": {"win_margin": 0.05},
+  "subjects": {
+    "card:map-the-watering-holes": {
+      "kind": "card",
+      "fixture_set": "audiences",
+      "stage": 1,
+      "n_items": 5,
+      "score": 0.9,
+      "baseline": 0.7,
+      "delta": 0.2,
+      "verdict": "win"
+    }
+  },
+  "items": []
+}

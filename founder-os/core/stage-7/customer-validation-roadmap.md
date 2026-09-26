@@ -20,7 +20,7 @@ Say two of the nine agency owners sign, and in both firms the bookkeeper pushed 
 
 ## When to use
 
-This is the stage 7 card. Before you open it, check that you have a working product a buyer can sign into and the earlyvangelist list you built at stage 3. Earlyvangelist is Blank and Dorf's term for the buyer who feels the pain, has already rigged up a workaround and has budget to fix it now. Think of the agency owner who built a Zapier chain to chase late invoices and asked for your pricing page before it existed.
+This is the stage 7 card. Before you open it, check that you have a working product a buyer can sign into and the [[earlyvangelist]] list you built at stage 3. Earlyvangelist is Blank and Dorf's term for the buyer who feels the pain, has already rigged up a workaround and has budget to fix it now. Think of the agency owner who built a Zapier chain to chase late invoices and asked for your pricing page before it existed.
 
 This is the wrong card if nobody on that list has asked when they can buy. Go back and find stronger prospects first. It is also the wrong card for writing cold emails, which belongs to 'Founder-led outbound'. Practising the price ask inside one call belongs to 'Ask for money: state the price, count the commitments'.
 

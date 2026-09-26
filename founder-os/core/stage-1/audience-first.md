@@ -16,7 +16,7 @@ Pick a group of real people you can reach and learn from, and describe them by t
 
 ## When to use
 
-Start of stage 1, before you look for watering holes. It matters most if you already have an app, built or half-built, and your real question is "who do I sell this to?"
+Start of stage 1, before you look for [[watering-hole|watering holes]]. It matters most if you already have an app, built or half-built, and your real question is "who do I sell this to?"
 
 Wrong card if you can already name your audience and back it with evidence. Go to *Watering holes: find where they already talk* and *First bowling-pin segment*. Also wrong if you have no problem area at all. That's stage 0.
 
@@ -54,7 +54,7 @@ What the switch looks like: a founder built a client-portal tool "for agencies".
 
 ## Gate criteria
 
-The `stage-1-audience` gate asks for three things: a named audience, at least three active watering holes, and a first bowling-pin segment. This card supplies the named audience. That means one behaviour line naming role, recurring job and current spending, backed by a scoring table in which you can name five real members.
+The `stage-1-audience` gate asks for three things: a named audience, at least three active watering holes, and a first [[bowling-pin]] segment. This card supplies the named audience. That means one behaviour line naming role, recurring job and current spending, backed by a scoring table in which you can name five real members.
 
 The gate fails if the audience is a market category or a demographic, or if the line was written to fit an existing app. The watering holes and the segment come from the sibling cards.
 

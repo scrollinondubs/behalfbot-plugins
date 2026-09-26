@@ -1,0 +1,12 @@
+Founder: Tell me about the last time you had to reschedule a delivery.
+Tomas: Two weeks ago a supplier moved our flour delivery from Tuesday to Thursday with one hour's notice, and I had to buy flour at retail price to cover two days of baking.
+Founder: How much did that cost you?
+Tomas: About 180 euros more than usual, plus I drove to three shops on my morning off.
+Founder: Has anything like that happened before?
+Tomas: In March the same supplier forgot our order completely. Since then I keep a paper list by the phone with every supplier's backup contact.
+Founder: So what we're making is a tool that watches your supplier orders and warns you the moment one changes, and it suggests a backup supplier automatically.
+Tomas: That's a fantastic idea, really clever.
+Founder: Would you pay for something like that?
+Tomas: I'd happily pay fifty euros a month for that, honestly I'd pay today.
+Founder: Great, what would be the next step for you?
+Tomas: Just send me something when it's ready and I'll have a look.

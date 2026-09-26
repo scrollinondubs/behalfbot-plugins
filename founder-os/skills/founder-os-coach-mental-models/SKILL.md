@@ -1,5 +1,5 @@
 ---
-name: mental-models
+name: founder-os-coach-mental-models
 description: FounderOS coach skill, usable at any stage and never a gate. Offers a small set of named thinking tools when a founder is stuck on a decision - inversion, second-order effects, opportunity cost, first principles, reversibility - drawn from Shane Parrish's The Great Mental Models and Gabriel Weinberg and Lauren McCann's Super Thinking. Triggers on "should I do X or Y", a big irreversible call, or a founder going in circles on a choice.
 plugin: behalfbot-founder-os
 enabled_when: "chassis.config.yaml modules.founder-os.enabled == true"

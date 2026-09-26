@@ -1,0 +1,36 @@
+# Seed cards: in core/ before the eval harness existed (behalfbot-plugins#28).
+#
+# The lint lets a core card without a winning `eval:` through only if it is
+# listed here. This list only shrinks. A card leaves it when it wins an eval
+# (and gains an `eval:` field) or is demoted to contrib. Adding a card to this
+# list is how you would skip the eval gate, so a PR that adds one is a review
+# blocker. See CONTRIBUTING.md, "Promotion from contrib to core".
+ask-for-money
+audience-first
+bullseye-one-channel
+choose-the-mvp-type
+cluster-pains-into-jobs
+cohort-dashboard-aarrr
+customer-validation-roadmap
+e-bombs
+earlyvangelists-and-commitment
+find-the-watering-holes
+find-your-why
+first-bowling-pin
+founder-led-outbound
+interviews-without-fooling-yourself
+job-and-foothold
+one-metric-that-matters
+pain-dream-fix
+pitch-traction-team-social-proof
+prfaq-v0
+prfaq-v2
+problem-hypothesis-heard-enough
+problem-interview-exit-criteria
+sales-safari-pain-log
+sean-ellis-test
+should-you-raise
+small-market-first
+solution-interview-reduce-mvp
+sprint-test-your-app
+what-angels-screen-for

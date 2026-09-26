@@ -1,0 +1,115 @@
+{
+ "set": "assumptions",
+ "stage": 0,
+ "description": "A founder's PR/FAQ v0 assumption list for one idea. Synthetic, written for these evals.",
+ "items": [
+  {
+   "id": "as-1",
+   "input": {
+    "idea": "An app that chases missing receipts for small bookkeeping firms, 49 euros a seat per month.",
+    "assumptions": {
+     "a1": "Bookkeepers find receipts annoying.",
+     "a2": "At least 6 of 10 bookkeepers we interview at firms of 2-10 people lost 3 or more hours last month chasing client receipts.",
+     "a3": "At least 3 of 10 firm owners who see the price agree to a paid pilot at 49 euros a seat.",
+     "a4": "Clients prefer a text message link to email.",
+     "a5": "The market for bookkeeping software is huge."
+    }
+   },
+   "expected": {
+    "falsifiable": [
+     "a2",
+     "a3"
+    ],
+    "riskiest": "a3"
+   },
+   "note": "Only a2 and a3 name who, a number and a threshold. Paying is what sinks the business; the reminder channel costs an afternoon."
+  },
+  {
+   "id": "as-2",
+   "input": {
+    "idea": "A booking page for independent dog groomers that takes a deposit to stop no-shows.",
+    "assumptions": {
+     "b1": "Groomers we reach in two Facebook groups lose at least 2 appointments a week to no-shows.",
+     "b2": "Dog owners will accept paying a 10 euro deposit: fewer than 1 in 5 abandon the booking at the deposit step in a 50-booking test.",
+     "b3": "Groomers like nice-looking software.",
+     "b4": "At least 5 of 20 groomers we contact already use some deposit or card-on-file method.",
+     "b5": "Grooming is growing fast."
+    }
+   },
+   "expected": {
+    "falsifiable": [
+     "b1",
+     "b2",
+     "b4"
+    ],
+    "riskiest": "b2"
+   },
+   "note": "If owners walk away at the deposit, the product removes bookings instead of saving them."
+  },
+  {
+   "id": "as-3",
+   "input": {
+    "idea": "A shared repair log for landlords with two to ten flats, 9 euros per flat per month.",
+    "assumptions": {
+     "c1": "Landlords want to be more organised.",
+     "c2": "At least half of 12 landlords we interview had a repair request go unanswered for 48 hours or more in the last six months.",
+     "c3": "Tenants will report repairs in the app rather than by WhatsApp: at least 60 percent of requests in a 4-week pilot come through the app.",
+     "c4": "Landlords with 2-10 flats will pay 9 euros per flat: 4 of 12 agree to pay for a 3-month pilot.",
+     "c5": "The app should be blue."
+    }
+   },
+   "expected": {
+    "falsifiable": [
+     "c2",
+     "c3",
+     "c4"
+    ],
+    "riskiest": "c4"
+   },
+   "note": "c3 matters, but a workaround exists (the landlord logs requests); nobody paying ends the business."
+  },
+  {
+   "id": "as-4",
+   "input": {
+    "idea": "Automatic stock reorder for food trucks, paid by the collective that runs them.",
+    "assumptions": {
+     "d1": "Collectives, not individual truck owners, control the budget for stock tools: in 8 of 10 collectives we call, one person approves spending over 100 euros a month.",
+     "d2": "Trucks often run out of things.",
+     "d3": "Food trucks are cool.",
+     "d4": "Owners would probably like fewer stock-outs.",
+     "d5": "Suppliers will accept orders by API or email within 12 hours: at least 3 of the 5 largest suppliers in Lisbon confirm."
+    }
+   },
+   "expected": {
+    "falsifiable": [
+     "d1",
+     "d5"
+    ],
+    "riskiest": "d1"
+   },
+   "note": "d2 names no who and no threshold of trucks; the buyer being the collective is the load-bearing claim for a product it pays for."
+  },
+  {
+   "id": "as-5",
+   "input": {
+    "idea": "A price-rise clause generator for kitchen renovators.",
+    "assumptions": {
+     "e1": "Renovators hate paperwork.",
+     "e2": "At least 7 of 15 renovators we interview absorbed a material price rise of 5 percent or more on a job in the last year.",
+     "e3": "Clients will sign a quote with a price-validity clause as often as without one: acceptance within 5 points across 40 quotes.",
+     "e4": "Renovators will pay 15 euros a month for the generator: 5 of 15 prepay a month.",
+     "e5": "Clients like short, friendly clauses."
+    }
+   },
+   "expected": {
+    "falsifiable": [
+     "e2",
+     "e3",
+     "e4"
+    ],
+    "riskiest": "e3"
+   },
+   "note": "If clients refuse quotes with the clause, renovators lose jobs by using it, and no price makes that worth paying for."
+  }
+ ]
+}

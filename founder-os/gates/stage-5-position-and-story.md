@@ -5,6 +5,7 @@ title: "Stage 5 gate: one job, one foothold, one rewritten launch"
 stage: 5
 signoff: claude+sean
 fail_routes_to: 5
+evidence: [artifacts/job_statement>=1, artifacts/foothold>=1, interviews>=5, artifacts/not_for>=1, artifacts/market_sizing>=1, artifacts/expansion_sequence>=1, prfaq_versions>=2, artifacts/prfaq_diff>=1]
 ---
 
 # Stage 5 gate: one job, one foothold, one rewritten launch

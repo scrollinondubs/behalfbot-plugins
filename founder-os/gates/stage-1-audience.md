@@ -5,6 +5,7 @@ title: "Stage 1 gate: a named audience you can go and read"
 stage: 1
 signoff: claude
 fail_routes_to: 1
+evidence: [artifacts/audience>=1, artifacts/watering_holes>=1]
 ---
 
 # Stage 1 gate: a named audience you can go and read

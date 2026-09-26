@@ -55,9 +55,17 @@ change to `budget.yml`, which is code-owned and needs its own reason.
 ## Promotion from contrib to core
 
 A card moves into core only with a passing eval showing it beats plain Claude
-on the gate it serves. The eval harness is
-[behalfbot-plugins#28](https://github.com/scrollinondubs/behalfbot-plugins/issues/28)
-and has not landed yet. Until it does, nothing is promoted from contrib.
+on the gate it serves. The harness is in [`evals/`](evals/README.md)
+(behalfbot-plugins#28): `scripts/run_evals.py live` scores a card against
+plain Claude on a fixture set and writes `evals/results/<run-id>.json`.
+
+The rule is in the lint, not only in this file. A card under `core/` must have
+`eval: <run-id>` in its frontmatter, and `evals/results/<run-id>.json` must
+hold `card:<id>` with verdict `win`. The one exception is the seed list,
+[`evals/seed-cards.txt`](evals/seed-cards.txt): the cards that were in core
+before the harness existed. That list only shrinks. A seed card leaves it when
+it wins an eval or is demoted. **Adding a card to the seed list is a review
+blocker**, because it is the one way to skip the gate.
 
 Cards carry an optional `status:` that tracks where they are in that process:
 
@@ -73,11 +81,13 @@ under `core/` that says anything else.
 
 A promotion PR:
 
-1. moves the card from `contrib/` to the matching place in `core/` and sets
-   `tier: core`
-2. adds `gate:` if the card did not have one
-3. links the passing eval run in the PR body
-4. demotes a card from the same stage if the stage is at its budget, and says
+1. adds fixtures for the card's gate to `evals/fixtures/` if none fit, and a
+   subject for the card in `founder_eval/subjects.py`
+2. runs the live eval and commits the results, whatever they say
+3. moves the card from `contrib/` to the matching place in `core/`, sets
+   `tier: core`, and adds `eval: <run-id>`
+4. adds `gate:` if the card did not have one
+5. demotes a card from the same stage if the stage is at its budget, and says
    which one in the PR template's FounderOS section
 
 A demoted card moves back to `contrib/` with `tier: contrib`. It is not deleted.
@@ -122,12 +132,15 @@ plugin-tests CI job. For governance it fails when:
 - a core card names no gate, or any card names a gate that does not exist
 - a card in `contrib/` has `status: core`, a core card has another status, or a
   status is not one of the values above
+- a core card has no winning `eval:` and is not on the seed list, or a card's
+  `eval:` names a results file or entry that does not exist
 
 Run it locally before you push:
 
 ```bash
 python3 founder-os/scripts/lint_content.py
 python3 founder-os/tests/test_lint_content.py
+python3 founder-os/scripts/run_evals.py validate
 ```
 
 ## The PR template

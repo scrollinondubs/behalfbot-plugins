@@ -5,6 +5,7 @@ title: "Stage 8 gate: fit you can measure, a number that moves"
 stage: 8
 signoff: claude+sean
 fail_routes_to: 8
+evidence: [artifacts/pmf_survey>=2, artifacts/pmf_rerun>=1, artifacts/omtm>=1, artifacts/metric_series>=1, artifacts/aarrr_event_map>=1, artifacts/cohort_table>=1, artifacts/change_log>=1]
 ---
 
 # Stage 8 gate: fit you can measure, a number that moves

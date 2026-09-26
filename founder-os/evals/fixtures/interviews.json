@@ -1,0 +1,33 @@
+{
+  "set": "interviews",
+  "stage": 3,
+  "description": "Customer discovery interview transcripts, one founder and one interviewee. Synthetic, written for these evals.",
+  "items": [
+    {"id": "int-1", "input_file": "src/int-1.txt",
+     "expected": {"verdict": "fail", "commitment": "none", "pitched_before_first_fact": true, "fact_turns": [], "struck_turns": [2, 4, 6, 8, 10]},
+     "note": "Warm and useless: a pitch in the first line, compliments, a talked-about price and 'keep me posted'."},
+    {"id": "int-2", "input_file": "src/int-2.txt",
+     "expected": {"verdict": "pass", "commitment": "reputation", "pitched_before_first_fact": false, "fact_turns": [2, 4, 6, 8], "struck_turns": []},
+     "note": "Dated incidents with amounts, a workaround and a tried tool, closed with an introduction to the business partner."},
+    {"id": "int-3", "input_file": "src/int-3.txt",
+     "expected": {"verdict": "flag", "commitment": "none", "pitched_before_first_fact": false, "fact_turns": [2, 4, 6], "struck_turns": [8, 10]},
+     "ignore_turns": [12],
+     "note": "Good facts, then a pitch. 'I'd pay today' is talk about paying, not a payment, and the close is a brush-off."},
+    {"id": "int-4", "input_file": "src/int-4.txt",
+     "expected": {"verdict": "pass", "commitment": "money", "pitched_before_first_fact": false, "fact_turns": [2, 4, 6], "struck_turns": []},
+     "ignore_turns": [8],
+     "note": "Specific incidents and a searched-for fix, closed by a deposit against an invoice. Turn 8 is the commitment."},
+    {"id": "int-5", "input_file": "src/int-5.txt",
+     "expected": {"verdict": "flag", "commitment": "time", "pitched_before_first_fact": false, "fact_turns": [8], "struck_turns": [2, 4, 6]},
+     "note": "Leading, future-tense questions and generic answers, with one real incident late on and a real follow-up booked."},
+    {"id": "int-6", "input_file": "src/int-6.txt",
+     "expected": {"verdict": "flag", "commitment": "reputation", "pitched_before_first_fact": true, "fact_turns": [4, 6], "struck_turns": [2]},
+     "note": "Opens with a demo, which taints what follows, though the facts are real and the intro is concrete."},
+    {"id": "int-7", "input_file": "src/int-7.txt",
+     "expected": {"verdict": "fail", "commitment": "none", "pitched_before_first_fact": false, "fact_turns": [], "struck_turns": [2, 4, 6, 8]},
+     "note": "Opinions about an industry and a 'maybe, sometime' introduction. No pitch, and no facts either."},
+    {"id": "int-8", "input_file": "src/int-8.txt",
+     "expected": {"verdict": "pass", "commitment": "time", "pitched_before_first_fact": false, "fact_turns": [2, 4, 6], "struck_turns": []},
+     "note": "Three dated incidents with costs, a cancelled tool, and a dated two-week trial with a review meeting."}
+  ]
+}

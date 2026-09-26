@@ -22,7 +22,7 @@ Wrong card if the notes haven't been audited. Run [[interviews-without-fooling-y
 
 ## Principles
 
-- Earlyvangelist is Steve Blank's word, from his Customer Development method. Talk doesn't earn the label. A freight broker who says your load-matching app "would save us hours" is a maybe. The one who emails you last month's load sheet so you can try it on real data is the one you want.
+- [[earlyvangelist|Earlyvangelist]] is Steve Blank's word, from his Customer Development method. Talk doesn't earn the label. A freight broker who says your load-matching app "would save us hours" is a maybe. The one who emails you last month's load sheet so you can try it on real data is the one you want.
 - Blank lists five tests. Each one gets its own line of proof: they have the problem, they know it, they're out looking for a fix, they've rigged up something in the meantime, and they can spend.
 - The workaround is the clearest single tell. A spreadsheet with a macro, a Zapier chain, a contractor paid to do the job by hand.
 - Rob Fitzpatrick's commitment and advancement: a closing next step only counts when the person spends something they would miss. That means time, reputation or money.
@@ -66,7 +66,7 @@ Wrong card if the notes haven't been audited. Run [[interviews-without-fooling-y
 
 ## Gate criteria
 
-The `stage-3-discovery` gate asks for audited interviews, commitment signals and identified earlyvangelists. This card supplies the second and third, and it only works on top of the first.
+The `stage-3-discovery` gate asks for audited interviews, [[commitment-signal|commitment signals]] and identified earlyvangelists. This card supplies the second and third, and it only works on top of the first.
 
 - Every audited interview record carries a commitment grade with the closing step quoted.
 - Each flagged earlyvangelist has a quote or observed fact for all five criteria, and the auditor can trace each one back to the interview notes.

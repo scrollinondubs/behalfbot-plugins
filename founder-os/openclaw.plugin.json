@@ -1,20 +1,20 @@
 {
   "id": "behalfbot-founder-os",
   "name": "Behalf.bot - FounderOS",
-  "description": "A gated coach for early-stage founders. It walks a founder through a fixed sequence of stages, from why and founder fit through audience, pain research, discovery, solution test, positioning, content, validation and traction. Each stage ends in a gate that needs ledger evidence, not self-report. Content (framework cards, concept notes, skills, gate specs, Laya question sets) is markdown and JSON in git; founder state lives in a ledger behind a storage interface. Ships the stage 0-9 cards with draft gates, four auditor skills (Mom Test interview audit, pain tagger and pain-log check, earlyvangelist qualifier, Pain-Dream-Fix checker) with Laya tagging and a Claude-only fallback, coach skills, and the founder bundle: a `founder-os export` / `founder-os import` CLI plus an opt-in, signed progress webhook.",
-  "version": "0.3.0",
+  "description": "A gated coach for early-stage founders. It walks a founder through a fixed sequence of stages, from why and founder fit through audience, pain research, discovery, solution test, positioning, content, validation and traction. Each stage ends in a gate that needs ledger evidence, not self-report. Content (framework cards, concept notes, skills, gate specs, Laya question sets) is markdown and JSON in git; founder state lives in a ledger behind a storage interface. Ships the stage 0-9 cards and gates, ten stage skills that walk a founder from stage to gate against the ledger (scripts/stage.py), concept notes, four auditor skills (Mom Test interview audit, pain tagger and pain-log check, earlyvangelist qualifier, Pain-Dream-Fix checker) with Laya tagging and a Claude-only fallback, coach skills, an eval harness that scores skills and cards against plain Claude, and the founder bundle: a `founder-os export` / `founder-os import` CLI plus an opt-in, signed progress webhook.",
+  "version": "0.4.0",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
       "enabled": {
         "type": "boolean",
-        "description": "Master switch. Enables the auditor skills and runs setup.sh and validate.sh. Stage coaching skills are not shipped yet.",
+        "description": "Master switch. Enables the stage, auditor and coach skills and runs setup.sh and validate.sh.",
         "default": false
       },
       "include_contrib": {
         "type": "boolean",
-        "description": "Load community cards from contrib/ in addition to core/. Off by default: the coach loads only core/, and founders never see contrib content unless the operator opts in.",
+        "description": "Load community cards from contrib/ in addition to core/. Off by default: the coach loads only core/, and founders never see contrib content unless the operator opts in. Exported as FOUNDER_OS_INCLUDE_CONTRIB.",
         "default": false
       },
       "ledger_backend": {
@@ -62,14 +62,29 @@
       "founder-os"
     ],
     "skills": [
+      "founder-os-stage-0-why",
+      "founder-os-stage-1-audience",
+      "founder-os-stage-2-pain-research",
+      "founder-os-stage-3-discovery",
+      "founder-os-stage-4-solution-test",
+      "founder-os-stage-5-position-and-story",
+      "founder-os-stage-6-content-and-audience",
+      "founder-os-stage-7-validation-and-sales",
+      "founder-os-stage-8-traction-and-pmf",
+      "founder-os-stage-9-fundraise",
       "founder-os-mom-test-auditor",
       "founder-os-pain-tagger",
       "founder-os-earlyvangelist-qualifier",
-      "founder-os-pain-dream-fix-checker"
+      "founder-os-pain-dream-fix-checker",
+      "founder-os-coach-extreme-ownership",
+      "founder-os-coach-the-one-thing",
+      "founder-os-coach-mental-models",
+      "founder-os-coach-pg-essays"
     ],
     "hooks": [],
     "env": {
       "FOUNDER_OS_DIR": "${PLUGIN_DIR}",
+      "FOUNDER_OS_INCLUDE_CONTRIB": "false",
       "FOUNDER_OS_LEDGER_BACKEND": "postgres",
       "FOUNDER_OS_PG_SCHEMA": "founder_os",
       "FOUNDER_OS_SQLITE_PATH": "${CUSTOMER_HOME}/data/founder-os-ledger.db",
@@ -81,7 +96,7 @@
   },
   "activation": {
     "onStartup": false,
-    "_note": "Auditor skills are invoked on demand from a founder session; there are no scheduled jobs."
+    "_note": "Stage, auditor and coach skills are invoked on demand from a founder session; there are no scheduled jobs."
   },
   "dependencies": {
     "system": [

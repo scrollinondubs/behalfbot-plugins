@@ -17,12 +17,37 @@ founder's ledger, not the founder's say-so.
 | 8 | Traction and PMF | PMF score, a metric that moves |
 | 9 | Fundraise (optional) | Only if 7 and 8 justify it |
 
-Status: **content and tooling in place.** The layout, the authoring
-templates, the ledger, the founder bundle (export/import CLI and signed
-progress webhook), the stage 0-9 framework cards with draft gates, four
-auditor skills and the coach skills are in place. Gate minimums are drafts
-pending Sean's ruling. The epic is
+Status: **a founder can be walked from stage 0 to a gate submission using
+only the plugin.** The stage 0-9 cards and gates, the ten stage skills,
+concept notes, four auditor skills, the coach skills, the ledger, the founder
+bundle and the eval harness are in place. Gate minimums were ruled by Sean on 2026-09-26. The epic is
 [behalfbot-plugins#22](https://github.com/scrollinondubs/behalfbot-plugins/issues/22).
+
+## Stage skills and gates
+
+Each stage has one skill, `skills/founder-os-stage-<N>-<slug>`. It reads the
+founder's context and ledger first, loads only the current stage's core cards,
+calls the stage's auditors, and records artifacts through `scripts/stage.py`.
+Then it hands over to the gate:
+
+1. `stage.py submit` counts the gate's `evidence:` minimums in the ledger,
+   writes a `gate_submission` artifact and marks the stage `gate_pending`.
+2. Claude rules on every auditor check in the gate spec, one `audits` row per
+   check against the submission.
+3. From stage 3, Sean signs off (`stage.py signoff`, operator-only).
+4. `stage.py decide` records the pass or fail. A pass is refused while a
+   minimum is missing, a check is unruled or failed, or Sean's sign-off is
+   missing. A fail sends the founder to the stage the gate's failure routing
+   names.
+
+A founder cannot pass a gate by saying the work is done. `tests/test_stage_walk.py`
+walks a synthetic founder through all of this against a SQLite ledger.
+
+## Evals
+
+`evals/` scores the auditor skills, a card per fixture set and the stage 0-3
+skills against plain Claude, and publishes nulls with wins. Promotion into
+core needs a win, and the lint checks it. See [`evals/README.md`](evals/README.md).
 
 ## Auditors
 
@@ -110,10 +135,12 @@ founder-os/
   core/                  canonical cards and concept notes (the coach loads only this)
   contrib/               community cards, opt-in
   gates/                 gate specs and rubrics
-  skills/                stage, auditor and coach SKILL.md files
+  skills/                stage, auditor and coach SKILL.md files, one per skills/<name>/
   laya/                  Laya question sets (JSON)
   founder_audit/         Laya client, chunking and the auditors' Laya half
+  scripts/stage.py       ledger and gate calls the stage skills make
   scripts/audit.py       run an auditor; the skills call it
+  scripts/run_evals.py   validate fixtures; run the live eval (manual)
   scripts/labels.py      accept or reject Laya tags
   scripts/record_audit.py  write Claude's verdict as an audits row
   scripts/export_labels.py  the fine-tune set, operator-only
@@ -123,11 +150,13 @@ founder-os/
   scripts/ledger_migrate.py  apply ledger migrations to the configured backend
   founder_ledger/        storage interface and its Postgres and SQLite adapters
   founder_bundle/        founder bundle export/import and the progress webhook
+  founder_stage/         gate evidence counting, submissions and decisions
+  founder_eval/          eval sets, scoring and the runner
   bin/founder-os         CLI: export, import, progress
   docs/                  the bundle format, and implementation notes such as the ledger on Turso
   tests/                 offline test suites, run by CI
   schema/                ledger schema and migrations
-  evals/                 evals that gate promotion into core
+  evals/                 fixtures, published results and the seed-card list
   ATTRIBUTION.md         every source the cards draw on
 ```
 

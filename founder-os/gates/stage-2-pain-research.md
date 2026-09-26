@@ -5,6 +5,7 @@ title: "Stage 2 gate: pains in their words, grouped into jobs"
 stage: 2
 signoff: claude
 fail_routes_to: 2
+evidence: [artifacts/problem_hypothesis>=1, artifacts/safari_session>=3, pains>=30, pains:audited>=30, artifacts/saturation_check>=3, artifacts/jobs>=1]
 ---
 
 # Stage 2 gate: pains in their words, grouped into jobs

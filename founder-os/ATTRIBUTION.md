@@ -38,11 +38,11 @@ merged.
 | How to Raise Money | Paul Graham | `pg-how-to-raise-money` | `should-you-raise` (stage 9) | http://paulgraham.com/fr.html |
 | Pitching Hacks | Venture Hacks (Babak Nivi, Naval Ravikant) | `pitching-hacks` | `pitch-traction-team-social-proof` (stage 9) | https://venturehacks.com/pitching-hacks |
 | Angel | Jason Calacanis | `angel` | `what-angels-screen-for` (stage 9) | https://www.harpercollins.com/products/angel-jason-calacanis |
-| Extreme Ownership | Jocko Willink, Leif Babin | `extreme-ownership` | coach skill `extreme-ownership` | https://echelonfront.com/extreme-ownership/ |
-| The ONE Thing | Gary Keller, Jay Papasan | `the-one-thing` | coach skill `the-one-thing` | https://www.the1thing.com |
-| The Great Mental Models, Volume 1 | Shane Parrish, Rhiannon Beaubien | `great-mental-models` | coach skill `mental-models` | https://fs.blog/tgmm/ |
-| Super Thinking | Gabriel Weinberg, Lauren McCann | `super-thinking` | coach skill `mental-models` | https://www.penguinrandomhouse.com/books/562091/super-thinking-by-gabriel-weinberg-and-lauren-mccann/ |
-| Paul Graham's essays | Paul Graham | `pg-essays` | coach skill `pg-essays` | https://paulgraham.com/articles.html |
+| Extreme Ownership | Jocko Willink, Leif Babin | `extreme-ownership` | coach skill `founder-os-coach-extreme-ownership` | https://echelonfront.com/extreme-ownership/ |
+| The ONE Thing | Gary Keller, Jay Papasan | `the-one-thing` | coach skill `founder-os-coach-the-one-thing` | https://www.the1thing.com |
+| The Great Mental Models, Volume 1 | Shane Parrish, Rhiannon Beaubien | `great-mental-models` | coach skill `founder-os-coach-mental-models` | https://fs.blog/tgmm/ |
+| Super Thinking | Gabriel Weinberg, Lauren McCann | `super-thinking` | coach skill `founder-os-coach-mental-models` | https://www.penguinrandomhouse.com/books/562091/super-thinking-by-gabriel-weinberg-and-lauren-mccann/ |
+| Paul Graham's essays | Paul Graham | `pg-essays` | coach skill `founder-os-coach-pg-essays` | https://paulgraham.com/articles.html |
 | The Four Steps to the Epiphany, The Startup Owner's Manual (earlyvangelist criteria) | Steve Blank | `four-steps` | skill `founder-os-earlyvangelist-qualifier` (stage 3) | https://steveblank.com/books-for-startups/ |
 
 ## Sources to come

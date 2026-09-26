@@ -1,0 +1,85 @@
+{
+ "set": "audiences",
+ "stage": 1,
+ "description": "A founder's stage 1 audience line and first bowling-pin segment. Synthetic, written for these evals.",
+ "items": [
+  {
+   "id": "au-1",
+   "input": {
+    "audience": "SMBs in Europe that need better software.",
+    "bowling_pin": "SMBs in Portugal."
+   },
+   "expected": {
+    "audience_is_people": false,
+    "pin_is_narrower": false,
+    "verdict": "fail"
+   },
+   "note": "A market, not people doing a job; the pin is a region of the same market."
+  },
+  {
+   "id": "au-2",
+   "input": {
+    "audience": "Freelance bookkeepers who close the monthly books for small restaurants and chase their receipts.",
+    "bowling_pin": "Bookkeepers in Lisbon who run payroll for restaurants in the Baixa, most of whom meet at the same accountants' association evening."
+   },
+   "expected": {
+    "audience_is_people": true,
+    "pin_is_narrower": true,
+    "verdict": "pass"
+   },
+   "note": "People described by their recurring work; the pin is a reachable subset whose members know each other."
+  },
+  {
+   "id": "au-3",
+   "input": {
+    "audience": "Owners of independent dog grooming salons who book appointments themselves.",
+    "bowling_pin": "Pet professionals."
+   },
+   "expected": {
+    "audience_is_people": true,
+    "pin_is_narrower": false,
+    "verdict": "fail"
+   },
+   "note": "Good audience, but the pin is wider than the audience."
+  },
+  {
+   "id": "au-4",
+   "input": {
+    "audience": "Gen Z creators.",
+    "bowling_pin": "Gen Z creators on TikTok with 10k to 50k followers who sell presets."
+   },
+   "expected": {
+    "audience_is_people": false,
+    "pin_is_narrower": true,
+    "verdict": "fail"
+   },
+   "note": "A demographic, not a job. The pin is narrower but cannot rescue the audience line."
+  },
+  {
+   "id": "au-5",
+   "input": {
+    "audience": "People who would use an AI scheduling assistant.",
+    "bowling_pin": "Early adopters of AI scheduling assistants."
+   },
+   "expected": {
+    "audience_is_people": false,
+    "pin_is_narrower": false,
+    "verdict": "fail"
+   },
+   "note": "Defined by the product, not by work; the pin is a rename."
+  },
+  {
+   "id": "au-6",
+   "input": {
+    "audience": "School transport coordinators who plan daily bus routes and answer parents' calls.",
+    "bowling_pin": "Coordinators at private schools in the Lisbon district who share the same two bus contractors."
+   },
+   "expected": {
+    "audience_is_people": true,
+    "pin_is_narrower": true,
+    "verdict": "pass"
+   },
+   "note": "Work-defined audience, pin linked by shared suppliers."
+  }
+ ]
+}
