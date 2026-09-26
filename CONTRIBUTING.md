@@ -105,6 +105,13 @@ or does not match what the package actually contains, is the shape a supply-chai
 problem arrives in. Pinning the package version is what protects an install;
 trusting the README does not.
 
+## FounderOS content
+
+Cards, concept notes and gates for `founder-os/` have their own rules on top of
+this file: core vs contrib, the per-stage card budget, eval-gated promotion and
+how to credit sources. Read [`founder-os/CONTRIBUTING.md`](founder-os/CONTRIBUTING.md)
+first.
+
 ## Before you open a PR
 
 Open an issue first for a new plugin. Partly so it does not duplicate one that
