@@ -1,7 +1,7 @@
 {
   "id": "behalfbot-founder-os",
   "name": "Behalf.bot - FounderOS",
-  "description": "A gated coach for early-stage founders. It walks a founder through a fixed sequence of stages, from why and founder fit through audience, pain research, discovery, solution test, positioning, content, validation and traction. Each stage ends in a gate that needs ledger evidence, not self-report. Content (framework cards, concept notes, stage skills, gate specs) is markdown in git; founder state lives in a ledger behind a storage interface. This release is the scaffold only: no skills, cards or gates ship yet.",
+  "description": "A gated coach for early-stage founders. It walks a founder through a fixed sequence of stages, from why and founder fit through audience, pain research, discovery, solution test, positioning, content, validation and traction. Each stage ends in a gate that needs ledger evidence, not self-report. Content (framework cards, concept notes, stage skills, gate specs) is markdown in git; founder state lives in a ledger behind a storage interface. This release ships the layout, the authoring templates with a content lint, and the ledger schema with its storage interface (Postgres and SQLite adapters). No skills, cards or gates ship yet.",
   "version": "0.1.0",
   "configSchema": {
     "type": "object",
@@ -16,16 +16,41 @@
         "type": "boolean",
         "description": "Load community cards from contrib/ in addition to core/. Off by default: the coach loads only core/, and founders never see contrib content unless the operator opts in.",
         "default": false
+      },
+      "ledger_backend": {
+        "type": "string",
+        "enum": [
+          "postgres",
+          "sqlite"
+        ],
+        "default": "postgres",
+        "description": "Where founder state is stored. postgres uses the chassis database named by BEHALFBOT_PG_DSN or CHASSIS_PG_DSN (the same variables the chassis already sets). sqlite is for development and tests. Exported as FOUNDER_OS_LEDGER_BACKEND."
+      },
+      "ledger_pg_schema": {
+        "type": "string",
+        "default": "founder_os",
+        "pattern": "^[a-z_][a-z0-9_]{0,62}$",
+        "description": "Postgres schema the ledger tables live in. The plugin creates it if missing and never reads or writes outside it, so its generic table names (artifacts, labels, audits) cannot collide with other tables in the chassis database. Exported as FOUNDER_OS_PG_SCHEMA."
+      },
+      "ledger_sqlite_path": {
+        "type": "string",
+        "default": "${CUSTOMER_HOME}/data/founder-os-ledger.db",
+        "description": "SQLite ledger file, used only when ledger_backend is sqlite. Exported as FOUNDER_OS_SQLITE_PATH."
       }
     },
-    "required": ["enabled"]
+    "required": [
+      "enabled"
+    ]
   },
   "contracts": {
     "tools": [],
     "skills": [],
     "hooks": [],
     "env": {
-      "FOUNDER_OS_DIR": "${PLUGIN_DIR}"
+      "FOUNDER_OS_DIR": "${PLUGIN_DIR}",
+      "FOUNDER_OS_LEDGER_BACKEND": "postgres",
+      "FOUNDER_OS_PG_SCHEMA": "founder_os",
+      "FOUNDER_OS_SQLITE_PATH": "${CUSTOMER_HOME}/data/founder-os-ledger.db"
     },
     "triggers": []
   },
@@ -38,7 +63,12 @@
       {
         "name": "python3",
         "install": "apt-get install python3 (Debian) / your platform's package manager",
-        "_explanation": "validate.sh parses the manifest with python3. Later releases add a stdlib-only content lint and the ledger storage interface, both Python."
+        "_explanation": "Runs the content lint (validate.sh) and the ledger storage interface. Both are stdlib-only apart from the Postgres driver below."
+      },
+      {
+        "name": "psycopg",
+        "install": "pip install psycopg==3.2.3 (already in the chassis image)",
+        "_explanation": "Postgres driver for the ledger's Postgres adapter. The chassis image ships psycopg 3.2.3, so setup.sh only checks for it and never installs it. It is a soft dependency: without it the SQLite backend still works, and setup.sh warns instead of failing."
       }
     ]
   }

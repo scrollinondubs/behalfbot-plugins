@@ -17,8 +17,8 @@ founder's ledger, not the founder's say-so.
 | 8 | Traction and PMF | PMF score, a metric that moves |
 | 9 | Fundraise (optional) | Only if 7 and 8 justify it |
 
-Status: **scaffold only.** The layout, manifest and checks are in place. No
-cards, gates or skills ship yet. The epic is
+Status: **foundations only.** The layout, the authoring templates and the
+ledger are in place. No cards, gates or skills ship yet. The epic is
 [behalfbot-plugins#22](https://github.com/scrollinondubs/behalfbot-plugins/issues/22).
 
 ## Content vs state
@@ -34,7 +34,8 @@ content in a database and syncs it back.
 progress, artifacts, pain logs, interviews, audits, gate decisions, PR/FAQ
 versions - is rows in a database behind a storage interface. One schema, two
 backends: Postgres on a self-hosted Behalf.bot, Turso on the Vibecode Lisboa
-dashboard. Every row carries a `founder_id`.
+dashboard. Every row carries a `founder_id`. Skills call `founder_ledger`, never
+SQL. See [`schema/README.md`](schema/README.md).
 
 Anything else a database holds, such as a retrieval index over the cards, is
 derived from the markdown and can be rebuilt from it at any time.
@@ -71,6 +72,9 @@ founder-os/
   templates/authoring/   templates for cards, concept notes, stage skills and gate specs
   templates/examples/    one filled example of each, linted like real content
   scripts/lint_content.py  content lint, run by validate.sh
+  scripts/ledger_migrate.py  apply ledger migrations to the configured backend
+  founder_ledger/        storage interface and its Postgres and SQLite adapters
+  docs/                  implementation notes, e.g. the ledger on Turso for VCL
   tests/                 offline test suites, run by CI
   schema/                ledger schema and migrations
   evals/                 evals that gate promotion into core
