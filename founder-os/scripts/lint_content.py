@@ -25,6 +25,12 @@ and checks:
     that card, and a core card either has a winning eval or is one of the seed
     cards in evals/seed-cards.txt (promotion into core is eval-gated)
   - every concept note is linked from somewhere, so none sits unused
+  - the Basic track under basic/ (when present): five stages 0-4, three cards
+    and one gate per stage, ids prefixed basic-, known submit values, choices
+    exactly when submit has choice, the required sections, a link to the
+    course, no em dash, and no database words in learner text
+  - Basic skills (type: basic-skill) say their role, and a review skill ends
+    in a founderos-verdict block
 
 The format rules live in templates/authoring/README.md. Stdlib only, so it runs
 in CI with no install step. That is also why frontmatter is a restricted subset
@@ -54,8 +60,9 @@ REQUIRED_FIELDS = {
     "stage-skill": ("name", "description", "plugin", "type", "stage", "gate"),
     "auditor-skill": ("name", "description", "plugin", "type", "stage", "question_set"),
     "coach-skill": ("name", "description", "plugin", "type"),
+    "basic-skill": ("name", "description", "plugin", "type", "track", "role"),
 }
-SKILL_KINDS = ("stage-skill", "auditor-skill", "coach-skill")
+SKILL_KINDS = ("stage-skill", "auditor-skill", "coach-skill", "basic-skill")
 
 REQUIRED_SECTIONS = {
     "framework-card": (
@@ -75,7 +82,28 @@ REQUIRED_SECTIONS = {
     "auditor-skill": ("When to run", "Laya pass", "Claude pass", "Without Laya", "Label capture", "Ledger writes"),
     "concept": (),
     "coach-skill": (),
+    "basic-skill": (),
 }
+
+BASIC_DIR = "basic"
+BASIC_STAGES = range(0, 5)
+BASIC_CARDS_PER_STAGE = 3
+BASIC_CARD_FIELDS = ("id", "type", "track", "stage", "order", "title", "gate", "submit", "sources")
+BASIC_GATE_FIELDS = ("id", "type", "track", "stage", "title", "signoff")
+BASIC_CARD_SECTIONS = ("What this is", "What you make", "How to submit", "Done when", "Coach checks", "Source")
+BASIC_GATE_SECTIONS = ("What this is", "Why you care", "What you get", "Read the original")
+BASIC_SUBMIT_VALUES = ("text", "link", "file", "choice")
+BASIC_DONE_WHEN = range(3, 6)
+BASIC_SKILL_SECTIONS = {
+    "coach": ("Read first", "Current stage only", "How to coach", "Never do the work"),
+    "review": ("Input", "How to review", "Reply", "Verdict"),
+}
+BASIC_VERDICT_FENCE = "```founderos-verdict"
+COURSE_URL = "https://stackingthebricks.com/30x500/"
+EM_DASH = "\u2014"
+COACH_ONLY = "Coach checks"
+LEARNER_BANNED = re.compile(r"\b(rows?|kinds?|artifacts?|ledgers?|meta)\b", re.IGNORECASE)
+SNAKE_CASE = re.compile(r"\b[a-z0-9]+_[a-z0-9_]+\b")
 
 SIGNOFF_VALUES = ("claude", "claude+sean")
 STATUS_VALUES = ("draft", "candidate", "core")
@@ -119,11 +147,33 @@ def parse_fields(lines: list[str], first_lineno: int = 1) -> tuple[dict[str, obj
         key, _, value = line.partition(":")
         key, value = key.strip(), value.strip()
         if value.startswith("[") and value.endswith("]"):
-            inner = value[1:-1].strip()
-            fields[key] = [_unquote(v.strip()) for v in inner.split(",")] if inner else []
+            fields[key] = split_list(value[1:-1])
         else:
             fields[key] = _unquote(value)
     return fields, None
+
+
+def split_list(inner: str) -> list[str]:
+    """Split an inline list on commas outside quotes, so
+    ["Amy Hoy and Alex Hillman, 30x500, pp 38-43"] stays one item."""
+    if not inner.strip():
+        return []
+    parts, buf, quote = [], "", ""
+    for ch in inner:
+        if quote:
+            buf += ch
+            if ch == quote:
+                quote = ""
+        elif ch in "\"'" and not buf.strip():
+            quote = ch
+            buf += ch
+        elif ch == ",":
+            parts.append(buf)
+            buf = ""
+        else:
+            buf += ch
+    parts.append(buf)
+    return [_unquote(v.strip()) for v in parts]
 
 
 def _unquote(v: str) -> str:
@@ -247,6 +297,9 @@ def check_item(item: Item, problems: list[str]) -> None:
         for field in ("gate", "stage"):
             if field in f:
                 problems.append(f"{rel}: a coach skill gates nothing and works at any stage; drop '{field}'")
+
+    if item.kind == "basic-skill":
+        check_basic_skill(item, problems)
 
     if item.kind == "gate":
         from founder_stage.evidence import parse_evidence
@@ -458,6 +511,210 @@ def check_question_sets(root: pathlib.Path, items: list[Item], problems: list[st
                 problems.append(f"{item.rel}: question_set {qs!r} is not a question set in laya/")
 
 
+# --- Basic track (basic/) ----------------------------------------------------
+#
+# A separate, smaller format from core/ and gates/: learner-facing cards whose
+# acceptance the coach decides card by card, and gates that are only the stage
+# panel. None of it goes through the Advanced checks above.
+
+def section_text(body: str, heading: str) -> str:
+    m = re.search(rf"^##\s+{re.escape(heading)}\s*$(.*?)(?=^##\s|\Z)", body, re.MULTILINE | re.DOTALL)
+    return m.group(1).strip() if m else ""
+
+
+def without_section(body: str, heading: str) -> str:
+    return re.sub(rf"^##\s+{re.escape(heading)}\s*$.*?(?=^##\s|\Z)", "", body, flags=re.MULTILINE | re.DOTALL)
+
+
+def check_learner_text(rel: str, text: str, problems: list[str]) -> None:
+    words = sorted({m.group(0).lower() for m in LEARNER_BANNED.finditer(text)})
+    if words:
+        problems.append(f"{rel}: learner text uses database word(s) {', '.join(words)}; "
+                        f"keep them to ## {COACH_ONLY}")
+    if "`" in text:
+        problems.append(f"{rel}: learner text has backticks; keep them to ## {COACH_ONLY}")
+    snake = sorted(set(SNAKE_CASE.findall(text)))
+    if snake:
+        problems.append(f"{rel}: learner text has snake_case id(s) {', '.join(snake)}")
+
+
+def check_no_em_dash(item: Item, problems: list[str]) -> None:
+    if EM_DASH in item.path.read_text(encoding="utf-8"):
+        problems.append(f"{item.rel}: has an em dash; use ' - '")
+
+
+def check_basic_skill(item: Item, problems: list[str]) -> None:
+    f, rel = item.fields, item.rel
+    if f.get("track") != "basic":
+        problems.append(f"{rel}: a basic skill needs track: basic")
+    role = f.get("role")
+    if role not in BASIC_SKILL_SECTIONS:
+        problems.append(f"{rel}: role {role!r} must be one of {', '.join(BASIC_SKILL_SECTIONS)}")
+    else:
+        missing = [s for s in BASIC_SKILL_SECTIONS[role] if s not in headings(item.body)]
+        if missing:
+            problems.append(f"{rel}: missing section(s) {', '.join('## ' + s for s in missing)}")
+        if role == "review" and BASIC_VERDICT_FENCE not in item.body:
+            problems.append(f"{rel}: a review skill must show its {BASIC_VERDICT_FENCE} output block")
+    for field in ("gate", "stage"):
+        if field in f:
+            problems.append(f"{rel}: a basic skill works across the Basic stages; drop '{field}'")
+    check_no_em_dash(item, problems)
+
+
+def collect_basic(root: pathlib.Path, problems: list[str]) -> tuple[list[Item], list[Item]]:
+    """(cards, gates) under basic/. Cards sit in basic/stage-<N>/, gates in basic/gates/."""
+    cards: list[Item] = []
+    gates: list[Item] = []
+    base = root / BASIC_DIR
+    for path in sorted(base.rglob("*.md")):
+        if path.name == "README.md":
+            continue
+        rel = str(path.relative_to(root))
+        parent = path.parent.relative_to(base)
+        if str(parent) == "gates":
+            bucket, kind = gates, "gate"
+        elif re.fullmatch(r"stage-\d+", str(parent)):
+            bucket, kind = cards, "card"
+        else:
+            problems.append(f"{rel}: basic content lives in basic/stage-<N>/ or basic/gates/")
+            continue
+        fields, body, err = parse_frontmatter(path.read_text(encoding="utf-8"))
+        if err:
+            problems.append(f"{rel}: {err}")
+            continue
+        if fields is None:
+            problems.append(f"{rel}: no frontmatter")
+            continue
+        if fields.get("type") != kind:
+            problems.append(f"{rel}: type must be {kind!r} here, got {fields.get('type')!r}")
+            continue
+        bucket.append(Item(path, rel, kind, fields, body, None))
+    return cards, gates
+
+
+def as_basic_stage(value: object) -> int | None:
+    n = as_stage(value)
+    return n if n in BASIC_STAGES else None
+
+
+def check_basic_common(item: Item, required: tuple[str, ...], sections: tuple[str, ...],
+                       problems: list[str]) -> int | None:
+    f, rel = item.fields, item.rel
+    for field in required:
+        if f.get(field) in (None, "", []):
+            problems.append(f"{rel}: missing required frontmatter field '{field}'")
+    if f.get("track") not in (None, "", "basic"):
+        problems.append(f"{rel}: track must be 'basic'")
+    ident = str(f.get("id", ""))
+    if ident:
+        if not ident.startswith("basic-"):
+            problems.append(f"{rel}: id {ident!r} must start with 'basic-'")
+        elif not ID_SHAPE.match(ident):
+            problems.append(f"{rel}: id {ident!r} must be lowercase kebab-case")
+        elif ident != "basic-" + item.path.stem:
+            problems.append(f"{rel}: id {ident!r} must be 'basic-{item.path.stem}' to match its file name")
+    missing = [s for s in sections if s not in headings(item.body)]
+    if missing:
+        problems.append(f"{rel}: missing section(s) {', '.join('## ' + s for s in missing)}")
+    check_no_em_dash(item, problems)
+    stage = as_basic_stage(f.get("stage", ""))
+    if "stage" in f and stage is None:
+        problems.append(f"{rel}: stage {f['stage']!r} is not an integer 0-4")
+    return stage
+
+
+def check_basic_card(item: Item, gate_stage: dict[str, int | None], problems: list[str]) -> None:
+    f, rel = item.fields, item.rel
+    stage = check_basic_common(item, BASIC_CARD_FIELDS, BASIC_CARD_SECTIONS, problems)
+    if stage is not None and item.path.parent.name != f"stage-{stage}":
+        problems.append(f"{rel}: stage {stage} but the file lives under basic/{item.path.parent.name}/")
+
+    order = f.get("order")
+    if order not in (None, "") and str(order) not in ("1", "2", "3"):
+        problems.append(f"{rel}: order {order!r} must be 1, 2 or 3")
+
+    gate = f.get("gate")
+    if gate:
+        if gate not in gate_stage:
+            problems.append(f"{rel}: names gate {gate!r}, which does not exist in basic/gates/")
+        elif stage is not None and gate_stage[gate] != stage:
+            problems.append(f"{rel}: stage {stage} but its gate {gate!r} is at stage {gate_stage[gate]}")
+
+    submit = f.get("submit")
+    if submit not in (None, "", []):
+        if not isinstance(submit, list):
+            problems.append(f"{rel}: submit must be a list, e.g. submit: [text]")
+            submit = []
+        bad = [v for v in submit if v not in BASIC_SUBMIT_VALUES]
+        if bad:
+            problems.append(f"{rel}: submit value(s) {', '.join(map(repr, bad))} not in "
+                            f"{', '.join(BASIC_SUBMIT_VALUES)}")
+        choices = f.get("choices")
+        if "choice" in submit and (not isinstance(choices, list) or not choices):
+            problems.append(f"{rel}: submit has choice, so choices must list the options")
+        if "choice" not in submit and "choices" in f:
+            problems.append(f"{rel}: choices is set but submit has no choice")
+
+    if "sources" in f and not isinstance(f["sources"], list):
+        problems.append(f"{rel}: sources must be a list")
+
+    done = [ln for ln in section_text(item.body, "Done when").splitlines() if ln.startswith("- ")]
+    if "Done when" in headings(item.body) and len(done) not in BASIC_DONE_WHEN:
+        problems.append(f"{rel}: ## Done when has {len(done)} bullet(s); it needs 3 to 5")
+    if "Source" in headings(item.body) and not section_text(item.body, "Source").endswith(COURSE_URL):
+        problems.append(f"{rel}: ## Source must end with the link to the course, {COURSE_URL}")
+
+    learner = "\n".join([str(f.get("title", "")), " ".join(map(str, f.get("choices") or [])),
+                         without_section(item.body, COACH_ONLY)])
+    check_learner_text(rel, learner, problems)
+
+
+def check_basic_gate(item: Item, problems: list[str]) -> None:
+    f, rel = item.fields, item.rel
+    stage = check_basic_common(item, BASIC_GATE_FIELDS, BASIC_GATE_SECTIONS, problems)
+    if stage is not None and not item.path.stem.startswith(f"stage-{stage}-"):
+        problems.append(f"{rel}: stage {stage} but the file name does not start with 'stage-{stage}-'")
+    if f.get("signoff") not in (None, "", "coach"):
+        problems.append(f"{rel}: a basic gate has signoff: coach (the stage passes when every card is accepted)")
+    if "Read the original" in headings(item.body) and COURSE_URL not in section_text(item.body, "Read the original"):
+        problems.append(f"{rel}: ## Read the original must link to {COURSE_URL}")
+    check_learner_text(rel, "\n".join([str(f.get("title", "")), item.body]), problems)
+
+
+def check_basic(root: pathlib.Path, others: list[Item], problems: list[str]) -> None:
+    """Runs only when the root has a basic/ tree."""
+    if not (root / BASIC_DIR).is_dir():
+        return
+    cards, gates = collect_basic(root, problems)
+
+    seen = {i.ident: i.rel for i in others if i.ident}
+    for item in gates + cards:
+        ident = str(item.fields.get("id", ""))
+        if ident in seen:
+            problems.append(f"{item.rel}: duplicate id {ident!r} (also {seen[ident]})")
+        elif ident:
+            seen[ident] = item.rel
+
+    gate_stage = {str(g.fields.get("id")): as_basic_stage(g.fields.get("stage", "")) for g in gates}
+    for gate in gates:
+        check_basic_gate(gate, problems)
+    for card in cards:
+        check_basic_card(card, gate_stage, problems)
+
+    for stage in BASIC_STAGES:
+        here = [g.ident for g in gates if as_basic_stage(g.fields.get("stage", "")) == stage]
+        if len(here) != 1:
+            problems.append(f"basic: stage {stage} needs exactly one gate in basic/gates/, found {len(here)}")
+        in_stage = [c for c in cards if as_basic_stage(c.fields.get("stage", "")) == stage]
+        if len(in_stage) != BASIC_CARDS_PER_STAGE:
+            problems.append(f"basic: stage {stage} needs {BASIC_CARDS_PER_STAGE} cards, found {len(in_stage)}")
+        orders = [str(c.fields.get("order")) for c in in_stage]
+        dupes = sorted({o for o in orders if orders.count(o) > 1})
+        if dupes:
+            problems.append(f"basic: stage {stage} has more than one card at order {', '.join(dupes)}")
+
+
 def lint(root: pathlib.Path, budget_path: pathlib.Path | None = None) -> list[str]:
     problems: list[str] = []
     items = collect(root, problems)
@@ -467,6 +724,7 @@ def lint(root: pathlib.Path, budget_path: pathlib.Path | None = None) -> list[st
     check_question_sets(root, items, problems)
     check_manifest(root, items, problems)
     check_evals(root, items, problems)
+    check_basic(root, items, problems)
     budget = load_budget(budget_path or resolve_budget_path(root), problems)
     if budget is not None:
         check_budget(items, budget, problems)

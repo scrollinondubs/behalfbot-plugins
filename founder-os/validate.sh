@@ -9,7 +9,7 @@ set -euo pipefail
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fail=0
 
-for d in core contrib gates skills laya templates schema evals; do
+for d in core contrib gates basic skills laya templates schema evals; do
   if [[ -d "$PLUGIN_DIR/$d" ]]; then
     echo "[founder-os] OK: $d/"
   else

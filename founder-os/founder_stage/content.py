@@ -28,11 +28,33 @@ def parse_frontmatter(text: str) -> tuple[dict[str, object], str]:
         key, _, value = line.partition(":")
         key, value = key.strip(), value.strip()
         if value.startswith("[") and value.endswith("]"):
-            inner = value[1:-1].strip()
-            fields[key] = [_unquote(v.strip()) for v in inner.split(",")] if inner else []
+            fields[key] = split_list(value[1:-1])
         else:
             fields[key] = _unquote(value)
     return fields, "\n".join(lines[end + 1:])
+
+
+def split_list(inner: str) -> list[str]:
+    """Split an inline list on commas outside quotes. Same rule as
+    scripts/lint_content.py, so a quoted source citation stays one item."""
+    if not inner.strip():
+        return []
+    parts, buf, quote = [], "", ""
+    for ch in inner:
+        if quote:
+            buf += ch
+            if ch == quote:
+                quote = ""
+        elif ch in "\"'" and not buf.strip():
+            quote = ch
+            buf += ch
+        elif ch == ",":
+            parts.append(buf)
+            buf = ""
+        else:
+            buf += ch
+    parts.append(buf)
+    return [_unquote(v.strip()) for v in parts]
 
 
 def _unquote(v: str) -> str:
@@ -123,3 +145,14 @@ class Content:
                 if doc.fields.get("type") == "concept" and doc.id in wanted:
                     out.append(doc)
         return out
+
+    def basic_cards(self, stage: int) -> list[Doc]:
+        """The Basic track's cards for one stage (0-4), in their `order`."""
+        docs = [d for d in self._docs(f"basic/stage-{stage}/*.md") if d.fields.get("type") == "card"]
+        return sorted(docs, key=lambda d: str(d.fields.get("order", "")))
+
+    def basic_gate(self, stage: int) -> Doc:
+        for doc in self._docs(f"basic/gates/stage-{stage}-*.md"):
+            if doc.fields.get("type") == "gate" and doc.stage == stage:
+                return doc
+        raise LookupError(f"no Basic gate for stage {stage} in basic/gates/")
