@@ -20,7 +20,7 @@ from typing import Any, Iterator
 
 from .interface import (
     AUDIT_TARGETS, AUDITORS, BUNDLE_TABLES, COMMITMENTS, DECIDERS, DECISIONS, EVIDENCE_TABLES,
-    LABEL_TARGETS, SEAN_SIGNOFF_FROM_STAGE, STAGES, TABLE_COLUMNS, VERDICTS,
+    LABEL_TARGETS, PAIN_SOURCES, SEAN_SIGNOFF_FROM_STAGE, STAGES, TABLE_COLUMNS, VERDICTS,
     Ledger, LedgerError, NotFound, Row,
 )
 
@@ -251,14 +251,18 @@ class SqlLedger(Ledger):
     # --- pains --------------------------------------------------------------
 
     def add_pain(self, founder_id, *, quote, source_url=None, watering_hole=None,
-                 segment=None, job=None, tags=None):
+                 segment=None, job=None, tags=None, page_title=None, note=None,
+                 screenshot_url=None, source=None):
         _check_text(quote, "quote")
+        if source is not None:
+            _check_choice(source, PAIN_SOURCES, "source")
         with self._tx():
             self._require_founder(founder_id)
             return self._insert("pains", {
                 "id": new_id(), "founder_id": founder_id, "quote": quote, "source_url": source_url,
                 "watering_hole": watering_hole, "segment": segment, "job": job,
-                "tags": _dump(list(tags or [])), "created_at": now(),
+                "tags": _dump(list(tags or [])), "created_at": now(), "page_title": page_title,
+                "note": note, "screenshot_url": screenshot_url, "source": source,
             })
 
     def list_pains(self, founder_id, *, job=None):

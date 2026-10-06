@@ -31,6 +31,7 @@ SEAN_SIGNOFF_FROM_STAGE = 3
 # Tables a gate decision may cite as evidence, and an audit may target.
 EVIDENCE_TABLES = ("artifacts", "pains", "interviews", "prfaq_versions", "audits")
 AUDIT_TARGETS = ("artifacts", "pains", "interviews", "prfaq_versions")
+PAIN_SOURCES = ("extension", "card", "api")
 LABEL_TARGETS = ("artifacts", "pains", "interviews", "prfaq_versions")
 
 # Every table that holds founder rows, in the order an import loads them:
@@ -49,7 +50,7 @@ TABLE_COLUMNS = {
     "stage_progress": ("id", "founder_id", "stage", "status", "started_at", "passed_at", "updated_at"),
     "artifacts": ("id", "founder_id", "stage", "kind", "version", "title", "body", "meta", "created_at"),
     "pains": ("id", "founder_id", "quote", "source_url", "watering_hole", "segment", "job", "tags",
-              "created_at"),
+              "created_at", "page_title", "note", "screenshot_url", "source"),
     "interviews": ("id", "founder_id", "interviewee", "segment", "conducted_on", "notes", "commitment",
                    "earlyvangelist", "created_at"),
     "prfaq_versions": ("id", "founder_id", "version", "stage", "body", "assumptions", "created_at"),
@@ -132,6 +133,8 @@ class Ledger(abc.ABC):
         self, founder_id: str, *, quote: str, source_url: str | None = None,
         watering_hole: str | None = None, segment: str | None = None,
         job: str | None = None, tags: list[str] | None = None,
+        page_title: str | None = None, note: str | None = None,
+        screenshot_url: str | None = None, source: str | None = None,
     ) -> Row: ...
 
     @abc.abstractmethod
