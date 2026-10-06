@@ -112,3 +112,28 @@ sentence reads better with different words.
 
 A concept note holds one idea. If you are writing "and also" in a concept note,
 split it into two notes and link them.
+
+## Basic track
+
+`basic/` has its own, smaller format. There is no template file: the fifteen
+real cards are the examples.
+
+- Cards live at `basic/stage-<N>/<slug>.md` with `id: basic-<slug>`,
+  `type: card`, `track: basic`, `stage` (0 to 4, matching the directory),
+  `order` (1 to 3), `title`, `gate`, `submit` and `sources`.
+- `submit` is a list drawn from `text`, `link`, `file`, `choice`. `choices`
+  is present exactly when `submit` includes `choice`.
+- Sections: What this is, What you make, How to submit, Done when (3 to 5
+  bullets), Coach checks, Source. Source ends with
+  https://stackingthebricks.com/30x500/.
+- Gates live at `basic/gates/stage-<N>-<slug>.md` with
+  `id: basic-stage-<N>-<slug>`, `type: gate`, `track: basic`, `stage`, `title`
+  and `signoff: coach`. Sections: What this is, Why you care, What you get,
+  Read the original (with the course link).
+- Each stage has exactly three cards and one gate.
+- No em dash anywhere. Learner text (everything except Coach checks, plus the
+  title and choices) has no backticks, no snake_case ids, and none of the
+  words row, kind, artifact, ledger, meta.
+- A quoted list item keeps its commas: `sources: ["Amy Hoy and Alex Hillman, 30x500, pp 38-43"]`
+  is one source.
+

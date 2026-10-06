@@ -23,6 +23,32 @@ concept notes, four auditor skills, the coach skills, the ledger, the founder
 bundle and the eval harness are in place. Gate minimums were ruled by Sean on 2026-09-26. The epic is
 [behalfbot-plugins#22](https://github.com/scrollinondubs/behalfbot-plugins/issues/22).
 
+## Basic track
+
+`basic/` is a second, shorter track: five stages, three cards each, built on
+Amy Hoy and Alex Hillman's [30x500](https://stackingthebricks.com/30x500/).
+It ends at a first sale to a stranger. Cards are paraphrased with page cites
+and point to the course; they are a short version, not a substitute. The ten
+stages above are the Advanced track and are unchanged.
+
+| # | Stage (learners see 1 to 5) | Cards |
+|---|---|---|
+| 0 | Pick your people | Audience you belong to, watering holes, weekly research time |
+| 1 | Sales Safari | Painstorm one thread, themes and saved threads, Safari gold and e-bomb ideas |
+| 2 | E-bombs and your list | Home base, five e-bombs, sharing and the first email |
+| 3 | Your first tiny product | Pain into dream, ten pitches, plinko and a sign-up page |
+| 4 | Ship it small and launch | Build it, sales page and price, launch and the first sale |
+
+Each card says what to make, how to submit it (`text`, `link`, `file`,
+`choice`) and the lines it is done when. `## Coach checks` on a card is for the
+coach only and is never shown to the founder. `basic/gates/` holds one panel per
+stage. A Basic stage passes when every card in it is accepted; there is no
+separate gate submission. Two skills serve it: `founder-os-basic-coach` (chat,
+any Basic stage) and `founder-os-basic-review` (one submission against one
+card, ending in a `founderos-verdict` block the host app reads). The lint checks
+the format, the course link, and that learner text has no em dashes or database
+words.
+
 ## Stage skills and gates
 
 Each stage has one skill, `skills/founder-os-stage-<N>-<slug>`. It reads the
@@ -135,7 +161,8 @@ founder-os/
   core/                  canonical cards and concept notes (the coach loads only this)
   contrib/               community cards, opt-in
   gates/                 gate specs and rubrics
-  skills/                stage, auditor and coach SKILL.md files, one per skills/<name>/
+  basic/                 the Basic track: stage-<N>/ cards and gates/ panels, stages 0-4
+  skills/                stage, auditor, coach and Basic SKILL.md files, one per skills/<name>/
   laya/                  Laya question sets (JSON)
   founder_audit/         Laya client, chunking and the auditors' Laya half
   scripts/stage.py       ledger and gate calls the stage skills make

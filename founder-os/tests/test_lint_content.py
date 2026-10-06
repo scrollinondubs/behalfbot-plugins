@@ -385,5 +385,229 @@ class LintContentTest(unittest.TestCase):
         self.assertOneProblem("'long-gone' is not a core card; take it off the seed list")
 
 
+BASIC_CARD = "basic/stage-0/find-where-they-talk.md"
+BASIC_CHOICE_CARD = "basic/stage-0/choose-your-audience.md"
+BASIC_GATE = "basic/gates/stage-0-people.md"
+
+
+class BasicTrackLintTest(LintContentTest):
+    """The Basic track (basic/). Each case starts from the real basic/ tree
+    copied next to the template examples, breaks one thing, and expects
+    exactly that one problem."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        shutil.copytree(PLUGIN_DIR / "basic", self.root / "basic")
+
+    def test_basic_tree_passes(self) -> None:
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_basic_absent_is_not_required(self) -> None:
+        shutil.rmtree(self.root / "basic")
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_quoted_list_item_keeps_its_commas(self) -> None:
+        fields, _ = lint_content.parse_fields(['sources: ["Amy Hoy and Alex Hillman, 30x500, pp 38-43", other]'])
+        self.assertEqual(fields["sources"], ["Amy Hoy and Alex Hillman, 30x500, pp 38-43", "other"])
+        fields, _ = lint_content.parse_fields(["sources: [a, b]", "submit: []"])
+        self.assertEqual(fields, {"sources": ["a", "b"], "submit": []})
+
+    def test_card_id_needs_basic_prefix(self) -> None:
+        self.edit(BASIC_CARD, "id: basic-find-where-they-talk", "id: find-where-they-talk")
+        self.assertOneProblem("must start with 'basic-'")
+
+    def test_card_id_matches_file(self) -> None:
+        self.edit(BASIC_CARD, "id: basic-find-where-they-talk", "id: basic-find-them")
+        self.assertOneProblem("must be 'basic-find-where-they-talk'")
+
+    def test_card_id_unique_across_plugin(self) -> None:
+        text = (self.root / BASIC_CARD).read_text(encoding="utf-8")
+        self.write("basic/stage-1/find-where-they-talk.md", text.replace("stage: 0", "stage: 1").replace(
+            "order: 2", "order: 4").replace("basic-stage-0-people", "basic-stage-1-sales-safari"))
+        problems = lint_content.lint(self.root)
+        self.assertTrue(any("duplicate id 'basic-find-where-they-talk'" in p for p in problems), problems)
+
+    def test_missing_required_field(self) -> None:
+        self.edit(BASIC_CARD, "order: 2\n", "")
+        self.assertOneProblem("missing required frontmatter field 'order'")
+
+    def test_stage_out_of_range(self) -> None:
+        self.edit(BASIC_GATE, "stage: 0", "stage: 5")
+        problems = lint_content.lint(self.root)
+        self.assertIn("basic/gates/stage-0-people.md: stage '5' is not an integer 0-4", problems)
+
+    def test_card_stage_matches_directory(self) -> None:
+        self.edit(BASIC_CARD, "stage: 0", "stage: 1")
+        problems = lint_content.lint(self.root)
+        self.assertIn(f"{BASIC_CARD}: stage 1 but the file lives under basic/stage-0/", problems)
+
+    def test_three_cards_per_stage(self) -> None:
+        (self.root / BASIC_CARD).unlink()
+        self.assertOneProblem("basic: stage 0 needs 3 cards, found 2")
+
+    def test_order_unique_in_stage(self) -> None:
+        self.edit(BASIC_CARD, "order: 2", "order: 1")
+        self.assertOneProblem("stage 0 has more than one card at order 1")
+
+    def test_gate_per_stage(self) -> None:
+        (self.root / "basic/gates/stage-4-ship-and-launch.md").unlink()
+        problems = lint_content.lint(self.root)
+        self.assertIn("basic: stage 4 needs exactly one gate in basic/gates/, found 0", problems)
+
+    def test_card_names_missing_gate(self) -> None:
+        self.edit(BASIC_CARD, "gate: basic-stage-0-people", "gate: basic-stage-0-nowhere")
+        self.assertOneProblem("names gate 'basic-stage-0-nowhere', which does not exist in basic/gates/")
+
+    def test_card_gate_at_other_stage(self) -> None:
+        self.edit(BASIC_CARD, "gate: basic-stage-0-people", "gate: basic-stage-1-sales-safari")
+        self.assertOneProblem("stage 0 but its gate 'basic-stage-1-sales-safari' is at stage 1")
+
+    def test_gate_signoff_is_coach(self) -> None:
+        self.edit(BASIC_GATE, "signoff: coach", "signoff: claude")
+        self.assertOneProblem("a basic gate has signoff: coach")
+
+    def test_submit_values(self) -> None:
+        self.edit(BASIC_CARD, "submit: [text]", "submit: [text, video]")
+        self.assertOneProblem("submit value(s) 'video' not in text, link, file, choice")
+
+    def test_choice_needs_choices(self) -> None:
+        self.edit(BASIC_CHOICE_CARD, "choices: [Peers, Newcomers, Clients]\n", "")
+        self.assertOneProblem("submit has choice, so choices must list the options")
+
+    def test_choices_need_choice(self) -> None:
+        self.edit(BASIC_CARD, "submit: [text]", "submit: [text]\nchoices: [Yes, No]")
+        self.assertOneProblem("choices is set but submit has no choice")
+
+    def test_card_missing_section(self) -> None:
+        self.edit(BASIC_CARD, "## How to submit", "## Sending it in")
+        self.assertOneProblem("missing section(s) ## How to submit")
+
+    def test_gate_missing_section(self) -> None:
+        self.edit(BASIC_GATE, "## Why you care", "## Why it matters")
+        self.assertOneProblem("missing section(s) ## Why you care")
+
+    def test_done_when_bullet_count(self) -> None:
+        self.edit(BASIC_CARD, "- You have not posted anything in any of them yet.\n", "")
+        self.edit(BASIC_CARD, "- You list three or more watering holes, each with a working link.\n", "")
+        self.assertOneProblem("## Done when has 2 bullet(s); it needs 3 to 5")
+
+    def test_source_links_the_course(self) -> None:
+        self.edit(BASIC_CARD, " Want the full version? Take the course: https://stackingthebricks.com/30x500/", "")
+        self.assertOneProblem("## Source must end with the link to the course")
+
+    def test_gate_links_the_course(self) -> None:
+        self.edit(BASIC_GATE, "\nhttps://stackingthebricks.com/30x500/", "")
+        self.assertOneProblem("## Read the original must link to")
+
+    def test_em_dash(self) -> None:
+        self.edit(BASIC_CARD, "Find where they talk\n", "Find where they talk \u2014 now\n")
+        self.assertOneProblem("has an em dash")
+
+    def test_em_dash_in_coach_checks_still_fails(self) -> None:
+        self.edit(BASIC_CARD, "- A mix of formats", "- A mix \u2014 of formats")
+        self.assertOneProblem("has an em dash")
+
+    def test_database_word_in_learner_text(self) -> None:
+        self.edit(BASIC_CARD, "each with a link, what sort of place", "each with a link, what kind of place")
+        self.assertOneProblem("learner text uses database word(s) kind")
+
+    def test_database_word_in_title(self) -> None:
+        self.edit(BASIC_CARD, "title: Find where they talk", "title: Log a ledger of where they talk")
+        self.assertOneProblem("learner text uses database word(s) ledger")
+
+    def test_database_word_in_gate(self) -> None:
+        self.edit(BASIC_GATE, "A named audience you already belong to", "An audience artifact")
+        self.assertOneProblem("learner text uses database word(s) artifact")
+
+    def test_database_words_allowed_in_coach_checks(self) -> None:
+        self.edit(BASIC_CARD, "- A mix of formats", "- Stored as an `artifacts` row of kind watering_holes. A mix of formats")
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_backticks_in_learner_text(self) -> None:
+        self.edit(BASIC_CARD, "add the search words you used", "add the `search words` you used")
+        self.assertOneProblem("learner text has backticks")
+
+    def test_snake_case_in_learner_text(self) -> None:
+        self.edit(BASIC_CARD, "add the search words you used", "add the search_words you used")
+        self.assertOneProblem("snake_case id(s) search_words")
+
+    def test_stray_file(self) -> None:
+        self.write("basic/notes.md", "---\nid: basic-notes\ntype: card\n---\n")
+        self.assertOneProblem("basic content lives in basic/stage-<N>/ or basic/gates/")
+
+    def test_wrong_type_in_gates_dir(self) -> None:
+        self.edit(BASIC_GATE, "type: gate", "type: card")
+        problems = lint_content.lint(self.root)
+        self.assertIn(f"{BASIC_GATE}: type must be 'gate' here, got 'card'", problems)
+
+    # Basic skills.
+
+    BASIC_REVIEW = (
+        "---\nname: founder-os-basic-example\ndescription: A review.\nplugin: behalfbot-founder-os\n"
+        "type: basic-skill\ntrack: basic\nrole: review\n---\n\n# Review\n\n## Input\n\nx\n\n"
+        "## How to review\n\nx\n\n## Reply\n\nx\n\n## Verdict\n\n"
+        "```founderos-verdict\n{\"card_id\": \"basic-x\", \"verdict\": \"accepted\", \"failed\": []}\n```\n"
+    )
+
+    def test_basic_review_skill_passes(self) -> None:
+        self.write("skills/founder-os-basic-example/SKILL.md", self.BASIC_REVIEW)
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_review_skill_needs_verdict_block(self) -> None:
+        self.write("skills/founder-os-basic-example/SKILL.md",
+                   self.BASIC_REVIEW.replace("```founderos-verdict", "```json"))
+        self.assertOneProblem("must show its ```founderos-verdict output block")
+
+    def test_basic_skill_role(self) -> None:
+        self.write("skills/founder-os-basic-example/SKILL.md",
+                   self.BASIC_REVIEW.replace("role: review", "role: judge"))
+        self.assertOneProblem("role 'judge' must be one of coach, review")
+
+    def test_basic_skill_sections(self) -> None:
+        self.write("skills/founder-os-basic-example/SKILL.md",
+                   self.BASIC_REVIEW.replace("## Reply", "## Answer"))
+        self.assertOneProblem("missing section(s) ## Reply")
+
+    def test_basic_skill_names_no_stage(self) -> None:
+        self.write("skills/founder-os-basic-example/SKILL.md",
+                   self.BASIC_REVIEW.replace("role: review\n", "role: review\nstage: 0\n"))
+        self.assertOneProblem("a basic skill works across the Basic stages; drop 'stage'")
+
+    def test_basic_skill_em_dash(self) -> None:
+        self.write("skills/founder-os-basic-example/SKILL.md",
+                   self.BASIC_REVIEW.replace("# Review", "# Review \u2014 one card"))
+        self.assertOneProblem("has an em dash")
+
+    def test_real_basic_skills_are_in_manifest(self) -> None:
+        import json
+        listed = json.loads((PLUGIN_DIR / "openclaw.plugin.json").read_text(encoding="utf-8"))["contracts"]["skills"]
+        self.assertIn("founder-os-basic-coach", listed)
+        self.assertIn("founder-os-basic-review", listed)
+
+
+class BasicContentLoaderTest(unittest.TestCase):
+    def test_loader_reads_the_basic_tree(self) -> None:
+        sys.path.insert(0, str(PLUGIN_DIR))
+        from founder_stage.content import Content
+        content = Content(PLUGIN_DIR, include_contrib=False)
+        for stage in range(5):
+            cards = content.basic_cards(stage)
+            self.assertEqual([c.fields["order"] for c in cards], ["1", "2", "3"])
+            self.assertTrue(all(c.fields["gate"] == content.basic_gate(stage).id for c in cards))
+        first = content.basic_cards(0)[0]
+        self.assertEqual(first.fields["sources"], ["Amy Hoy and Alex Hillman, 30x500, pp 5-9, 30, 38-43"])
+        self.assertEqual(content.basic_gate(0).id, "basic-stage-0-people")
+        with self.assertRaises(LookupError):
+            content.basic_gate(5)
+
+    def test_basic_cards_stay_out_of_the_advanced_stages(self) -> None:
+        sys.path.insert(0, str(PLUGIN_DIR))
+        from founder_stage.content import Content
+        content = Content(PLUGIN_DIR, include_contrib=False)
+        for stage in range(10):
+            self.assertFalse(any(c.id.startswith("basic-") for c in content.cards(stage)))
+            self.assertFalse(content.gate(stage).id.startswith("basic-"))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

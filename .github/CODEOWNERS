@@ -29,3 +29,6 @@
 /founder-os/core/         @scrollinondubs
 /founder-os/gates/        @scrollinondubs
 /founder-os/budget.yml    @scrollinondubs
+# The Basic track: its cards and stage panels are what every Basic founder is
+# held to, and they paraphrase a paid course, so wording changes get a review.
+/founder-os/basic/        @scrollinondubs
