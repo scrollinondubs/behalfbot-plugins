@@ -7,6 +7,7 @@ order: 2
 title: Fixstorm it into ten pitches
 gate: basic-stage-3-first-product
 submit: [text, file]
+assist: draft
 sources: ["Amy Hoy and Alex Hillman, 30x500, pp 149-176"]
 ---
 ## What this is
@@ -16,7 +17,7 @@ A fix is any bridge from pain to dream. First question the pain on eight points:
 Short answers to the eight questions about your pain, at least one fix idea under each of the six methods, and ten or more three-line pitches: pain, dream, and fix with its method and format.
 
 ## How to submit
-Write it in the box or upload your notes.
+Press "Draft it from my work". We build a first version from your Safari captures, e-bombs and earlier cards. Reshape it by asking for changes or edit it yourself (at least once), then submit. Add or cut pitches until the list feels like yours.
 
 ## Done when
 - You answered at least five of the eight questions about your pain with details from your notes.
@@ -26,6 +27,7 @@ Write it in the box or upload your notes.
 - Every pitch uses the exact dream line from your previous card.
 
 ## Coach checks
+- This card started from a draft we wrote. Check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when.
 - Did they jump to software or an app? The course says never start there, and treats a process you can teach as the step before any software (pp 97, 152, 184).
 - Is knowledge written as bodies of understanding they lack, not just "how to X" (p 166)?
 - Are the tools and buys specific to this audience (p 167)?

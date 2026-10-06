@@ -6,17 +6,18 @@ stage: 4
 order: 2
 title: Write the sales page and set the price
 gate: basic-stage-4-ship-and-launch
-submit: [link]
+submit: [text, link]
+assist: draft
 sources: ["Amy Hoy and Alex Hillman, 30x500, pp 133-134, 185, 188-193, 216-219"]
 ---
 ## What this is
 Your sales page is your pitch told in full: the pain in your audience's words, a few lines that step back and forth between pain and dream, the dream itself, then the fix revealed late with its parts, and a call to action that is mostly dream plus a buy button. For price, the course gives a recipe: three tiers at roughly 1x, 2.2x and 5x, set next to what this audience already pays.
 
 ## What you make
-A live sales page with a price and a working buy button.
+Your sales page copy and the live page itself, with a price and a working buy button.
 
 ## How to submit
-Share the link to your sales page.
+Press "Draft it from my work" for a v1 page written from your pain, dream and pitch, in your audience's words. Reshape it by asking for changes or edit it yourself (at least once). Paste your final copy in the box and share the link to your live page.
 
 ## Done when
 - The page opens with pain in your audience's words and does not name the product until after the dream.
@@ -26,6 +27,7 @@ Share the link to your sales page.
 - You tested checkout end to end, with a real purchase and refund or a test mode.
 
 ## Coach checks
+- This card started from a draft we wrote. Check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when.
 - Answering "what is this product" at the top. The course says nobody is asking that yet (p 191).
 - A list of benefits instead of a story. The course calls benefits-only selling a route to failure (pp 133-134).
 - Missing the back-and-forth "sandwich" lines, so it reads like fell down, stood up, walked away (pp 190, 193).
