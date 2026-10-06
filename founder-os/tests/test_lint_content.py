@@ -503,6 +503,10 @@ class BasicTrackLintTest(LintContentTest):
         self.edit(BASIC_CARD, "Find where they talk\n", "Find where they talk \u2014 now\n")
         self.assertOneProblem("has an em dash")
 
+    def test_backslash_escaped_quote(self) -> None:
+        self.edit(BASIC_CARD, "Find where they talk\n", "Find where they\\'re talking\n")
+        self.assertOneProblem("backslash-escaped quote")
+
     def test_em_dash_in_coach_checks_still_fails(self) -> None:
         self.edit(BASIC_CARD, "- A mix of formats", "- A mix \u2014 of formats")
         self.assertOneProblem("has an em dash")

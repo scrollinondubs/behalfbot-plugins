@@ -7,7 +7,7 @@ title: Your first tiny product
 signoff: coach
 ---
 ## What this is
-You write the pitch before the product. A pitch is a cheap guess, so you make lots of them, cut most against your limits and your customer's, and build only the one that survives. From here on we draft each step from everything you have gathered so far, and you shape it until it is yours.
+You write the pitch before the product. A pitch is a cheap guess, so you make lots of them, cut most against your limits and your customer's, and build only the one that survives. From here on you can write each step yourself or have us draft a first version from everything you have gathered, and either way ask for feedback before you submit.
 
 ## Why you care
 Your first product should be small, written, and something you can make with the skills you have now, in weeks rather than nine months. Picking it this way saves you from building something nobody buys.

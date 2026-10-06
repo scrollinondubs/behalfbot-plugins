@@ -7,7 +7,7 @@ title: Ship it small and launch
 signoff: coach
 ---
 ## What this is
-You finish the tiny product, write the page that sells it, and run a short launch with a clear start and end. We draft the plan, the page and the launch emails from your work so far; you shape them and do the parts only you can do.
+You finish the tiny product, write the page that sells it, and run a short launch with a clear start and end. Write the plan, the page and the launch emails yourself or have us draft them from your work so far; you shape them and do the parts only you can do.
 
 ## Why you care
 To make one sale you need a customer who is ready, a way to reach them, and an offer. You already have the first two. Shipping is a skill you can learn, the big launch is a myth, and the thing that kills most products is never finishing them.

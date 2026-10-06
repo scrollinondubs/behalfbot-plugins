@@ -17,7 +17,7 @@ A launch is a dinner party: a date and time, an RSVP deadline, reminders, and an
 A launch calendar, three to seven launch emails, your doors-open and reminder emails, a results note, and a plan for the next four weeks.
 
 ## How to submit
-Press "Draft it from my work" for a first set of launch emails built from your e-bombs, your sales page and your audience's words. Reshape them by asking for changes or edit them yourself (at least once). After the launch, upload your sent emails or share links to them, and write your results note in the box.
+Write your launch emails yourself, or press "Draft V1 for me" for a first set built from your e-bombs, your sales page and your audience's words. If you use the draft, reshape it or edit it yourself (at least once). Press "Analyse this" any time for feedback. After the launch, upload your sent emails or share links to them, and write your results note in the box.
 
 ## Done when
 - You wrote down your "worth it" number of sales before the doors opened.
@@ -27,7 +27,7 @@ Press "Draft it from my work" for a first set of launch emails built from your e
 - The next four weeks of Safari sessions and e-bombs are on your calendar.
 
 ## Coach checks
-- This card started from a draft we wrote. Check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when.
+- If this card started from a draft we wrote, check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when. If they wrote it themselves, judge it on its own.
 - The course's launch template: one email reframes the main pain, one gives a tiny win in under 30 minutes, one a bigger win, one is all dream, one is a sample the day before the doors open (pp 214-215).
 - "I'm proud to announce" with no build-up is the course's own one-sale flop (pp 211, 224-225).
 - No explicit ask for the sale. People need to be shown the door (p 226).

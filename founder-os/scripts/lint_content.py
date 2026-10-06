@@ -539,8 +539,11 @@ def check_learner_text(rel: str, text: str, problems: list[str]) -> None:
 
 
 def check_no_em_dash(item: Item, problems: list[str]) -> None:
-    if EM_DASH in item.path.read_text(encoding="utf-8"):
+    text = item.path.read_text(encoding="utf-8")
+    if EM_DASH in text:
         problems.append(f"{item.rel}: has an em dash; use ' - '")
+    if "/basic/" in "/" + str(item.rel).replace("\\", "/") and ("\\'" in text or '\\"' in text):
+        problems.append(f"{item.rel}: has a backslash-escaped quote; write the plain quote")
 
 
 def check_basic_skill(item: Item, problems: list[str]) -> None:
