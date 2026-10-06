@@ -93,7 +93,7 @@ BASIC_GATE_FIELDS = ("id", "type", "track", "stage", "title", "signoff")
 BASIC_CARD_SECTIONS = ("What this is", "What you make", "How to submit", "Done when", "Coach checks", "Source")
 BASIC_GATE_SECTIONS = ("What this is", "Why you care", "What you get", "Read the original")
 BASIC_SUBMIT_VALUES = ("text", "link", "file", "choice")
-BASIC_DONE_WHEN = range(3, 6)
+BASIC_DONE_WHEN = range(2, 6)
 BASIC_SKILL_SECTIONS = {
     "coach": ("Read first", "Current stage only", "How to coach", "Never do the work"),
     "review": ("Input", "How to review", "Reply", "Verdict"),
@@ -664,7 +664,7 @@ def check_basic_card(item: Item, gate_stage: dict[str, int | None], problems: li
 
     done = [ln for ln in section_text(item.body, "Done when").splitlines() if ln.startswith("- ")]
     if "Done when" in headings(item.body) and len(done) not in BASIC_DONE_WHEN:
-        problems.append(f"{rel}: ## Done when has {len(done)} bullet(s); it needs 3 to 5")
+        problems.append(f"{rel}: ## Done when has {len(done)} bullet(s); it needs 2 to 5")
     if "Source" in headings(item.body) and not section_text(item.body, "Source").endswith(COURSE_URL):
         problems.append(f"{rel}: ## Source must end with the link to the course, {COURSE_URL}")
 

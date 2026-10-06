@@ -4,35 +4,29 @@ type: card
 track: basic
 stage: 0
 order: 3
-title: Fill up your emotional fuel tank
+title: Fuel up your emotional fuel tank
 gate: basic-stage-0-people
 submit: [text]
 sources: ["Amy Hoy and Alex Hillman, 30x500, pp 16-19, 28, 117-120", "Sliding Doors exercise, Vibecode Lisboa"]
 ---
 ## What this is
-This work takes months, and some weeks it will feel slow and pointless. A schedule breaks the first busy week; what carries you through is knowing why you are doing it. So fill the tank now, while you are fresh, and you can draw on it later. The Sliding Doors exercise helps: picture two versions of your life six months from today.
+Before embarking on a journey to build something that involves protracted effort over many days, you need to fuel up your emotional fuel tank for the inevitable grind that's ahead. The best way to do this is via an exercise called "Sliding Doors" (reference to the Gwenyth Paltrow movie).
 
 ## What you make
-A short statement in three parts:
-- Why you are doing this, and what you want out of it: the freedom, enjoyment or satisfaction you are after.
-- Six months from now if nothing changes: where you are, what your days look like, how it feels.
-- Six months from now if you do the work and it pays off: the same picture, just as specific.
+Imagine two divergent paths forward from this day. Path A you close the browser window and do nothing and go about whatever you would be doing right now if you weren't in FounderOS doing this exercise. Imagine forward six months, one year, two years... what does life look like? Now come back and imagine the other path where you put in the work that's ahead to build this side hustle and get it off the ground and it becomes successful. It may feel cheesy to write this but what does your life look like in that scenario and how does it feel knowing that you've done something that 95% of the world could and will never do?
 
 ## How to submit
-Write your statement in the box.
+Write a few sentences from Path A and Path B below.
 
 ## Done when
-- You say in your own words why you are doing this and what you want out of it.
-- Your "nothing changes" picture is specific: real places, real days, real feelings.
-- Your "it worked" picture is just as specific.
-- You name one thing you will give up or say no to, to make room for this work.
+- You have submitted a paragraph of text that gives a brief overview of your life and how it feels in both scenarios.
+- The sentences feel honest and your best attempt to capture what those two different potential realities look like as best you can estimate them.
 
 ## Coach checks
-- Generic answers ("financial freedom", "be my own boss") need one more layer: what would that look like on a Tuesday?
-- Never judge the reason. Money, freedom, pride and curiosity are all fine. The test is whether it is theirs and specific.
-- The two pictures should feel different enough that the student would choose one. If they read the same, push on the "nothing changes" side.
-- The course says the only way to fail is to do nothing, and consistency beats hours (pp 16-19, 117-120). This card is where that resolve comes from.
-- Keep it warm. This card is about motivation, not a test of planning skill.
+- Both paths are there: Path A (nothing changes) and Path B (the work pays off), each with what life looks like and how it feels.
+- Look for honesty over polish. A short, specific, slightly uncomfortable answer beats a long generic one about "financial freedom".
+- If a path is vague, ask one question that makes it concrete: where are you, what does a normal Tuesday look like, how do you feel about it?
+- Never judge the reasons or the dream. This card is about motivation, not planning skill. Keep the reply warm and brief.
 
 ## Source
-Sliding Doors exercise from Vibecode Lisboa, plus the commitment lessons in Amy Hoy and Alex Hillman's 30x500. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500. Want the full version? Take the course: https://stackingthebricks.com/30x500/
