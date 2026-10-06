@@ -7,6 +7,7 @@ order: 1
 title: Pick one pain and turn it into a dream
 gate: basic-stage-3-first-product
 submit: [text]
+assist: draft
 sources: ["Amy Hoy and Alex Hillman, 30x500, pp 76-77, 130-148"]
 ---
 ## What this is
@@ -16,7 +17,7 @@ A pitch has three acts: pain, dream, fix. You get the dream straight from the pa
 One pain that many people in your notes share, written in the first person, then its negation, its obliterated version, and that dream rewritten as a "what if you" line.
 
 ## How to submit
-Write four labelled lines in the box: crispy pain, negated, obliterated, what if you.
+Press "Draft it from my work". We build a first version from your Safari captures, e-bombs and earlier cards. Reshape it by asking for changes or edit it yourself (at least once), then submit. Keep the four labelled lines: crispy pain, negated, obliterated, what if you.
 
 ## Done when
 - The pain shows up in quotes from three or more different people in your notes.
@@ -26,6 +27,7 @@ Write four labelled lines in the box: crispy pain, negated, obliterated, what if
 - Your dream describes something already true in the better world, not a promise to fix it.
 
 ## Coach checks
+- This card started from a draft we wrote. Check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when.
 - Is the dream secretly the pain again? The course's case study shows a "dream" headline that was all pain (pp 146-147).
 - Does the dream bring in new worry, like big numbers or money words, when the pain was worry (pp 147-148)?
 - Did they sharpen the pain with Safari notes, or guess what bad means to this audience (p 141)?
