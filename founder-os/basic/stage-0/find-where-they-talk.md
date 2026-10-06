@@ -10,7 +10,7 @@ submit: [text]
 sources: ["Amy Hoy and Alex Hillman, 30x500, pp 39, 56-59, 82"]
 ---
 ## What this is
-The places your audience gathers online are what the course calls watering holes: forums, groups, subreddits, mailing lists. People write things there late at night that they would never say to your face, so this is where you listen. You find them by pairing what the audience calls itself, the tools and jargon it uses, and venue words like forum or group. If nothing turns up, look for your group inside a bigger community.
+The places your audience gathers online are what the 30x500 method calls watering holes: forums, groups, subreddits, mailing lists. People write things there late at night that they would never say to your face, so this is where you listen. You find them by pairing what the audience calls itself, the tools and jargon it uses, and venue words like forum or group. If nothing turns up, look for your group inside a bigger community.
 
 ## What you make
 A list of three or more watering holes, each with a link, what sort of place it is, and one line on why you think it is alive.
@@ -32,4 +32,4 @@ Write your list with links in the box, and add the search words you used.
 - Three watering holes is a FounderOS number. The course only says one is probably not enough (p 82).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 39, 56-59, 82. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Watering holes. Want the full version? Take the course: https://stackingthebricks.com/30x500/

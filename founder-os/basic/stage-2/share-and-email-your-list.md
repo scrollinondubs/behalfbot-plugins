@@ -10,20 +10,19 @@ submit: [link, text, file]
 sources: ["Amy Hoy and Alex Hillman, 30x500, pp 100-120"]
 ---
 ## What this is
-Nobody finds a new blog on their own, so share each e-bomb in plain, low-effort ways first: your own social accounts, links to other people's posts, your email list, and helpful comments in watering holes. In a watering hole, learn the culture first and help right there in the comment; a link to your site is never your first move. Every email to your list should help on its own, even if nobody clicks.
+Nobody finds a new blog on their own, so share each e-bomb in plain, low-effort ways first: your own social accounts, links to other people's posts, your email list, and helpful comments in watering holes. In a watering hole, learn the culture first and answer the question right there in the comment, so it has value on its own; then link to your e-bomb for anyone who wants more. Every email to your list should help on its own, even if nobody clicks.
 
 ## What you make
-A short sharing log for each e-bomb, three or more helpful comments in watering holes, your first email to your list, and a log of the weekly sessions you kept.
+A short sharing log for each e-bomb, five or more helpful comments in watering holes, and your first email to your list. You are building a feeder network of little on-ramps at the watering holes where people talk about the pains your e-bombs solve. Answer the question in the comment and link to your e-bomb for more, so your reply stands on its own and is never just an ad for your post.
 
 ## How to submit
-Share links to your comments and posts, and paste your sent email in the box or upload a screenshot of it.
+Share links to your first 5 comments and posts, and paste your sent email in the box or upload a screenshot of it.
 
 ## Done when
 - Each published e-bomb was shared somewhere, and your log says where.
-- Three or more comments in watering holes answer someone's question inside the comment, with no link to your site.
+- Five or more comments in watering holes answer someone's question inside the comment itself; a link to your e-bomb is welcome as further reading.
 - You sent one email to your list that gives the fix in the email itself.
 - Your list has at least one subscriber who is not you.
-- A short log shows you kept your weekly sessions for the last four weeks.
 
 ## Coach checks
 - The living room test: would this comment feel like a stranger barging in (pp 101, 112)?
@@ -33,7 +32,7 @@ Share links to your comments and posts, and paste your sent email in the box or 
 - Did they pitch a podcast or newsletter host with one post? That needs a library first (p 113).
 - The course's seven traffic strategies run cheapest first, and pitching gatekeepers comes last (pp 103-116).
 - Common mistake: tweaking headlines and tweets instead of writing the next e-bomb (p 107).
-- Four weeks of kept sessions is a FounderOS number. The course stresses consistency over hours (pp 117-120).
+- A link to the e-bomb is fine after a real answer. A comment that is mostly the link fails the living room test (pp 101, 109-110).
 
 ## Source
 Amy Hoy and Alex Hillman, 30x500, pp 100-120. Want the full version? Take the course: https://stackingthebricks.com/30x500/
