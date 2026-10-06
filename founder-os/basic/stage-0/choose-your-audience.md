@@ -11,13 +11,13 @@ choices: [Peers, Newcomers, Clients]
 sources: ["Amy Hoy and Alex Hillman, 30x500, pp 5-9, 30, 38-43"]
 ---
 ## What this is
-Amy and Alex give three tests for a good audience: they gather online, they happily pay for things that are worth it to them, and you already belong to them or serve them. Inside a group you know, you can help your peers, newcomers to the field, or the clients who would normally hire you. Start from where you already stand rather than chasing a hot niche. You are only picking a group to research, and the research will tell you if it was a good pick.
+Products emerge from solving people's needs. We first need to choose the audience that we intend to serve. 30x500 is an amazing framework for deeply understanding an audience, communicating with them and eventually crafting a product that addresses their pains with the ultimate goal of launching a product you know will sell on day one. It all starts with choosing an audience however so this first step is where you begin. If you've already vibecoded a product set that aside for now and think about the people you want to serve.
 
 ## What you make
-One short paragraph naming the group, whether you will serve peers, newcomers or clients, how you belong to the group, and one thing you can already help them with.
+One short paragraph naming the group, whether you will serve peers, newcomers or clients, how you belong to the group, and one specific thing you can already help them with.
 
 ## How to submit
-Write your paragraph in the box, then pick Peers, Newcomers or Clients.
+Write your descriptive paragraph in the box and choose the audience category.
 
 ## Done when
 - Your audience is a group defined by what they do or care about, not a demographic like "parents" or a market like "small businesses".
@@ -33,4 +33,4 @@ Write your paragraph in the box, then pick Peers, Newcomers or Clients.
 - A founder who arrived with an app does not get to pick the audience that fits the app. Park it first (pp 9, 32-33, 127).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 5-9, 30, 38-43. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Audience selection. Want the full version? Take their course: https://stackingthebricks.com/30x500/
