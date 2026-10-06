@@ -17,7 +17,7 @@ Your sales page is your pitch told in full: the pain in your audience's words, a
 Your sales page copy and the live page itself, with a price and a working buy button.
 
 ## How to submit
-Press "Draft it from my work" for a v1 page written from your pain, dream and pitch, in your audience's words. Reshape it by asking for changes or edit it yourself (at least once). Paste your final copy in the box and share the link to your live page.
+Write your page copy yourself, or press "Draft V1 for me" for a v1 written from your pain, dream and pitch, in your audience's words. If you use the draft, reshape it or edit it yourself (at least once). Press "Analyse this" any time for feedback. Paste your final copy in the box and share the link to your live page.
 
 ## Done when
 - The page opens with pain in your audience's words and does not name the product until after the dream.
@@ -27,7 +27,7 @@ Press "Draft it from my work" for a v1 page written from your pain, dream and pi
 - You tested checkout end to end, with a real purchase and refund or a test mode.
 
 ## Coach checks
-- This card started from a draft we wrote. Check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when.
+- If this card started from a draft we wrote, check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when. If they wrote it themselves, judge it on its own.
 - Answering "what is this product" at the top. The course says nobody is asking that yet (p 191).
 - A list of benefits instead of a story. The course calls benefits-only selling a route to failure (pp 133-134).
 - Missing the back-and-forth "sandwich" lines, so it reads like fell down, stood up, walked away (pp 190, 193).

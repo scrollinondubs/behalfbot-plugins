@@ -17,7 +17,7 @@ Describe the finished thing clearly, work backwards to a list of tiny next steps
 Your backwards plan, a deadline, and the finished product.
 
 ## How to submit
-Press "Draft it from my work" for a first backwards plan built from your survivor pitch and everything before it. Reshape it by asking for changes or edit it yourself (at least once), then submit the plan in the box and upload the finished product or share a link to it.
+Write your backwards plan yourself, or press "Draft V1 for me" for a first plan built from your survivor pitch and everything before it. If you use the draft, reshape it or edit it yourself (at least once). Press "Analyse this" any time for feedback, then submit the plan in the box and upload the finished product or share a link to it.
 
 ## Done when
 - Your plan describes the finished product in one paragraph and breaks it into tasks small enough for one session.
@@ -27,7 +27,7 @@ Press "Draft it from my work" for a first backwards plan built from your survivo
 - Your plan for the week after launch is already written.
 
 ## Coach checks
-- This card started from a draft we wrote. Check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when.
+- If this card started from a draft we wrote, check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when. If they wrote it themselves, judge it on its own.
 - Scope creep: a "small guide" that grew chapters. The course's first products took from a day to 50 pages (pp 181-182).
 - A good session is one medium task and two small ones (pp 200-201).
 - Self-punishment or reward games around the deadline. The course wants "I choose to" and a calm view of done or not done (pp 196-197, 206).

@@ -17,7 +17,7 @@ A fix is any bridge from pain to dream. First question the pain on eight points:
 Short answers to the eight questions about your pain, at least one fix idea under each of the six methods, and ten or more three-line pitches: pain, dream, and fix with its method and format.
 
 ## How to submit
-Press "Draft it from my work". We build a first version from your Safari captures, e-bombs and earlier cards. Reshape it by asking for changes or edit it yourself (at least once), then submit. Add or cut pitches until the list feels like yours.
+Write it yourself in the box, or press "Draft V1 for me" for a first version built from your Safari captures, e-bombs and earlier cards. If you use the draft, reshape it by asking for changes or edit it yourself (at least once). Either way, press "Analyse this" any time for feedback against the checklist below, then submit. Add or cut pitches until the list feels like yours.
 
 ## Done when
 - You answered at least five of the eight questions about your pain with details from your notes.
@@ -27,7 +27,7 @@ Press "Draft it from my work". We build a first version from your Safari capture
 - Every pitch uses the exact dream line from your previous card.
 
 ## Coach checks
-- This card started from a draft we wrote. Check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when.
+- If this card started from a draft we wrote, check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when. If they wrote it themselves, judge it on its own.
 - Did they jump to software or an app? The course says never start there, and treats a process you can teach as the step before any software (pp 97, 152, 184).
 - Is knowledge written as bodies of understanding they lack, not just "how to X" (p 166)?
 - Are the tools and buys specific to this audience (p 167)?

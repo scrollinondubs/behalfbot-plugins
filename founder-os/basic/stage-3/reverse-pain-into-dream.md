@@ -17,7 +17,7 @@ A pitch has three acts: pain, dream, fix. You get the dream straight from the pa
 One pain that many people in your notes share, written in the first person, then its negation, its obliterated version, and that dream rewritten as a "what if you" line.
 
 ## How to submit
-Press "Draft it from my work". We build a first version from your Safari captures, e-bombs and earlier cards. Reshape it by asking for changes or edit it yourself (at least once), then submit. Keep the four labelled lines: crispy pain, negated, obliterated, what if you.
+Write it yourself in the box, or press "Draft V1 for me" for a first version built from your Safari captures, e-bombs and earlier cards. If you use the draft, reshape it by asking for changes or edit it yourself (at least once). Either way, press "Analyse this" any time for feedback against the checklist below, then submit. Keep the four labelled lines: crispy pain, negated, obliterated, what if you.
 
 ## Done when
 - The pain shows up in quotes from three or more different people in your notes.
@@ -27,7 +27,7 @@ Press "Draft it from my work". We build a first version from your Safari capture
 - Your dream describes something already true in the better world, not a promise to fix it.
 
 ## Coach checks
-- This card started from a draft we wrote. Check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when.
+- If this card started from a draft we wrote, check the final is in the student's voice and grounded in their own notes, and that their edits moved it closer to Done when. If they wrote it themselves, judge it on its own.
 - Is the dream secretly the pain again? The course's case study shows a "dream" headline that was all pain (pp 146-147).
 - Does the dream bring in new worry, like big numbers or money words, when the pain was worry (pp 147-148)?
 - Did they sharpen the pain with Safari notes, or guess what bad means to this audience (p 141)?
