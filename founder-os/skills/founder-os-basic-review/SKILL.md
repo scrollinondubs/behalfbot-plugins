@@ -69,6 +69,9 @@ End the reply with exactly one fenced block, and nothing after it:
 - `failed` is `[]` when accepted. When needs work it lists every unmet line,
   each copied exactly from the card's Done when, without the leading "- ".
 - One line of valid JSON. Never two blocks, never a block without a verdict.
+- Some Done when lines contain double quotes, like "parked for now". Escape each
+  one as \" when you copy the line, so the block stays valid JSON:
+  `"Any product or app you already have is written down and marked \"parked for now\"."`
 
 A full reply, for that card:
 
