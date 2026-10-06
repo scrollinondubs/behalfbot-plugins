@@ -22,7 +22,7 @@ goes in here.
 | `founders` | founder | `founder_id` is the key everywhere. `cohort` is for VCL. `current_stage` is 0-9. `context` is the JSON blob stage skills read first. |
 | `stage_progress` | founder x stage reached | `in_progress`, `gate_pending` or `passed`. A failed gate reopens the stage it routes to. |
 | `artifacts` | artifact version | Append-only. Each new artifact of the same `kind` gets the next `version`. |
-| `pains` | quote | Quote-backed pain log. `job` is the JTBD cluster. |
+| `pains` | quote | Quote-backed pain log. `job` is the JTBD cluster. Since 002, a quote saved with VCL's capture extension also keeps `page_title`, the founder's typed `note`, a `screenshot_url` and `source` (`extension`, `card` or `api`), all nullable. |
 | `interviews` | interview | `interviewee` is a pseudonymous label, never a name or contact. `commitment` and `earlyvangelist` are the Mom Test and Blank signals. |
 | `audits` | check on a row | Who checked (`laya`, `claude`, `sean`), which check, and the verdict. |
 | `gate_decisions` | decision | Cites `evidence` as a JSON list of `{table, id}` refs. |

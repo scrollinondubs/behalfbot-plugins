@@ -179,6 +179,17 @@ class LedgerConformance:
         self.assertEqual(paid[0]["tags"], ["money", "late"])
         self.assertEqual(len(self.ledger.list_pains(self.a)), 2)
 
+    def test_pains_keep_capture_columns_and_reject_a_bad_source(self):
+        p = self.ledger.add_pain(self.a, quote="receipts again", page_title="Month-end", note="typed by me",
+                                 screenshot_url="https://blob.example/s.png", source="extension")
+        self.assertEqual((p["page_title"], p["note"], p["screenshot_url"], p["source"]),
+                         ("Month-end", "typed by me", "https://blob.example/s.png", "extension"))
+        plain = self.ledger.add_pain(self.a, quote="older shape")
+        self.assertEqual((plain["page_title"], plain["note"], plain["screenshot_url"], plain["source"]),
+                         (None, None, None, None))
+        with self.assertRaises(LedgerError):
+            self.ledger.add_pain(self.a, quote="q", source="scraper")
+
     def test_interviews_round_trip_bools_and_reject_bad_commitment(self):
         i = self.ledger.add_interview(self.a, interviewee="P1", notes="n", commitment="money", earlyvangelist=True)
         self.assertIs(i["earlyvangelist"], True)

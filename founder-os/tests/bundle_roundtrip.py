@@ -54,6 +54,10 @@ def populate(ledger, files_dir: pathlib.Path) -> str:
     pain = ledger.add_pain(fid, quote="my chain snapped again", source_url="https://example.com/t/1",
                            watering_hole="r/bikecommuting", segment="commuters", job="get to work",
                            tags=["repair", "time"])
+    ledger.add_pain(fid, quote="I spend every Sunday chasing receipts", source_url="https://example.com/t/2",
+                    watering_hole="example.com", tags=["receipts"], page_title="Month-end is killing me",
+                    note="weekly, and the clients cause it", screenshot_url="https://blob.example/s.png",
+                    source="extension")
     audit = ledger.add_audit(fid, target_table="pains", target_id=pain["id"], auditor="laya",
                              check_name="is-real-quote", verdict="pass")
     ledger.record_gate_decision(fid, stage=1, gate_id="stage-1-audience", decision="pass", decided_by="claude",
@@ -154,6 +158,7 @@ class BundleRoundTrip:
         self.assertIn("Ação!", md)
         manifest = json.loads(files["manifest.json"])
         self.assertEqual(manifest["format_version"], 1)
+        self.assertEqual(manifest["schema_version"], "002")
         self.assertEqual(manifest["source"], "self-hosted")
         self.assertEqual(manifest["founder_id"], self.fid)
         self.assertEqual(manifest["counts"]["gate_decisions"], 3)
@@ -203,8 +208,11 @@ class BundleRoundTrip:
         self.assertEqual(sum(c["inserted"] for c in again["counts"].values()), 0)
         orig_ids = {r["id"] for r in dst.list_pains(self.fid)}
         new_pains = dst.list_pains("alice-selfhosted")
-        self.assertEqual(len(new_pains), 1)
-        self.assertNotIn(new_pains[0]["id"], orig_ids)
+        self.assertEqual(len(new_pains), 2)
+        self.assertFalse({p["id"] for p in new_pains} & orig_ids)
+        capture = next(p for p in new_pains if p["source"] == "extension")
+        self.assertEqual((capture["page_title"], capture["note"]), ("Month-end is killing me",
+                                                                    "weekly, and the clients cause it"))
         for d in dst.list_gate_decisions("alice-selfhosted"):
             for ref in d["evidence"]:
                 self.assertTrue(dst._owns(ref["table"], "alice-selfhosted", ref["id"]))

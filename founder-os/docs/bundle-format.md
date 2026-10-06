@@ -49,7 +49,7 @@ or a file that is not in `SHA256SUMS`.
   "format": "founder-os-bundle",
   "format_version": 1,
   "founder_id": "<the founder's id>",
-  "schema_version": "001",
+  "schema_version": "002",
   "source": "self-hosted"
 }
 ```
@@ -276,6 +276,10 @@ if (want.length !== sig.length || !timingSafeEqual(Buffer.from(want), Buffer.fro
 ## Changing the format
 
 Adding a table or column means a new migration and a new `schema_version`, and
-older importers refuse the bundle with a clear message. Anything that changes
+older importers refuse the bundle with a clear message. Schema `002` added
+`page_title`, `note`, `screenshot_url` and `source` to `pains` for VCL's
+capture extension. `format_version` did not change: no existing file is read or
+written differently. A screenshot travels as its URL in `screenshot_url`, not as
+a `files/` entry. Anything that changes
 how an existing file is written or read (paths, encoding, the remap function)
 bumps `format_version`, and this file is updated in the same PR.
