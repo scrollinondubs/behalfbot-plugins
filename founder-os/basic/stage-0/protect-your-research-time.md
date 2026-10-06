@@ -10,7 +10,7 @@ submit: [text]
 sources: ["Amy Hoy and Alex Hillman, 30x500, pp 16-19, 28, 117-120", "Sliding Doors exercise, Vibecode Lisboa"]
 ---
 ## What this is
-Before embarking on a journey to build something that involves protracted effort over many days, you need to fuel up your emotional fuel tank for the inevitable grind that's ahead. The best way to do this is via an exercise called "Sliding Doors" (reference to the Gwenyth Paltrow movie).
+Before embarking on a journey to build something that involves protracted effort over many days, you need to fuel up your emotional fuel tank for the inevitable grind that's ahead. The best way to do this is via an exercise called "Sliding Doors" (reference to the Gwyneth Paltrow movie).
 
 ## What you make
 Imagine two divergent paths forward from this day. Path A you close the browser window and do nothing and go about whatever you would be doing right now if you weren't in FounderOS doing this exercise. Imagine forward six months, one year, two years... what does life look like? Now come back and imagine the other path where you put in the work that's ahead to build this side hustle and get it off the ground and it becomes successful. It may feel cheesy to write this but what does your life look like in that scenario and how does it feel knowing that you've done something that 95% of the world could and will never do?
