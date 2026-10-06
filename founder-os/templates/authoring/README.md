@@ -123,7 +123,7 @@ real cards are the examples.
   `order` (1 to 3), `title`, `gate`, `submit` and `sources`.
 - `submit` is a list drawn from `text`, `link`, `file`, `choice`. `choices`
   is present exactly when `submit` includes `choice`.
-- Sections: What this is, What you make, How to submit, Done when (3 to 5
+- Sections: What this is, What you make, How to submit, Done when (2 to 5
   bullets), Coach checks, Source. Source ends with
   https://stackingthebricks.com/30x500/.
 - Gates live at `basic/gates/stage-<N>-<slug>.md` with
