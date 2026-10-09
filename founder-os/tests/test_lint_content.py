@@ -11,6 +11,7 @@ Run:
 """
 from __future__ import annotations
 
+import json
 import pathlib
 import shutil
 import sys
@@ -600,7 +601,7 @@ class BasicContentLoaderTest(unittest.TestCase):
             self.assertEqual([c.fields["order"] for c in cards], ["1", "2", "3"])
             self.assertTrue(all(c.fields["gate"] == content.basic_gate(stage).id for c in cards))
         first = content.basic_cards(0)[0]
-        self.assertEqual(first.fields["sources"], ["Amy Hoy and Alex Hillman, 30x500, pp 5-9, 30, 38-43"])
+        self.assertEqual(first.fields["sources"], ["thirty-x-500, pp 5-9, 30, 38-43"])
         self.assertEqual(content.basic_gate(0).id, "basic-stage-0-people")
         with self.assertRaises(LookupError):
             content.basic_gate(5)
@@ -612,6 +613,104 @@ class BasicContentLoaderTest(unittest.TestCase):
         for stage in range(10):
             self.assertFalse(any(c.id.startswith("basic-") for c in content.cards(stage)))
             self.assertFalse(content.gate(stage).id.startswith("basic-"))
+
+
+PR_CARD = "post-revenue/stage-0/map-your-funnel.md"
+PR_GATE = "post-revenue/gates/stage-0-lifecycle-basics.md"
+
+
+class PostRevenueTrackLintTest(LintContentTest):
+    """The Post-revenue track (post-revenue/) and the sources registry. Each
+    case starts from the real basic/ and post-revenue/ trees and sources.json
+    copied next to the template examples, breaks one thing, and expects
+    exactly that one problem."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        shutil.copytree(PLUGIN_DIR / "basic", self.root / "basic")
+        shutil.copytree(PLUGIN_DIR / "post-revenue", self.root / "post-revenue")
+        self.registry = json.loads((PLUGIN_DIR / "sources.json").read_text(encoding="utf-8"))
+        self.save_registry()
+
+    def save_registry(self) -> None:
+        self.write("sources.json", json.dumps(self.registry))
+
+    def test_tree_passes(self) -> None:
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_seven_stages_five_cards_in_the_last(self) -> None:
+        (self.root / "post-revenue/stage-6/business-model-canvas.md").unlink()
+        problems = lint_content.lint(self.root)
+        self.assertIn("post-revenue: stage 6 needs 5 cards, found 4", problems)
+
+    def test_order_can_reach_five_only_in_the_last_stage(self) -> None:
+        self.edit(PR_CARD, "order: 3", "order: 4")
+        self.assertOneProblem("order '4' must be one of 1, 2, 3")
+
+    def test_id_needs_track_prefix(self) -> None:
+        self.edit(PR_CARD, "id: post-revenue-map-your-funnel", "id: basic-map-your-funnel")
+        problems = lint_content.lint(self.root)
+        self.assertIn(f"{PR_CARD}: id 'basic-map-your-funnel' must start with 'post-revenue-'", problems)
+
+    def test_source_must_end_with_a_listed_link(self) -> None:
+        self.edit(PR_CARD, "Read the original: https://www.amazon.com", "Read the original: https://elsewhere.example")
+        self.assertOneProblem("## Source must end with the link of a source the card lists")
+
+    def test_gate_must_link_a_source(self) -> None:
+        text = (self.root / PR_GATE).read_text(encoding="utf-8")
+        head, _, _ = text.partition("## Read the original")
+        self.write(PR_GATE, head + "## Read the original\nThe books.\n")
+        self.assertOneProblem("## Read the original must link to at least one source")
+
+    def test_unknown_source_id(self) -> None:
+        self.edit(PR_CARD, "sources: [how-to-fix-your-funnel]", "sources: [how-to-fix-your-funnel, nowhere]")
+        self.assertOneProblem("source 'nowhere' is not in sources.json")
+
+    def test_basic_locator_resolves_by_its_first_part(self) -> None:
+        self.edit(BASIC_CARD, '"thirty-x-500, ', '"thirty-x-five-hundred, ')
+        self.assertOneProblem("source 'thirty-x-five-hundred' is not in sources.json")
+
+    def test_registry_entry_fields(self) -> None:
+        del self.registry["sources"][0]["url"]
+        self.save_registry()
+        self.assertTrue(any("is missing url" in p for p in lint_content.lint(self.root)))
+
+    def test_registry_kind(self) -> None:
+        self.registry["sources"][0]["kind"] = "podcast"
+        self.save_registry()
+        self.assertOneProblem("kind 'podcast' must be one of book, course, article, tool")
+
+    def test_registry_duplicate_id(self) -> None:
+        self.registry["sources"].append(dict(self.registry["sources"][0]))
+        self.save_registry()
+        self.assertOneProblem("duplicate id 'thirty-x-500'")
+
+    def test_no_registry_turns_source_checks_off(self) -> None:
+        (self.root / "sources.json").unlink()
+        self.edit(PR_CARD, "sources: [how-to-fix-your-funnel]", "sources: [how-to-fix-your-funnel, nowhere]")
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_requires_names_a_card(self) -> None:
+        self.edit(PR_CARD, "requires: [post-revenue-intro-to-lifecycle-marketing,",
+                  "requires: [post-revenue-no-such-card,")
+        self.assertOneProblem("requires names unknown card(s) 'post-revenue-no-such-card'")
+
+    def test_path_fields_are_lists(self) -> None:
+        self.edit(PR_CARD, "teaches: [funnel-mapping]", "teaches: funnel-mapping")
+        self.assertOneProblem("teaches must be a list")
+
+    def test_path_fields_are_optional(self) -> None:
+        for field in ("author: Sean Tierney\n", "teaches: [funnel-mapping]\n", "produces: [funnel-map]\n"):
+            self.edit(PR_CARD, field, "")
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_loader_reads_the_post_revenue_tree(self) -> None:
+        sys.path.insert(0, str(PLUGIN_DIR))
+        from founder_stage.content import Content
+        content = Content(PLUGIN_DIR, include_contrib=False)
+        counts = [len(content.basic_cards(stage, "post-revenue")) for stage in range(7)]
+        self.assertEqual(counts, [3, 3, 3, 3, 3, 3, 5])
+        self.assertEqual(content.basic_gate(6, "post-revenue").id, "post-revenue-stage-6-force-multipliers")
 
 
 if __name__ == "__main__":

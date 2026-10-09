@@ -134,6 +134,48 @@ real cards are the examples.
 - No em dash anywhere. Learner text (everything except Coach checks, plus the
   title and choices) has no backticks, no snake_case ids, and none of the
   words row, kind, artifact, ledger, meta.
-- A quoted list item keeps its commas: `sources: ["Amy Hoy and Alex Hillman, 30x500, pp 38-43"]`
-  is one source.
+- A quoted list item keeps its commas: `sources: ["thirty-x-500, pp 38-43"]`
+  is one source. Everything before the first comma is an id in
+  [`../../sources.json`](../../sources.json); the rest is a locator such as
+  page numbers.
+
+## Post-revenue track
+
+`post-revenue/` uses the Basic format above with three differences:
+
+- Seven stages, 0 to 6 (learners see 1 to 7). Three cards per stage, five in
+  stage 6. `order` runs 1 to the stage's card count.
+- Ids and the track are `post-revenue`: `id: post-revenue-<slug>`,
+  `track: post-revenue`, gates at `post-revenue/gates/stage-<N>-<slug>.md`
+  with `id: post-revenue-stage-<N>-<slug>`.
+- There is no single course. `## Source` ends with the link of one of the
+  sources the card lists, and the gate's `## Read the original` links at
+  least one source.
+
+The track is visible in the app but not startable yet. It has no coach or
+review skill of its own.
+
+## Sources registry
+
+[`../../sources.json`](../../sources.json) holds one entry per source:
+`id`, `title`, `author`, `url`, `kind` (`book`, `course`, `article` or
+`tool`) and an optional four-digit `year`. Every source a card lists (core,
+contrib, basic, post-revenue) must be an id in it, so the app can render a
+card's Source from the list and build the public sources page from the
+registry. A source no card cites yet can still have an entry. A root with no
+`sources.json` (the template examples) skips these checks.
+
+## Optional path fields
+
+Any card may carry these. They are for a future intake and path compiler,
+which will build a founder's own sequence of cards. Nothing in the app reads
+them yet, and leaving them out is always fine.
+
+| Field | Shape | Meaning |
+|---|---|---|
+| `author` | a name | Who wrote the card, e.g. `author: Sean Tierney` |
+| `requires` | list of card ids | Cards whose output this card builds on; each must exist |
+| `teaches` | list of kebab-case tags | Ideas the card teaches, e.g. `[aarrr, funnel-mapping]` |
+| `fits_when` | list of kebab-case tags | Founder situations it suits, e.g. `[has-paying-customers, b2b]` |
+| `produces` | list of kebab-case tags | What the founder walks away with, e.g. `[funnel-map]` |
 

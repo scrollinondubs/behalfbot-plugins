@@ -146,13 +146,14 @@ class Content:
                     out.append(doc)
         return out
 
-    def basic_cards(self, stage: int) -> list[Doc]:
-        """The Basic track's cards for one stage (0-4), in their `order`."""
-        docs = [d for d in self._docs(f"basic/stage-{stage}/*.md") if d.fields.get("type") == "card"]
+    def basic_cards(self, stage: int, track: str = "basic") -> list[Doc]:
+        """A Basic-format track's cards for one stage, in their `order`.
+        track is the directory: basic (stages 0-4) or post-revenue (0-6)."""
+        docs = [d for d in self._docs(f"{track}/stage-{stage}/*.md") if d.fields.get("type") == "card"]
         return sorted(docs, key=lambda d: str(d.fields.get("order", "")))
 
-    def basic_gate(self, stage: int) -> Doc:
-        for doc in self._docs(f"basic/gates/stage-{stage}-*.md"):
+    def basic_gate(self, stage: int, track: str = "basic") -> Doc:
+        for doc in self._docs(f"{track}/gates/stage-{stage}-*.md"):
             if doc.fields.get("type") == "gate" and doc.stage == stage:
                 return doc
-        raise LookupError(f"no Basic gate for stage {stage} in basic/gates/")
+        raise LookupError(f"no {track} gate for stage {stage} in {track}/gates/")

@@ -8,7 +8,8 @@ title: Choose an audience you already belong to
 gate: basic-stage-0-people
 submit: [text, choice]
 choices: [Peers, Newcomers, Clients]
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 5-9, 30, 38-43"]
+sources: ["thirty-x-500, pp 5-9, 30, 38-43"]
+author: Sean Tierney
 ---
 ## What this is
 Products emerge from solving people's needs. We first need to choose the audience that we intend to serve. 30x500 is an amazing framework for deeply understanding an audience, communicating with them and eventually crafting a product that addresses their pains with the ultimate goal of launching a product you know will sell on day one. It all starts with choosing an audience however so this first step is where you begin. If you've already vibecoded a product set that aside for now and think about the people you want to serve.

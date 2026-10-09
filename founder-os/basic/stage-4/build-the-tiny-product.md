@@ -8,7 +8,8 @@ title: Plan backwards, then build the tiny product
 gate: basic-stage-4-ship-and-launch
 submit: [file, link, text]
 assist: draft
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 18, 127-129, 180-182, 194-208"]
+sources: ["thirty-x-500, pp 18, 127-129, 180-182, 194-208"]
+author: Sean Tierney
 ---
 ## What this is
 Describe the finished thing clearly, work backwards to a list of tiny next steps, then cut the list until it fits. Work in blocks of three or four hours at most, and leave yourself a note for next time. Treat the deadline as a challenge, not a whip, and cut whatever you must to ship.

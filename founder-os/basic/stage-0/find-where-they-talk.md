@@ -7,7 +7,8 @@ order: 2
 title: Find where they talk
 gate: basic-stage-0-people
 submit: [text]
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 39, 56-59, 82"]
+sources: ["thirty-x-500, pp 39, 56-59, 82"]
+author: Sean Tierney
 ---
 ## What this is
 The places your audience gathers online are what the 30x500 method calls watering holes: forums, groups, subreddits, mailing lists. People write things there late at night that they would never say to your face, so this is where you listen. You find them by pairing what the audience calls itself, the tools and jargon it uses, and venue words like forum or group. If nothing turns up, look for your group inside a bigger community.
