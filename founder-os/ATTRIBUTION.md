@@ -4,9 +4,9 @@ FounderOS is original synthesis. It draws on published frameworks, but no source
 text ships in this plugin. Every card that leans on a source says so in its
 `Sources` section and links to the original, so a founder can read the real thing.
 
-This file is the plugin-wide index of those sources. It is a placeholder until
-the first cards land; each entry gets filled in when a card that uses it is
-merged.
+This file is the plugin-wide index of those sources, for people. The
+machine-readable registry is [`sources.json`](sources.json): every id a card
+lists in `sources` must be there, and the lint checks it.
 
 ## Sources in use
 
@@ -45,12 +45,34 @@ merged.
 | Super Thinking | Gabriel Weinberg, Lauren McCann | `super-thinking` | coach skill `founder-os-coach-mental-models` | https://www.penguinrandomhouse.com/books/562091/super-thinking-by-gabriel-weinberg-and-lauren-mccann/ |
 | Paul Graham's essays | Paul Graham | `pg-essays` | coach skill `founder-os-coach-pg-essays` | https://paulgraham.com/articles.html |
 | The Four Steps to the Epiphany, The Startup Owner's Manual (earlyvangelist criteria) | Steve Blank | `four-steps` | skill `founder-os-earlyvangelist-qualifier` (stage 3) | https://steveblank.com/books-for-startups/ |
+| Lifecycle marketing (Infusionsoft's model) | Keap (formerly Infusionsoft) | `keap-lifecycle-marketing` | post-revenue `intro-to-lifecycle-marketing`, `first-lead-magnet-and-follow-up` | https://keap.com/small-business-automation-blog/marketing/automation/what-is-lifecycle-marketing |
+| Startup Metrics for Pirates: AARRR! | Dave McClure | `startup-metrics-for-pirates` | post-revenue `analytics-and-instrumentation` | https://www.slideshare.net/slideshow/startup-metrics-for-pirates-long-version/89026 |
+| How To Fix Your Funnel | Ryan Chapman | `how-to-fix-your-funnel` | post-revenue `map-your-funnel` | https://www.amazon.com/How-Your-Funnel-Ryan-Chapman-ebook/dp/B07CBDTP4R |
+| Advanced Google AdWords (3rd edition) | Brad Geddes | `advanced-google-adwords` | post-revenue `experiment-with-ads`, `retargeting-and-lookalikes` | https://www.wiley.com/en-us/Advanced+Google+AdWords%2C+3rd+Edition-p-9781118819562 |
+| Optimizely Academy | Optimizely | `optimizely-academy` | post-revenue `experiment-with-ab-tests` | https://academy.optimizely.com/ |
+| Getting Started with Claude Code (Build School) | Vibecode Lisboa | `vcl-claude-code-101` | post-revenue `vibecode-your-crm` | https://vibecodelisboa.com/courses/claude-code-101 |
+| Automation Clinic (We do / They do, Sean's best recollection) | Jermaine Griggs | `automation-clinic` | post-revenue `we-do-they-do` | https://www.automationclinicmembers.com/ |
+| Reforge growth programs | Reforge | `reforge-growth` | post-revenue `set-up-your-affiliate-program`, `other-viral-loop-patterns` | https://www.reforge.com/ |
+| B2B Sales Process Automation: Leviathan Unveiled | Sean Tierney (Pagely) | `pagely-b2b-sales-process` | post-revenue `automate-safari-ebombs-and-socials` | https://pagely.com/blog/b2b-sales-process/ |
+| How Pagely is Using Adaptive Video to Deliver Consultative Sales at Scale | Sean Tierney (Pagely) | `pagely-adaptive-video` | post-revenue `advanced-outreach-techniques` | https://pagely.com/blog/adaptive-video-scale-consultative-sales/ |
+| Lateral thinking and Flintstoning your way around technical problems | Sean Tierney | `grid7-flintstoning` | post-revenue `flintstone-your-first-campaign` | https://grid7.com/2020/06/lateral-thinking-and-flintstoning/ |
+| GetProspect, Hunter, Resend (tools) | - | `getprospect`, `hunter-io`, `resend` | post-revenue `outreach-tools` | https://getprospect.com, https://hunter.io, https://resend.com |
+| Building Successful Partner Channels in the software industry | Hans Peter Bech | `building-partner-channels` | post-revenue `partnerships-and-biz-dev` | https://www.amazon.com/Building-Successful-Partner-Channels-software/dp/8793116160 |
+| Grid7 (Sean's own experience and past posts) | Sean Tierney | `grid7` | post-revenue `feeder-sites-and-lead-magnets`, `modeling-and-what-ifs`, `form-an-advisory-board` | https://grid7.com |
+| Behalf.bot | Sean Tierney | `behalf-bot` | post-revenue `behalf-bot-your-custom-ea` | https://behalf.bot |
+| Business Model Generation (the Business Model Canvas) | Alexander Osterwalder, Yves Pigneur | `business-model-generation` | post-revenue `business-model-canvas` | https://www.strategyzer.com/library/business-model-generation |
+| 12 things I learned from pitching VCs this past week | Sean Tierney | `lessons-from-vc-pitches` | post-revenue `everything-i-know-about-fundraising` (with `yc-seed-guide`, `pg-how-to-raise-money`, `angel`) | https://scrollinondubs.com/2007/12/12/lessons-from-vc-pitches/ |
+| Traction, Lean Analytics, The Startup Owner's Manual, Sean Ellis (rows above) | | | also post-revenue `find-the-leak`, `analytics-and-instrumentation` | |
+| Sliding Doors exercise | Vibecode Lisboa | `sliding-doors` | basic `protect-your-research-time` | https://vibecodelisboa.com/founder-os |
 
-## Sources to come
+## Sources not cited by a card yet
 
-| Source | Author(s) | Used in stages |
-|---|---|---|
-| Business Model Canvas | Alexander Osterwalder | 3 |
+Listed in [`sources.json`](sources.json) so the public sources list shows
+them: SPIN Selling (Neil Rackham, with a Readingraphics summary), The
+Innovator's Dilemma (Clayton Christensen), The Lean Entrepreneur, Anything You
+Want, Invisible Selling Machine, Building a StoryBrand, How to Write Copy That
+Sells, Made to Stick, Influence, Predictable Revenue and 80/20 Sales and
+Marketing.
 
 ## Rules
 
@@ -59,4 +81,4 @@ merged.
 - Every card lists its sources with a "read the original" link.
 - Use each source's own coined terms and never rename its mechanisms. Keeping
   their names is what lets a founder find and buy the original.
-- A new source gets a row here in the same PR as the first card that uses it.
+- A new source gets a row here and an entry in `sources.json` in the same PR as the first card that uses it.

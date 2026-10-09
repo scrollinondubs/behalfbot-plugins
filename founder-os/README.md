@@ -49,6 +49,30 @@ card, ending in a `founderos-verdict` block the host app reads). The lint checks
 the format, the course link, and that learner text has no em dashes or database
 words.
 
+## Post-revenue track
+
+`post-revenue/` is a third track in the Basic format, for founders who
+already sell: seven stages, twenty-three cards, from lifecycle marketing to
+fundraising. It draws on many sources, each listed on the card with a link,
+and frames the work as "your agent executes, you gather the context and
+steer". It is visible in the app but not startable yet, and has no coach or
+review skill of its own.
+
+| # | Stage (learners see 1 to 7) | Cards |
+|---|---|---|
+| 0 | Basic lifecycle marketing | Lifecycle marketing, analytics and instrumentation, map your funnel |
+| 1 | Unkink the garden hose | Decide where to focus, ad experiments, A/B tests |
+| 2 | Automate all the things | Lead magnet and follow-up, a CRM, We do / They do |
+| 3 | Viral loops and other distro channels | Affiliate program, viral loops, automated Safari and e-bombs |
+| 4 | Doing cold outreach | Flintstone a campaign, outreach tools, advanced techniques |
+| 5 | Other distribution channels | Partnerships, retargeting and lookalikes, feeder sites |
+| 6 | Miscellaneous force multipliers | Modeling, Behalf.bot, Business Model Canvas, advisory board, fundraising |
+
+Every source any card cites lives in [`sources.json`](sources.json), the
+registry the app renders sources from. Cards may also carry the optional path
+fields (`author`, `requires`, `teaches`, `fits_when`, `produces`) described in
+[`templates/authoring/README.md`](templates/authoring/README.md).
+
 ## Stage skills and gates
 
 Each stage has one skill, `skills/founder-os-stage-<N>-<slug>`. It reads the
@@ -162,6 +186,8 @@ founder-os/
   contrib/               community cards, opt-in
   gates/                 gate specs and rubrics
   basic/                 the Basic track: stage-<N>/ cards and gates/ panels, stages 0-4
+  post-revenue/          the Post-revenue track, same format, stages 0-6
+  sources.json           the sources registry: every source a card cites, plus a few not cited yet
   skills/                stage, auditor, coach and Basic SKILL.md files, one per skills/<name>/
   laya/                  Laya question sets (JSON)
   founder_audit/         Laya client, chunking and the auditors' Laya half
