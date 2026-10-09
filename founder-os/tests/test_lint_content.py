@@ -600,7 +600,7 @@ class BasicContentLoaderTest(unittest.TestCase):
             self.assertEqual([c.fields["order"] for c in cards], ["1", "2", "3"])
             self.assertTrue(all(c.fields["gate"] == content.basic_gate(stage).id for c in cards))
         first = content.basic_cards(0)[0]
-        self.assertEqual(first.fields["sources"], ["Amy Hoy and Alex Hillman, 30x500, pp 5-9, 30, 38-43"])
+        self.assertEqual(first.fields["sources"], ["thirty-x-500, pp 5-9, 30, 38-43"])
         self.assertEqual(content.basic_gate(0).id, "basic-stage-0-people")
         with self.assertRaises(LookupError):
             content.basic_gate(5)

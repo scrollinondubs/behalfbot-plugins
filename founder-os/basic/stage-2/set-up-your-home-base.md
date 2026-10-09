@@ -7,7 +7,8 @@ order: 1
 title: Set up your home base
 gate: basic-stage-2-ebombs
 submit: [link, text]
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 52-54, 70, 97-99, 110, 200"]
+sources: ["thirty-x-500, pp 52-54, 70, 97-99, 110, 200"]
+author: Sean Tierney
 ---
 ## What this is
 The simplest recipe in 30x500 is one pain, one e-bomb, and a call to action to join your email list, shared in one watering hole. For that you need a place to publish and a list to join. You can use any tool for this but most people use either Substack, Medium or WordPress. Substack and Medium are nice because they bundle the blog publishing platform with the mailing list functions. With WordPress you have to install a plugin or integrate with an external system to get the mailing list functionality.

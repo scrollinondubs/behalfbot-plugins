@@ -7,7 +7,8 @@ order: 1
 title: Painstorm one thread
 gate: basic-stage-1-sales-safari
 submit: [file, link]
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 23-25, 44-51, 83-85"]
+sources: ["thirty-x-500, pp 23-25, 44-51, 83-85"]
+author: Sean Tierney
 ---
 ## What this is
 Painstorming means reading one discussion thread slowly, top to bottom, replies included, and writing down what hurts. Read like a researcher asking what you can learn about this person's problem, not like a helper deciding what advice to give. Highlight each quote to capture it with the FounderOS Chrome extension, then write in your own words what it tells you about the person's situation and feelings.

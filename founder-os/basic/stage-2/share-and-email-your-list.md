@@ -7,7 +7,8 @@ order: 3
 title: Share without being a jerk, and email your list
 gate: basic-stage-2-ebombs
 submit: [link, text, file]
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 100-120"]
+sources: ["thirty-x-500, pp 100-120"]
+author: Sean Tierney
 ---
 ## What this is
 Nobody finds a new blog on their own, so share each e-bomb in plain, low-effort ways first: your own social accounts, links to other people's posts, your email list, and helpful comments in watering holes. In a watering hole, learn the culture first and answer the question right there in the comment, so it has value on its own; then link to your e-bomb for anyone who wants more. Every email to your list should help on its own, even if nobody clicks.

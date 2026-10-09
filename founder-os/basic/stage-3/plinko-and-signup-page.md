@@ -9,7 +9,8 @@ gate: basic-stage-3-first-product
 submit: [text, file, link, choice]
 assist: analyse
 choices: [Written guide, Email course, Cheat sheet or template, Workshop or video, Other]
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 176-187, 203"]
+sources: ["thirty-x-500, pp 176-187, 203"]
+author: Sean Tierney
 ---
 ## What this is
 Every pitch has to pass your own limits first: can you build it, launch it and keep it running with the skills, time and money you have today, will it fit your life and feel satisfying, and does it do no harm. Then your customer's: is the format familiar to them, do they already buy things like it at prices like it, and do they believe something like it can help. Run the checks yourself, or let us run them on every pitch and say which survive and why; then you agree or argue with any call. What survives should be tiny, and your pitch lines are enough for a "coming soon" page with a signup box.

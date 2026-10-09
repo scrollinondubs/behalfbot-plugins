@@ -8,7 +8,8 @@ title: Fixstorm it into ten pitches
 gate: basic-stage-3-first-product
 submit: [text, file]
 assist: draft
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 149-176"]
+sources: ["thirty-x-500, pp 149-176"]
+author: Sean Tierney
 ---
 ## What this is
 A fix is any bridge from pain to dream. First question the pain on eight points: its parts, its causes, the different versions of it, and the knowledge, skills, tools, mistakes and beliefs behind it. Then brainstorm fixes with six methods (educate, equip, support, access, outsource, eliminate), choosing formats last because format matters least. Finally line each idea up as three short lines: pain, dream, fix.

@@ -7,7 +7,8 @@ order: 3
 title: Mine Safari gold, then list five e-bomb ideas
 gate: basic-stage-1-sales-safari
 submit: [file, link]
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 65-66, 83-99"]
+sources: ["thirty-x-500, pp 65-66, 83-99"]
+author: Sean Tierney
 ---
 ## What this is
 Beyond pain, collect three more things from every thread: jargon (the words insiders use), worldview (beliefs so deep the audience thinks that is just how the world works), and buys and recommendations (what they spend money, time and trust on, and what they tell each other to try). This is what makes your writing feel like a tap on the shoulder by name. Then turn the patterns into e-bomb ideas: small, free lessons that each answer one question your audience really asks.

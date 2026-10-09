@@ -29,6 +29,13 @@ and checks:
     and one gate per stage, ids prefixed basic-, known submit values, choices
     exactly when submit has choice, the required sections, a link to the
     course, no em dash, and no database words in learner text
+  - the Post-revenue track under post-revenue/ (when present): the same
+    format over seven stages 0-6, three cards per stage and five in the
+    last, with each Source ending in the link of a source the card lists
+  - when the root has sources.json, every registry entry is well formed and
+    every card source (core, basic, post-revenue) names an entry in it
+  - the optional path fields (author, requires, teaches, fits_when,
+    produces) are well formed, and requires names cards that exist
   - Basic skills (type: basic-skill) say their role, and a review skill ends
     in a founderos-verdict block
 
@@ -88,6 +95,7 @@ REQUIRED_SECTIONS = {
 BASIC_DIR = "basic"
 BASIC_STAGES = range(0, 5)
 BASIC_CARDS_PER_STAGE = 3
+POST_REVENUE_DIR = "post-revenue"
 BASIC_CARD_FIELDS = ("id", "type", "track", "stage", "order", "title", "gate", "submit", "sources")
 BASIC_GATE_FIELDS = ("id", "type", "track", "stage", "title", "signoff")
 BASIC_CARD_SECTIONS = ("What this is", "What you make", "How to submit", "Done when", "Coach checks", "Source")
@@ -104,6 +112,14 @@ EM_DASH = "\u2014"
 COACH_ONLY = "Coach checks"
 LEARNER_BANNED = re.compile(r"\b(rows?|kinds?|artifacts?|ledgers?|meta)\b", re.IGNORECASE)
 SNAKE_CASE = re.compile(r"\b[a-z0-9]+_[a-z0-9_]+\b")
+URL = re.compile(r"https?://\S+")
+
+REGISTRY_FILE = "sources.json"
+REGISTRY_FIELDS = ("id", "title", "author", "url", "kind")
+REGISTRY_KINDS = ("book", "course", "article", "tool")
+# Optional card fields for a future intake and path compiler. author is a
+# string; the rest are inline lists. requires names other cards' ids.
+PATH_LIST_FIELDS = ("requires", "teaches", "fits_when", "produces")
 
 SIGNOFF_VALUES = ("claude", "claude+sean")
 STATUS_VALUES = ("draft", "candidate", "core")
@@ -565,11 +581,36 @@ def check_basic_skill(item: Item, problems: list[str]) -> None:
     check_no_em_dash(item, problems)
 
 
-def collect_basic(root: pathlib.Path, problems: list[str]) -> tuple[list[Item], list[Item]]:
-    """(cards, gates) under basic/. Cards sit in basic/stage-<N>/, gates in basic/gates/."""
+class TrackSpec:
+    """A learner track in the Basic format: cards in <dir>/stage-<N>/, one
+    panel per stage in <dir>/gates/, ids prefixed '<name>-'."""
+
+    def __init__(self, name: str, directory: str, stages: range, cards_per_stage: dict[int, int],
+                 course_url: str | None) -> None:
+        self.name, self.dir, self.stages = name, directory, stages
+        self.cards_per_stage, self.course_url = cards_per_stage, course_url
+
+    @property
+    def prefix(self) -> str:
+        return self.name + "-"
+
+    def cards_in(self, stage: int) -> int:
+        return self.cards_per_stage.get(stage, BASIC_CARDS_PER_STAGE)
+
+
+# basic/ ends every Source with the 30x500 course link. post-revenue/ draws on
+# many sources, so its Source ends with the link of one it lists.
+TRACKS = (
+    TrackSpec("basic", BASIC_DIR, BASIC_STAGES, {}, COURSE_URL),
+    TrackSpec("post-revenue", POST_REVENUE_DIR, range(0, 7), {6: 5}, None),
+)
+
+
+def collect_track(root: pathlib.Path, spec: TrackSpec, problems: list[str]) -> tuple[list[Item], list[Item]]:
+    """(cards, gates) under <dir>/. Cards sit in <dir>/stage-<N>/, gates in <dir>/gates/."""
     cards: list[Item] = []
     gates: list[Item] = []
-    base = root / BASIC_DIR
+    base = root / spec.dir
     for path in sorted(base.rglob("*.md")):
         if path.name == "README.md":
             continue
@@ -580,7 +621,7 @@ def collect_basic(root: pathlib.Path, problems: list[str]) -> tuple[list[Item], 
         elif re.fullmatch(r"stage-\d+", str(parent)):
             bucket, kind = cards, "card"
         else:
-            problems.append(f"{rel}: basic content lives in basic/stage-<N>/ or basic/gates/")
+            problems.append(f"{rel}: {spec.name} content lives in {spec.dir}/stage-<N>/ or {spec.dir}/gates/")
             continue
         fields, body, err = parse_frontmatter(path.read_text(encoding="utf-8"))
         if err:
@@ -596,51 +637,68 @@ def collect_basic(root: pathlib.Path, problems: list[str]) -> tuple[list[Item], 
     return cards, gates
 
 
-def as_basic_stage(value: object) -> int | None:
+def collect_basic(root: pathlib.Path, problems: list[str]) -> tuple[list[Item], list[Item]]:
+    return collect_track(root, TRACKS[0], problems)
+
+
+def as_track_stage(value: object, spec: TrackSpec) -> int | None:
     n = as_stage(value)
-    return n if n in BASIC_STAGES else None
+    return n if n in spec.stages else None
 
 
-def check_basic_common(item: Item, required: tuple[str, ...], sections: tuple[str, ...],
+def as_basic_stage(value: object) -> int | None:
+    return as_track_stage(value, TRACKS[0])
+
+
+def check_track_common(item: Item, spec: TrackSpec, required: tuple[str, ...], sections: tuple[str, ...],
                        problems: list[str]) -> int | None:
     f, rel = item.fields, item.rel
     for field in required:
         if f.get(field) in (None, "", []):
             problems.append(f"{rel}: missing required frontmatter field '{field}'")
-    if f.get("track") not in (None, "", "basic"):
-        problems.append(f"{rel}: track must be 'basic'")
+    if f.get("track") not in (None, "", spec.name):
+        problems.append(f"{rel}: track must be '{spec.name}'")
     ident = str(f.get("id", ""))
     if ident:
-        if not ident.startswith("basic-"):
-            problems.append(f"{rel}: id {ident!r} must start with 'basic-'")
+        if not ident.startswith(spec.prefix):
+            problems.append(f"{rel}: id {ident!r} must start with '{spec.prefix}'")
         elif not ID_SHAPE.match(ident):
             problems.append(f"{rel}: id {ident!r} must be lowercase kebab-case")
-        elif ident != "basic-" + item.path.stem:
-            problems.append(f"{rel}: id {ident!r} must be 'basic-{item.path.stem}' to match its file name")
+        elif ident != spec.prefix + item.path.stem:
+            problems.append(f"{rel}: id {ident!r} must be '{spec.prefix}{item.path.stem}' to match its file name")
     missing = [s for s in sections if s not in headings(item.body)]
     if missing:
         problems.append(f"{rel}: missing section(s) {', '.join('## ' + s for s in missing)}")
     check_no_em_dash(item, problems)
-    stage = as_basic_stage(f.get("stage", ""))
+    stage = as_track_stage(f.get("stage", ""), spec)
     if "stage" in f and stage is None:
-        problems.append(f"{rel}: stage {f['stage']!r} is not an integer 0-4")
+        problems.append(f"{rel}: stage {f['stage']!r} is not an integer {spec.stages[0]}-{spec.stages[-1]}")
     return stage
 
 
-def check_basic_card(item: Item, gate_stage: dict[str, int | None], problems: list[str]) -> None:
+def source_id(entry: str) -> str:
+    """The registry id of a card's source entry: everything before the first
+    comma. 'thirty-x-500, pp 5-9' cites pages 5-9 of thirty-x-500."""
+    return entry.split(",", 1)[0].strip()
+
+
+def check_track_card(item: Item, spec: TrackSpec, gate_stage: dict[str, int | None],
+                     registry: dict[str, dict] | None, problems: list[str]) -> None:
     f, rel = item.fields, item.rel
-    stage = check_basic_common(item, BASIC_CARD_FIELDS, BASIC_CARD_SECTIONS, problems)
+    stage = check_track_common(item, spec, BASIC_CARD_FIELDS, BASIC_CARD_SECTIONS, problems)
     if stage is not None and item.path.parent.name != f"stage-{stage}":
-        problems.append(f"{rel}: stage {stage} but the file lives under basic/{item.path.parent.name}/")
+        problems.append(f"{rel}: stage {stage} but the file lives under {spec.dir}/{item.path.parent.name}/")
 
     order = f.get("order")
-    if order not in (None, "") and str(order) not in ("1", "2", "3"):
-        problems.append(f"{rel}: order {order!r} must be 1, 2 or 3")
+    if order not in (None, "") and stage is not None:
+        allowed = [str(n) for n in range(1, spec.cards_in(stage) + 1)]
+        if str(order) not in allowed:
+            problems.append(f"{rel}: order {order!r} must be one of {', '.join(allowed)}")
 
     gate = f.get("gate")
     if gate:
         if gate not in gate_stage:
-            problems.append(f"{rel}: names gate {gate!r}, which does not exist in basic/gates/")
+            problems.append(f"{rel}: names gate {gate!r}, which does not exist in {spec.dir}/gates/")
         elif stage is not None and gate_stage[gate] != stage:
             problems.append(f"{rel}: stage {stage} but its gate {gate!r} is at stage {gate_stage[gate]}")
 
@@ -659,39 +717,52 @@ def check_basic_card(item: Item, gate_stage: dict[str, int | None], problems: li
         if "choice" not in submit and "choices" in f:
             problems.append(f"{rel}: choices is set but submit has no choice")
 
-    if "sources" in f and not isinstance(f["sources"], list):
+    sources = f.get("sources")
+    if "sources" in f and not isinstance(sources, list):
         problems.append(f"{rel}: sources must be a list")
+        sources = []
 
     done = [ln for ln in section_text(item.body, "Done when").splitlines() if ln.startswith("- ")]
     if "Done when" in headings(item.body) and len(done) not in BASIC_DONE_WHEN:
         problems.append(f"{rel}: ## Done when has {len(done)} bullet(s); it needs 2 to 5")
-    if "Source" in headings(item.body) and not section_text(item.body, "Source").endswith(COURSE_URL):
-        problems.append(f"{rel}: ## Source must end with the link to the course, {COURSE_URL}")
+    if "Source" in headings(item.body):
+        source = section_text(item.body, "Source")
+        if spec.course_url and not source.endswith(spec.course_url):
+            problems.append(f"{rel}: ## Source must end with the link to the course, {spec.course_url}")
+        if not spec.course_url and registry is not None:
+            listed = {registry[source_id(s)]["url"].rstrip("/") for s in sources or [] if source_id(s) in registry}
+            last = URL.findall(source)
+            if not last or last[-1].rstrip("/.") not in listed:
+                problems.append(f"{rel}: ## Source must end with the link of a source the card lists")
 
     learner = "\n".join([str(f.get("title", "")), " ".join(map(str, f.get("choices") or [])),
                          without_section(item.body, COACH_ONLY)])
     check_learner_text(rel, learner, problems)
 
 
-def check_basic_gate(item: Item, problems: list[str]) -> None:
+def check_track_gate(item: Item, spec: TrackSpec, problems: list[str]) -> None:
     f, rel = item.fields, item.rel
-    stage = check_basic_common(item, BASIC_GATE_FIELDS, BASIC_GATE_SECTIONS, problems)
+    stage = check_track_common(item, spec, BASIC_GATE_FIELDS, BASIC_GATE_SECTIONS, problems)
     if stage is not None and not item.path.stem.startswith(f"stage-{stage}-"):
         problems.append(f"{rel}: stage {stage} but the file name does not start with 'stage-{stage}-'")
     if f.get("signoff") not in (None, "", "coach"):
-        problems.append(f"{rel}: a basic gate has signoff: coach (the stage passes when every card is accepted)")
-    if "Read the original" in headings(item.body) and COURSE_URL not in section_text(item.body, "Read the original"):
-        problems.append(f"{rel}: ## Read the original must link to {COURSE_URL}")
+        problems.append(f"{rel}: a {spec.name} gate has signoff: coach (the stage passes when every card is accepted)")
+    if "Read the original" in headings(item.body):
+        original = section_text(item.body, "Read the original")
+        if spec.course_url and spec.course_url not in original:
+            problems.append(f"{rel}: ## Read the original must link to {spec.course_url}")
+        if not spec.course_url and not URL.search(original):
+            problems.append(f"{rel}: ## Read the original must link to at least one source")
     check_learner_text(rel, "\n".join([str(f.get("title", "")), item.body]), problems)
 
 
-def check_basic(root: pathlib.Path, others: list[Item], problems: list[str]) -> None:
-    """Runs only when the root has a basic/ tree."""
-    if not (root / BASIC_DIR).is_dir():
-        return
-    cards, gates = collect_basic(root, problems)
+def check_track(root: pathlib.Path, spec: TrackSpec, seen: dict[str, str], registry: dict[str, dict] | None,
+                problems: list[str]) -> list[Item]:
+    """Runs only when the root has the track's directory. Returns its cards."""
+    if not (root / spec.dir).is_dir():
+        return []
+    cards, gates = collect_track(root, spec, problems)
 
-    seen = {i.ident: i.rel for i in others if i.ident}
     for item in gates + cards:
         ident = str(item.fields.get("id", ""))
         if ident in seen:
@@ -699,23 +770,112 @@ def check_basic(root: pathlib.Path, others: list[Item], problems: list[str]) -> 
         elif ident:
             seen[ident] = item.rel
 
-    gate_stage = {str(g.fields.get("id")): as_basic_stage(g.fields.get("stage", "")) for g in gates}
+    gate_stage = {str(g.fields.get("id")): as_track_stage(g.fields.get("stage", ""), spec) for g in gates}
     for gate in gates:
-        check_basic_gate(gate, problems)
+        check_track_gate(gate, spec, problems)
     for card in cards:
-        check_basic_card(card, gate_stage, problems)
+        check_track_card(card, spec, gate_stage, registry, problems)
 
-    for stage in BASIC_STAGES:
-        here = [g.ident for g in gates if as_basic_stage(g.fields.get("stage", "")) == stage]
+    for stage in spec.stages:
+        here = [g.ident for g in gates if as_track_stage(g.fields.get("stage", ""), spec) == stage]
         if len(here) != 1:
-            problems.append(f"basic: stage {stage} needs exactly one gate in basic/gates/, found {len(here)}")
-        in_stage = [c for c in cards if as_basic_stage(c.fields.get("stage", "")) == stage]
-        if len(in_stage) != BASIC_CARDS_PER_STAGE:
-            problems.append(f"basic: stage {stage} needs {BASIC_CARDS_PER_STAGE} cards, found {len(in_stage)}")
+            problems.append(f"{spec.name}: stage {stage} needs exactly one gate in {spec.dir}/gates/, found {len(here)}")
+        in_stage = [c for c in cards if as_track_stage(c.fields.get("stage", ""), spec) == stage]
+        if len(in_stage) != spec.cards_in(stage):
+            problems.append(f"{spec.name}: stage {stage} needs {spec.cards_in(stage)} cards, found {len(in_stage)}")
         orders = [str(c.fields.get("order")) for c in in_stage]
         dupes = sorted({o for o in orders if orders.count(o) > 1})
         if dupes:
-            problems.append(f"basic: stage {stage} has more than one card at order {', '.join(dupes)}")
+            problems.append(f"{spec.name}: stage {stage} has more than one card at order {', '.join(dupes)}")
+    return cards
+
+
+def check_tracks(root: pathlib.Path, others: list[Item], registry: dict[str, dict] | None,
+                 problems: list[str]) -> list[Item]:
+    seen = {i.ident: i.rel for i in others if i.ident}
+    cards: list[Item] = []
+    for spec in TRACKS:
+        cards += check_track(root, spec, seen, registry, problems)
+    return cards
+
+
+# --- Sources registry (sources.json) and the optional path fields -------------
+
+def load_registry(root: pathlib.Path, problems: list[str]) -> dict[str, dict] | None:
+    """The sources registry at ROOT/sources.json, by id. None when the root has
+    none (the template examples), which turns the source checks off."""
+    path = root / REGISTRY_FILE
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        problems.append(f"{REGISTRY_FILE}: not valid JSON ({e})")
+        return {}
+    entries = data.get("sources") if isinstance(data, dict) else None
+    if not isinstance(entries, list):
+        problems.append(f"{REGISTRY_FILE}: expected {{\"sources\": [...]}}")
+        return {}
+    if EM_DASH in path.read_text(encoding="utf-8"):
+        problems.append(f"{REGISTRY_FILE}: has an em dash; use ' - '")
+    registry: dict[str, dict] = {}
+    for n, entry in enumerate(entries):
+        where = f"{REGISTRY_FILE}: entry {n}"
+        if not isinstance(entry, dict):
+            problems.append(f"{where} is not an object")
+            continue
+        missing = [k for k in REGISTRY_FIELDS if not isinstance(entry.get(k), str) or not entry.get(k)]
+        if missing:
+            problems.append(f"{where} ({entry.get('id')!r}) is missing {', '.join(missing)}")
+            continue
+        ident = entry["id"]
+        if not ID_SHAPE.match(ident):
+            problems.append(f"{where}: id {ident!r} must be lowercase kebab-case")
+        if ident in registry:
+            problems.append(f"{where}: duplicate id {ident!r}")
+        if entry["kind"] not in REGISTRY_KINDS:
+            problems.append(f"{where} ({ident}): kind {entry['kind']!r} must be one of {', '.join(REGISTRY_KINDS)}")
+        if not re.fullmatch(r"https?://\S+", entry["url"]):
+            problems.append(f"{where} ({ident}): url must be an http(s) link")
+        if "year" in entry and not (isinstance(entry["year"], int) and 1800 < entry["year"] < 2100):
+            problems.append(f"{where} ({ident}): year must be a four-digit number")
+        extra = sorted(set(entry) - set(REGISTRY_FIELDS) - {"year"})
+        if extra:
+            problems.append(f"{where} ({ident}): unknown field(s) {', '.join(extra)}")
+        registry[ident] = entry
+    return registry
+
+
+def check_card_sources(cards: list[Item], registry: dict[str, dict], problems: list[str]) -> None:
+    """Every card source names a registry entry, so the app can render it with its link."""
+    for card in cards:
+        sources = card.fields.get("sources")
+        for entry in sources if isinstance(sources, list) else []:
+            if source_id(entry) not in registry:
+                problems.append(f"{card.rel}: source {source_id(entry)!r} is not in {REGISTRY_FILE}")
+
+
+def check_path_fields(cards: list[Item], problems: list[str]) -> None:
+    """author, requires, teaches, fits_when, produces: optional, but well formed when present."""
+    ids = {str(c.fields.get("id")) for c in cards}
+    for card in cards:
+        f, rel = card.fields, card.rel
+        if "author" in f and (not isinstance(f["author"], str) or not f["author"]):
+            problems.append(f"{rel}: author must be a name, e.g. author: Sean Tierney")
+        for field in PATH_LIST_FIELDS:
+            if field not in f:
+                continue
+            value = f[field]
+            if not isinstance(value, list):
+                problems.append(f"{rel}: {field} must be a list, e.g. {field}: [a, b]")
+                continue
+            bad = [v for v in value if not ID_SHAPE.match(v)]
+            if bad:
+                problems.append(f"{rel}: {field} value(s) {', '.join(map(repr, bad))} must be lowercase kebab-case")
+            if field == "requires":
+                unknown = [v for v in value if ID_SHAPE.match(v) and v not in ids]
+                if unknown:
+                    problems.append(f"{rel}: requires names unknown card(s) {', '.join(map(repr, unknown))}")
 
 
 def lint(root: pathlib.Path, budget_path: pathlib.Path | None = None) -> list[str]:
@@ -727,7 +887,11 @@ def lint(root: pathlib.Path, budget_path: pathlib.Path | None = None) -> list[st
     check_question_sets(root, items, problems)
     check_manifest(root, items, problems)
     check_evals(root, items, problems)
-    check_basic(root, items, problems)
+    registry = load_registry(root, problems)
+    cards = [i for i in items if i.kind == "framework-card"] + check_tracks(root, items, registry, problems)
+    if registry is not None:
+        check_card_sources(cards, registry, problems)
+    check_path_fields(cards, problems)
     budget = load_budget(budget_path or resolve_budget_path(root), problems)
     if budget is not None:
         check_budget(items, budget, problems)

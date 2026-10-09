@@ -7,7 +7,8 @@ order: 3
 title: Fuel up your emotional fuel tank
 gate: basic-stage-0-people
 submit: [text]
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 16-19, 28, 117-120", "Sliding Doors exercise, Vibecode Lisboa"]
+sources: ["thirty-x-500, pp 16-19, 28, 117-120", sliding-doors]
+author: Sean Tierney
 ---
 ## What this is
 Before embarking on a journey to build something that involves protracted effort over many days, you need to fuel up your emotional fuel tank for the inevitable grind that's ahead. The best way to do this is via an exercise called "Sliding Doors" (reference to the Gwyneth Paltrow movie).

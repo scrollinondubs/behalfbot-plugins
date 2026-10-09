@@ -7,7 +7,8 @@ order: 2
 title: Write and publish five e-bombs
 gate: basic-stage-2-ebombs
 submit: [link, text]
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 60-72, 83-99"]
+sources: ["thirty-x-500, pp 60-72, 83-99"]
+author: Sean Tierney
 ---
 ## What this is
 An e-bomb is a small, free lesson that fixes one specific problem. The recipe: open with one real question your audience asks, show you understand their exact situation (their own words work best), give one answer rather than a book, and end with your call to action. Make the headline the question itself, not a topic.

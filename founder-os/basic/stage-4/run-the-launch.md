@@ -8,7 +8,8 @@ title: Run the launch, then plan the next one
 gate: basic-stage-4-ship-and-launch
 submit: [file, link, text]
 assist: draft
-sources: ["Amy Hoy and Alex Hillman, 30x500, pp 121-122, 209-215, 220-234"]
+sources: ["thirty-x-500, pp 121-122, 209-215, 220-234"]
+author: Sean Tierney
 ---
 ## What this is
 A launch is a dinner party: a date and time, an RSVP deadline, reminders, and an end. Send three to seven emails that each help on their own and build toward a yes or no, then open the doors with a clear closing time. Decide ahead how many sales would make it worth it, and afterwards celebrate, look back honestly, and go back to Safari and e-bombs.
