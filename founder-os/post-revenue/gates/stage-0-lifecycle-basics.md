@@ -16,6 +16,7 @@ Everything later in this track is about moving people from one step to the next.
 A lifecycle map in your own words, analytics that report real numbers for each step, and a funnel map that shows where people come in and where they leak out.
 
 ## Read the original
-This stage is our short version of three sources. Keap's lifecycle marketing model: https://keap.com/small-business-automation-blog/marketing/automation/what-is-lifecycle-marketing
-Dave McClure's Startup Metrics for Pirates: https://www.slideshare.net/slideshow/startup-metrics-for-pirates-long-version/89026
-Ryan Chapman's How To Fix Your Funnel: https://www.amazon.com/How-Your-Funnel-Ryan-Chapman-ebook/dp/B07CBDTP4R
+This stage is our short version of these sources. Read the originals:
+- [Keap's lifecycle marketing model](https://keap.com/small-business-automation-blog/marketing/automation/what-is-lifecycle-marketing)
+- [Dave McClure's Startup Metrics for Pirates](https://www.slideshare.net/slideshow/startup-metrics-for-pirates-long-version/89026)
+- [Ryan Chapman's How To Fix Your Funnel](https://www.amazon.com/How-Your-Funnel-Ryan-Chapman-ebook/dp/B07CBDTP4R)

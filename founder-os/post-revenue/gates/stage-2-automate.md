@@ -16,6 +16,7 @@ Automation multiplies whatever it touches, including a broken process. That is w
 A live lead magnet with a follow-up sequence, a CRM you built or connected, and a We do / They do map ready for your agent to turn into automations.
 
 ## Read the original
-This stage draws on Keap's lifecycle marketing model: https://keap.com/small-business-automation-blog/marketing/automation/what-is-lifecycle-marketing
-Getting Started with Claude Code, from Vibecode Lisboa: https://vibecodelisboa.com/courses/claude-code-101
-Jermaine Griggs' Automation Clinic: https://www.automationclinicmembers.com/
+This stage is our short version of these sources. Read the originals:
+- [Keap's lifecycle marketing model](https://keap.com/small-business-automation-blog/marketing/automation/what-is-lifecycle-marketing)
+- [Getting Started with Claude Code, from Vibecode Lisboa](https://vibecodelisboa.com/courses/claude-code-101)
+- [Jermaine Griggs' Automation Clinic](https://www.automationclinicmembers.com/)

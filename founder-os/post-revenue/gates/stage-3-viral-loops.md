@@ -16,6 +16,7 @@ Paid and manual channels grow in a straight line with your effort and budget. Lo
 A working affiliate program, one viral loop designed and shipped, and an automated research and content pipeline that keeps feeding your list.
 
 ## Read the original
-This stage draws on the growth programs at Reforge: https://www.reforge.com/
-30x500, by Amy Hoy and Alex Hillman: https://stackingthebricks.com/30x500/
-Sean's write-up of the Pagely sales automation system: https://pagely.com/blog/b2b-sales-process/
+This stage is our short version of these sources. Read the originals:
+- [Reforge growth programs](https://www.reforge.com/)
+- [30x500, by Amy Hoy and Alex Hillman](https://stackingthebricks.com/30x500/)
+- [Sean's write-up of the Pagely sales automation system](https://pagely.com/blog/b2b-sales-process/)

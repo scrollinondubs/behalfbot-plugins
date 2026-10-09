@@ -16,7 +16,8 @@ None of these is a channel. Each one multiplies your time, your judgment or your
 A working financial model, a personal agent handling real tasks, a current Business Model Canvas, a plan for your advisory board, and a written decision on fundraising.
 
 ## Read the original
-This stage draws on Business Model Generation, by Alexander Osterwalder and Yves Pigneur: https://www.strategyzer.com/library/business-model-generation
-Behalf.bot: https://behalf.bot
-Sean's lessons from pitching VCs: https://scrollinondubs.com/2007/12/12/lessons-from-vc-pitches/
-Sean's writing on Grid7: https://grid7.com
+This stage is our short version of these sources. Read the originals:
+- [Business Model Generation, by Alexander Osterwalder and Yves Pigneur](https://www.strategyzer.com/library/business-model-generation)
+- [Behalf.bot](https://behalf.bot)
+- [Sean's lessons from pitching VCs](https://scrollinondubs.com/2007/12/12/lessons-from-vc-pitches/)
+- [Sean's writing on Grid7](https://grid7.com)

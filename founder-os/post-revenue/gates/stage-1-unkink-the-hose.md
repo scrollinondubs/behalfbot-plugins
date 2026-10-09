@@ -16,6 +16,7 @@ Should you buy more traffic, improve the conversion rate on your site, or make t
 A written call on where the biggest leak is and why, a first ad experiment, and a first A/B test, each with a result you can read.
 
 ## Read the original
-This stage draws on Traction (Gabriel Weinberg and Justin Mares): https://www.penguinrandomhouse.com/books/319121/traction-by-gabriel-weinberg-and-justin-mares/
-Brad Geddes, Advanced Google AdWords: https://www.wiley.com/en-us/Advanced+Google+AdWords%2C+3rd+Edition-p-9781118819562
-Optimizely Academy: https://academy.optimizely.com/
+This stage is our short version of these sources. Read the originals:
+- [Traction (Gabriel Weinberg and Justin Mares)](https://www.penguinrandomhouse.com/books/319121/traction-by-gabriel-weinberg-and-justin-mares/)
+- [Brad Geddes, Advanced Google AdWords](https://www.wiley.com/en-us/Advanced+Google+AdWords%2C+3rd+Edition-p-9781118819562)
+- [Optimizely Academy](https://academy.optimizely.com/)
