@@ -71,7 +71,8 @@ the audience.
 ## Sources
 
 - 30x500, Amy Hoy and Alex Hillman. The audience-first approach this card is
-  modelled on. Read the original: https://30x500.com
+  modelled on. The course is closed to new students; more about it:
+  https://30x500.com
 
 ## Sean's notes
 

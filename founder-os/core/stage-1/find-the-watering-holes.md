@@ -62,7 +62,7 @@ The `stage-1-audience` gate needs a named audience, three or more active waterin
 
 ## Sources
 
-- 30x500, Amy Hoy and Alex Hillman. The watering hole idea, searching with the audience's own words, and studying a community before joining in. Read the original: https://30x500.com/academy/
+- 30x500, Amy Hoy and Alex Hillman. The watering hole idea, searching with the audience's own words, and studying a community before joining in. The course is closed to new students; more about it: https://30x500.com
 - Lean Customer Development, Cindy Alvarez. Asking a few target customers where they go for advice, and treating reply counts as a first read on what matters to them. Read the original: https://www.cindyalvarez.com/lean-customer-development/
 
 ## Sean's notes

@@ -520,8 +520,8 @@ class BasicTrackLintTest(LintContentTest):
         self.assertOneProblem("## Source must end with the link to the course")
 
     def test_gate_links_the_course(self) -> None:
-        self.edit(BASIC_GATE, "\nhttps://30x500.com", "")
-        self.assertOneProblem("## Read the original must link to")
+        self.edit(BASIC_GATE, "(https://30x500.com)", "")
+        self.assertOneProblem("## Inspired by must link to")
 
     def test_em_dash(self) -> None:
         self.edit(BASIC_CARD, "Find where they talk\n", "Find where they talk \u2014 now\n")
@@ -683,9 +683,9 @@ class PostRevenueTrackLintTest(LintContentTest):
 
     def test_gate_must_link_a_source(self) -> None:
         text = (self.root / PR_GATE).read_text(encoding="utf-8")
-        head, _, _ = text.partition("## Read the original")
-        self.write(PR_GATE, head + "## Read the original\nThe books.\n")
-        self.assertOneProblem("## Read the original must link to at least one source")
+        head, _, _ = text.partition("## Inspired by")
+        self.write(PR_GATE, head + "## Inspired by\nThe books.\n")
+        self.assertOneProblem("## Inspired by must link to at least one source")
 
     def test_unknown_source_id(self) -> None:
         self.edit(PR_CARD, "sources: [how-to-fix-your-funnel]", "sources: [how-to-fix-your-funnel, nowhere]")

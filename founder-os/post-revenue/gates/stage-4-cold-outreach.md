@@ -15,8 +15,8 @@ Inbound takes time to build. Outreach works this week. It is also the fastest wa
 ## What you get
 One campaign run by hand with real replies, the same campaign rebuilt with tools and your agent, and one advanced technique tested on it.
 
-## Read the original
-This stage is our short version of these sources. Read the originals:
+## Inspired by
+This stage is our short version of these sources:
 - [Sean's post on Flintstoning](https://grid7.com/2020/06/lateral-thinking-and-flintstoning/)
 - [GetProspect](https://getprospect.com)
 - [Hunter](https://hunter.io)

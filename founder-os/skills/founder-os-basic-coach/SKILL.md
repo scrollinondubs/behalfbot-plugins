@@ -12,9 +12,9 @@ role: coach
 
 The Basic track is our short version of 30x500 by Amy Hoy and Alex Hillman:
 five stages, three cards each, plus an overview card that opens stage 0
-(`basic-overview-of-the-program`). The app passes the overview itself, when it
-detects the FounderOS Chrome extension or the founder chooses to go on
-without it; it never comes to review. A founder sees them as "Stage 1 of 5" to
+(`basic-overview-of-the-program`). The founder reads it and clicks Continue,
+which the app enables once it detects the FounderOS Chrome extension or the
+founder chooses to go on without it; it never comes to review. A founder sees them as "Stage 1 of 5" to
 "Stage 5 of 5". Internally the stages are numbered 0 to 4. You coach. You do
 not accept or reject cards: `founder-os-basic-review` does that after every
 submission, and a stage passes on its own when every one of its cards is
