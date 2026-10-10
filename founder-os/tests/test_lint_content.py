@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 import shutil
 import sys
 import tempfile
@@ -475,7 +476,7 @@ class BasicTrackLintTest(LintContentTest):
 
     def test_canvas_rejects_unknown_ids(self) -> None:
         self.edit(BASIC_CARD, "author: Sean Tierney", "author: Sean Tierney\ncanvas: [research.pains, research.money]")
-        self.assertOneProblem("canvas id(s) 'research.money' not in")
+        self.assertOneProblem("canvas id(s) 'research.money' not on the 30x500 map")
 
     def test_canvas_must_be_a_list(self) -> None:
         self.edit(BASIC_CARD, "author: Sean Tierney", "author: Sean Tierney\ncanvas: audience")
@@ -484,6 +485,25 @@ class BasicTrackLintTest(LintContentTest):
     def test_canvas_rejects_repeats(self) -> None:
         self.edit(BASIC_CARD, "author: Sean Tierney", "author: Sean Tierney\ncanvas: [audience, audience]")
         self.assertOneProblem("canvas lists an id more than once")
+
+    def test_map_picks_the_ids_canvas_takes(self) -> None:
+        for front in ("map: 30x500\ncanvas: [audience]", "map: lifecycle\ncanvas: [lifecycle.attract, lifecycle.fans]",
+                      "map: lifecycle\ncanvas: []", "map: bmc\ncanvas: [bmc.value, bmc.revenue]", "map: bmc"):
+            bare = re.sub(r"^canvas: .*\n", "", (PLUGIN_DIR / BASIC_CARD).read_text(), flags=re.M)
+            self.write(BASIC_CARD, bare.replace("author: Sean Tierney", f"author: Sean Tierney\n{front}"))
+            self.assertEqual(lint_content.lint(self.root), [], front)
+
+    def test_map_rejects_unknown_maps(self) -> None:
+        self.edit(BASIC_CARD, "author: Sean Tierney", "author: Sean Tierney\nmap: lean-canvas\ncanvas: []")
+        self.assertOneProblem("map 'lean-canvas' must be one of 30x500, lifecycle, bmc")
+
+    def test_canvas_ids_must_be_on_the_cards_map(self) -> None:
+        self.edit(BASIC_CARD, "author: Sean Tierney", "author: Sean Tierney\nmap: bmc\ncanvas: [bmc.value, research.pains]")
+        self.assertOneProblem("canvas id(s) 'research.pains' not on the bmc map")
+
+    def test_no_map_means_30x500(self) -> None:
+        self.edit(BASIC_CARD, "author: Sean Tierney", "author: Sean Tierney\ncanvas: [lifecycle.attract]")
+        self.assertOneProblem("canvas id(s) 'lifecycle.attract' not on the 30x500 map")
 
     def test_order_unique_in_stage(self) -> None:
         self.edit(BASIC_CARD, "order: 3", "order: 1")
@@ -753,6 +773,14 @@ class PostRevenueTrackLintTest(LintContentTest):
         counts = [len(content.basic_cards(stage, "post-revenue")) for stage in range(7)]
         self.assertEqual(counts, [3, 3, 3, 3, 3, 3, 5])
         self.assertEqual(content.basic_gate(6, "post-revenue").id, "post-revenue-stage-6-force-multipliers")
+
+    def test_post_revenue_card_takes_a_map(self) -> None:
+        text = (PLUGIN_DIR / PR_CARD).read_text()
+        self.assertNotIn("\nmap:", text)
+        self.write(PR_CARD, text.replace("\ntitle:", "\nmap: lifecycle\ncanvas: [lifecycle.collect]\ntitle:", 1))
+        self.assertEqual(lint_content.lint(self.root), [])
+        self.write(PR_CARD, text.replace("\ntitle:", "\nmap: lifecycle\ncanvas: [bmc.value]\ntitle:", 1))
+        self.assertOneProblem("canvas id(s) 'bmc.value' not on the lifecycle map")
 
 
 if __name__ == "__main__":

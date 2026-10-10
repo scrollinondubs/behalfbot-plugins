@@ -31,8 +31,10 @@ and checks:
     exactly when submit has choice, the required sections, a link to the
     course, no em dash, and no database words in learner text
   - a card source names a lesson, never page numbers, and an optional
-    video: on a Basic or Post-revenue card or gate is a YouTube link, and an
-    optional canvas: on a card lists 30x500 Canvas section or area ids
+    video: on a Basic or Post-revenue card or gate is a YouTube link, an
+    optional map: on a card names the map the app draws (30x500, lifecycle
+    or bmc; no map: means 30x500), and an optional canvas: on a card lists
+    ids from that map
   - the Post-revenue track under post-revenue/ (when present): the same
     format over seven stages 0-6, three cards per stage and five in the
     last, with each Source ending in the link of a source the card lists
@@ -140,6 +142,25 @@ CANVAS_SECTIONS = (
     "systems.process", "systems.tools", "systems.habits", "systems.support",
 )
 CANVAS_IDS = CANVAS_SECTIONS + CANVAS_AREAS
+# Lifecycle Marketing (Infusionsoft, now Keap) as the app draws it: seven
+# stages left to right, in three groups an id can light whole.
+LIFECYCLE_STAGES = (
+    "lifecycle.attract", "lifecycle.capture", "lifecycle.nurture", "lifecycle.convert",
+    "lifecycle.deliver", "lifecycle.upsell", "lifecycle.referrals",
+)
+LIFECYCLE_GROUPS = ("lifecycle.collect", "lifecycle.sell", "lifecycle.fans")
+# The Business Model Canvas (Alexander Osterwalder / Strategyzer, CC BY-SA
+# 3.0): nine blocks, no groups.
+BMC_BLOCKS = (
+    "bmc.partners", "bmc.activities", "bmc.resources", "bmc.value", "bmc.relationships",
+    "bmc.channels", "bmc.segments", "bmc.costs", "bmc.revenue",
+)
+DEFAULT_MAP = "30x500"
+MAP_IDS = {
+    "30x500": CANVAS_IDS,
+    "lifecycle": LIFECYCLE_STAGES + LIFECYCLE_GROUPS,
+    "bmc": BMC_BLOCKS,
+}
 
 REGISTRY_FILE = "sources.json"
 REGISTRY_FIELDS = ("id", "title", "author", "url", "kind")
@@ -754,7 +775,7 @@ def check_track_card(item: Item, spec: TrackSpec, gate_stage: dict[str, int | No
             problems.append(f"{rel}: source {entry!r} cites pages; name the lesson instead, "
                             "e.g. \"thirty-x-500, Choosing your audience\"")
     check_video(item, problems)
-    check_canvas(item, problems)
+    check_map_and_canvas(item, problems)
 
     done = [ln for ln in section_text(item.body, "Done when").splitlines() if ln.startswith("- ")]
     if "Done when" in headings(item.body) and len(done) not in BASIC_DONE_WHEN:
@@ -783,18 +804,28 @@ def check_video(item: Item, problems: list[str]) -> None:
         problems.append(f"{item.rel}: video must be a YouTube link (watch, youtu.be, shorts or embed), got {video!r}")
 
 
-def check_canvas(item: Item, problems: list[str]) -> None:
-    """canvas: is optional; when present it is a list of 30x500 Canvas ids.
-    An empty list shows the whole canvas with nothing lit."""
+def check_map_and_canvas(item: Item, problems: list[str]) -> None:
+    """map: is optional and names the map the app draws; no map: means 30x500.
+    canvas: is optional; when present it lists ids from that map. An empty
+    list shows the whole map with nothing lit."""
+    chosen = DEFAULT_MAP
+    if "map" in item.fields:
+        value = item.fields["map"]
+        if not isinstance(value, str) or value not in MAP_IDS:
+            problems.append(f"{item.rel}: map {value!r} must be one of {', '.join(MAP_IDS)}")
+            return
+        chosen = value
     if "canvas" not in item.fields:
         return
     canvas = item.fields["canvas"]
     if not isinstance(canvas, list):
         problems.append(f"{item.rel}: canvas must be a list, e.g. canvas: [research.pains, audience]")
         return
-    bad = [v for v in canvas if v not in CANVAS_IDS]
+    ids = MAP_IDS[chosen]
+    bad = [v for v in canvas if v not in ids]
     if bad:
-        problems.append(f"{item.rel}: canvas id(s) {', '.join(map(repr, bad))} not in {', '.join(CANVAS_IDS)}")
+        problems.append(f"{item.rel}: canvas id(s) {', '.join(map(repr, bad))} not on the {chosen} map "
+                        f"({', '.join(ids)})")
     if len(set(canvas)) != len(canvas):
         problems.append(f"{item.rel}: canvas lists an id more than once")
 

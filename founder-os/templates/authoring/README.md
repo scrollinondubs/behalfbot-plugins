@@ -141,6 +141,22 @@ real cards are the examples.
   whole area. `canvas: []` shows the whole canvas with nothing lit (the stage 0
   overview). No `canvas` line, no canvas. Admins set it inline on VCL and it
   comes back in the weekly sync PR.
+- `map` (optional, cards, both tracks) names the map `canvas` points into:
+  `30x500` (the default when there is no `map` line, so Basic cards leave it
+  out), `lifecycle` or `bmc`. `canvas` ids must come from that map.
+  `lifecycle` is Lifecycle Marketing (Infusionsoft, now Keap), drawn as seven
+  stages left to right: `lifecycle.attract`, `lifecycle.capture`,
+  `lifecycle.nurture`, `lifecycle.convert`, `lifecycle.deliver`,
+  `lifecycle.upsell`, `lifecycle.referrals`, plus three group ids that light
+  several at once: `lifecycle.collect` (attract, capture, nurture),
+  `lifecycle.sell` (convert) and `lifecycle.fans` (deliver, upsell,
+  referrals). `bmc` is the Business Model Canvas (Alexander Osterwalder /
+  Strategyzer, CC BY-SA 3.0), nine blocks: `bmc.partners`, `bmc.activities`,
+  `bmc.resources`, `bmc.value`, `bmc.relationships`, `bmc.channels`,
+  `bmc.segments`, `bmc.costs`, `bmc.revenue`. Example:
+  `map: lifecycle` with `canvas: [lifecycle.capture, lifecycle.nurture]`.
+  Admins pick the map and its ids together inline on VCL; both lines come
+  back in the weekly sync PR.
 - Sections: What this is, What you make, How to submit, Done when (2 to 5
   bullets), Coach checks, Source. Source ends with
   https://30x500.com.
