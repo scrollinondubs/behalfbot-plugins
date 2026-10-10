@@ -3,11 +3,11 @@ id: basic-protect-your-research-time
 type: card
 track: basic
 stage: 0
-order: 3
+order: 4
 title: Fuel up your emotional fuel tank
 gate: basic-stage-0-people
 submit: [text]
-sources: ["thirty-x-500, pp 16-19, 28, 117-120", sliding-doors]
+sources: ["thirty-x-500, Staying motivated", sliding-doors]
 author: Sean Tierney
 ---
 ## What this is
@@ -30,4 +30,4 @@ Write a few sentences from Path A and Path B below.
 - Never judge the reasons or the dream. This card is about motivation, not planning skill. Keep the reply warm and brief.
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Staying motivated. The course is closed to new students; more about it: https://30x500.com

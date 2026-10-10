@@ -7,7 +7,7 @@ order: 1
 title: Painstorm one thread
 gate: basic-stage-1-sales-safari
 submit: [file, link]
-sources: ["thirty-x-500, pp 23-25, 44-51, 83-85"]
+sources: ["thirty-x-500, Painstorming"]
 author: Sean Tierney
 ---
 ## What this is
@@ -35,4 +35,4 @@ Install the FounderOS Chrome Extension and use it to submit your first painstorm
 - The course says this is hard for roughly the first fifty threads (p 50). Encourage, do not grade harshly.
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 23-25, 44-51, 83-85. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Painstorming. The course is closed to new students; more about it: https://30x500.com

@@ -7,7 +7,7 @@ order: 3
 title: Automating your sales safari, e-bombs and socials
 gate: post-revenue-stage-3-viral-loops
 submit: [text, link]
-sources: [thirty-x-500, pagely-b2b-sales-process]
+sources: ["thirty-x-500, Sales Safari", pagely-b2b-sales-process]
 author: Sean Tierney
 requires: [post-revenue-we-do-they-do]
 teaches: [sales-safari, content-automation]

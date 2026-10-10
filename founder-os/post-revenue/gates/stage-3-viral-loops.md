@@ -15,8 +15,8 @@ Paid and manual channels grow in a straight line with your effort and budget. Lo
 ## What you get
 A working affiliate program, one viral loop designed and shipped, and an automated research and content pipeline that keeps feeding your list.
 
-## Read the original
-This stage is our short version of these sources. Read the originals:
+## Inspired by
+This stage is our short version of these sources:
 - [Reforge growth programs](https://www.reforge.com/)
-- [30x500, by Amy Hoy and Alex Hillman](https://stackingthebricks.com/30x500/)
+- [30x500 by Amy Hoy and Alex Hillman](https://30x500.com)
 - [Sean's write-up of the Pagely sales automation system](https://pagely.com/blog/b2b-sales-process/)

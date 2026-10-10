@@ -37,5 +37,5 @@ name, with credit, rather than renaming them. Nothing here implies endorsement
 by any author. See `ATTRIBUTION.md`.
 
 The 30x500 material, including Sales Safari, painstorming, e-bombs and
-Pain-Dream-Fix, is the work of Amy Hoy and Alex Hillman. To learn the method
-properly, take the course: https://30x500.com/academy/
+Pain-Dream-Fix, is the work of Amy Hoy and Alex Hillman. The course is closed
+to new students; more about it: https://30x500.com

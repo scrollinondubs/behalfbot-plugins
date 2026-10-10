@@ -7,7 +7,7 @@ order: 1
 title: Set up your home base
 gate: basic-stage-2-ebombs
 submit: [link, text]
-sources: ["thirty-x-500, pp 52-54, 70, 97-99, 110, 200"]
+sources: ["thirty-x-500, Your home base"]
 author: Sean Tierney
 ---
 ## What this is
@@ -33,4 +33,4 @@ Share the link to your site, and write your call to action in the box.
 - A link to the site belongs in their profile or signature on the watering holes, not in posts (p 110).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 52-54, 70, 97-99, 110, 200. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Your home base. The course is closed to new students; more about it: https://30x500.com
