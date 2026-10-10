@@ -5,6 +5,7 @@ track: basic
 stage: 2
 order: 2
 title: Write and publish five e-bombs
+canvas: [research.pains, research.jargon, fixes.ebombs, sales.ctas]
 gate: basic-stage-2-ebombs
 submit: [link, text]
 sources: ["thirty-x-500, Education bombs"]

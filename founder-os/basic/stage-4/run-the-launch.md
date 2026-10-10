@@ -5,6 +5,7 @@ track: basic
 stage: 4
 order: 3
 title: Run the launch, then plan the next one
+canvas: [fixes.email-sequences, audience.list, sales.ctas]
 gate: basic-stage-4-ship-and-launch
 submit: [file, link, text]
 assist: draft

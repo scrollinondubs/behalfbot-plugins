@@ -31,7 +31,8 @@ and checks:
     exactly when submit has choice, the required sections, a link to the
     course, no em dash, and no database words in learner text
   - a card source names a lesson, never page numbers, and an optional
-    video: on a Basic or Post-revenue card or gate is a YouTube link
+    video: on a Basic or Post-revenue card or gate is a YouTube link, and an
+    optional canvas: on a card lists 30x500 Canvas section or area ids
   - the Post-revenue track under post-revenue/ (when present): the same
     format over seven stages 0-6, three cards per stage and five in the
     last, with each Source ending in the link of a source the card lists
@@ -128,6 +129,17 @@ YOUTUBE_URL = re.compile(
     r"https?://(?:(?:www\.|m\.)?youtube\.com/(?:watch\?(?:\S*&)?v=|shorts/|embed/)|youtu\.be/)"
     r"[A-Za-z0-9_-]{11}(?:[?&#]\S*)?"
 )
+# The 30x500 Canvas (Amy Hoy and Alex Hillman) as the app draws it: a card's
+# canvas: lists the sections it works on, or an area id to light a whole area.
+CANVAS_AREAS = ("research", "fixes", "audience", "sales", "systems")
+CANVAS_SECTIONS = (
+    "research.pains", "research.buys", "research.jargon", "research.worldview",
+    "fixes.ebombs", "fixes.email-sequences", "fixes.product",
+    "audience.watering-holes", "audience.list", "audience.reputation",
+    "sales.ctas", "sales.pitch",
+    "systems.process", "systems.tools", "systems.habits", "systems.support",
+)
+CANVAS_IDS = CANVAS_SECTIONS + CANVAS_AREAS
 
 REGISTRY_FILE = "sources.json"
 REGISTRY_FIELDS = ("id", "title", "author", "url", "kind")
@@ -742,6 +754,7 @@ def check_track_card(item: Item, spec: TrackSpec, gate_stage: dict[str, int | No
             problems.append(f"{rel}: source {entry!r} cites pages; name the lesson instead, "
                             "e.g. \"thirty-x-500, Choosing your audience\"")
     check_video(item, problems)
+    check_canvas(item, problems)
 
     done = [ln for ln in section_text(item.body, "Done when").splitlines() if ln.startswith("- ")]
     if "Done when" in headings(item.body) and len(done) not in BASIC_DONE_WHEN:
@@ -768,6 +781,22 @@ def check_video(item: Item, problems: list[str]) -> None:
     video = item.fields["video"]
     if not isinstance(video, str) or not YOUTUBE_URL.fullmatch(video):
         problems.append(f"{item.rel}: video must be a YouTube link (watch, youtu.be, shorts or embed), got {video!r}")
+
+
+def check_canvas(item: Item, problems: list[str]) -> None:
+    """canvas: is optional; when present it is a list of 30x500 Canvas ids.
+    An empty list shows the whole canvas with nothing lit."""
+    if "canvas" not in item.fields:
+        return
+    canvas = item.fields["canvas"]
+    if not isinstance(canvas, list):
+        problems.append(f"{item.rel}: canvas must be a list, e.g. canvas: [research.pains, audience]")
+        return
+    bad = [v for v in canvas if v not in CANVAS_IDS]
+    if bad:
+        problems.append(f"{item.rel}: canvas id(s) {', '.join(map(repr, bad))} not in {', '.join(CANVAS_IDS)}")
+    if len(set(canvas)) != len(canvas):
+        problems.append(f"{item.rel}: canvas lists an id more than once")
 
 
 def check_track_gate(item: Item, spec: TrackSpec, problems: list[str]) -> None:

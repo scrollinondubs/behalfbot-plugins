@@ -5,6 +5,7 @@ track: basic
 stage: 1
 order: 1
 title: Painstorm one thread
+canvas: [research.pains, research.buys, systems.tools]
 gate: basic-stage-1-sales-safari
 submit: [file, link]
 sources: ["thirty-x-500, Painstorming"]

@@ -5,6 +5,7 @@ track: basic
 stage: 1
 order: 2
 title: Zoom out, find the themes, save threads
+canvas: [research.jargon, research.pains, audience.watering-holes]
 gate: basic-stage-1-sales-safari
 submit: [file, link]
 sources: ["thirty-x-500, Sales Safari"]

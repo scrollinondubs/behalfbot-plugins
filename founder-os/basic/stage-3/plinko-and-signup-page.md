@@ -5,6 +5,7 @@ track: basic
 stage: 3
 order: 3
 title: Run the plinko and put up a sign-up page
+canvas: [fixes.product, research.buys, sales.ctas]
 gate: basic-stage-3-first-product
 submit: [text, file, link, choice]
 assist: analyse

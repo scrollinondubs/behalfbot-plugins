@@ -5,6 +5,7 @@ track: basic
 stage: 0
 order: 2
 title: Choose an audience you already belong to
+canvas: [audience]
 gate: basic-stage-0-people
 submit: [text, choice]
 choices: [Peers, Newcomers, Clients]

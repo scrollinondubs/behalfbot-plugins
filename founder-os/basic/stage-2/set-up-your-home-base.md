@@ -5,6 +5,7 @@ track: basic
 stage: 2
 order: 1
 title: Set up your home base
+canvas: [systems.tools, audience.list, sales.ctas]
 gate: basic-stage-2-ebombs
 submit: [link, text]
 sources: ["thirty-x-500, Your home base"]
