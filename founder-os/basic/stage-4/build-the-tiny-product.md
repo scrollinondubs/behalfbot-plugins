@@ -8,7 +8,7 @@ title: Plan backwards, then build the tiny product
 gate: basic-stage-4-ship-and-launch
 submit: [file, link, text]
 assist: draft
-sources: ["thirty-x-500, pp 18, 127-129, 180-182, 194-208"]
+sources: ["thirty-x-500, Your first small product"]
 author: Sean Tierney
 ---
 ## What this is
@@ -37,4 +37,4 @@ Write your backwards plan yourself, or press "Draft V1 for me" for a first plan 
 - The backwards plan starts from one sale: a customer who is ready, a way to reach them, and an offer (pp 127-129).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 18, 127-129, 180-182, 194-208. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Your first small product. The course is closed to new students; more about it: https://30x500.com

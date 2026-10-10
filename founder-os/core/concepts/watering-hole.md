@@ -21,4 +21,4 @@ Finding them comes before building anything, and reading them is how a founder
 earns the right to sell later.
 
 Credit: the term and the practice come from Amy Hoy and Alex Hillman's 30x500.
-Read the original: https://stackingthebricks.com/30x500/
+Read the original: https://30x500.com

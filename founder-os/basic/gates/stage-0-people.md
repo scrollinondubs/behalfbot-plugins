@@ -16,5 +16,5 @@ You cannot build something people already want until you know who those people a
 A named audience you already belong to, three or more lively places online where they talk, and a clear picture of why this work matters to you.
 
 ## Read the original
-This stage is our short version of a chapter of 30x500 by Amy Hoy and Alex Hillman. If you want the whole thing, with the authors' own examples and hot seats, take the course:
-https://stackingthebricks.com/30x500/
+This stage is our short version of a chapter of 30x500 by Amy Hoy and Alex Hillman. The course is closed to new students; more about it:
+https://30x500.com

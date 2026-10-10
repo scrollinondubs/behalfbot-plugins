@@ -25,10 +25,11 @@ bundle and the eval harness are in place. Gate minimums were ruled by Sean on 20
 
 ## Basic track
 
-`basic/` is a second, shorter track: five stages, three cards each, built on
-Amy Hoy and Alex Hillman's [30x500](https://stackingthebricks.com/30x500/).
-It ends at a first sale to a stranger. Cards are paraphrased with page cites
-and point to the course; they are a short version, not a substitute. The ten
+`basic/` is a second, shorter track: five stages, three cards each (stage 0
+opens with a fourth, the program overview), built on
+Amy Hoy and Alex Hillman's [30x500](https://30x500.com).
+It ends at a first sale to a stranger. Cards are paraphrased, name the 30x500
+lesson they draw on and point to the course; they are a short version, not a substitute. The ten
 stages above are the Advanced track and are unchanged.
 
 | # | Stage (learners see 1 to 5) | Cards |
