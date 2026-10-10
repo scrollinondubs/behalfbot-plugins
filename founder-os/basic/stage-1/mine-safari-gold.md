@@ -5,6 +5,7 @@ track: basic
 stage: 1
 order: 3
 title: Mine Safari gold, then list five e-bomb ideas
+canvas: [research.pains, research.jargon, research.worldview, research.buys, fixes.ebombs]
 gate: basic-stage-1-sales-safari
 submit: [file, link]
 sources: ["thirty-x-500, Mining Safari gold"]

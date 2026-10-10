@@ -5,6 +5,7 @@ track: basic
 stage: 0
 order: 3
 title: Find where they talk
+canvas: [audience.watering-holes, research.jargon]
 gate: basic-stage-0-people
 submit: [text]
 sources: ["thirty-x-500, Finding watering holes"]

@@ -130,6 +130,17 @@ real cards are the examples.
 - `video` (optional, cards and gates) is a YouTube link: watch, youtu.be,
   shorts or embed. The app shows its thumbnail and plays it in a dialog.
   Admins set it inline on VCL and it comes back in the weekly sync PR.
+- `canvas` (optional, cards) lists where the card sits on the 30x500 Canvas
+  (Amy Hoy and Alex Hillman's layout; the app draws it in its own style under
+  the heading "Where you are"). Values are section ids: `research.pains`,
+  `research.buys`, `research.jargon`, `research.worldview`, `fixes.ebombs`,
+  `fixes.email-sequences`, `fixes.product`, `audience.watering-holes`,
+  `audience.list`, `audience.reputation`, `sales.ctas`, `sales.pitch`,
+  `systems.process`, `systems.tools`, `systems.habits`, `systems.support`, or
+  an area id (`research`, `fixes`, `audience`, `sales`, `systems`) to light a
+  whole area. `canvas: []` shows the whole canvas with nothing lit (the stage 0
+  overview). No `canvas` line, no canvas. Admins set it inline on VCL and it
+  comes back in the weekly sync PR.
 - Sections: What this is, What you make, How to submit, Done when (2 to 5
   bullets), Coach checks, Source. Source ends with
   https://30x500.com.

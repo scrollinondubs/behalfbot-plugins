@@ -5,6 +5,7 @@ track: basic
 stage: 0
 order: 4
 title: Fuel up your emotional fuel tank
+canvas: [systems.habits]
 gate: basic-stage-0-people
 submit: [text]
 sources: ["thirty-x-500, Staying motivated", sliding-doors]

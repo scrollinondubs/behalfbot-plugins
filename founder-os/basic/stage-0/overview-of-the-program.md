@@ -5,6 +5,7 @@ track: basic
 stage: 0
 order: 1
 title: Overview of the program
+canvas: []
 gate: basic-stage-0-people
 submit: [extension]
 sources: ["thirty-x-500, Introduction"]
@@ -28,8 +29,6 @@ TODO for Sean: add the other sources and where they fit. Jobs To Be Done (Clayto
 Treat this as an investment. It will feel slow at first, and that's normal. **The progress compounds.** What you're really building is a muscle: the ability to parachute into any market, learn it fast and sell to it. You get to keep that one.
 
 Last thing: the canvas. It's one page that shows how all the pieces fit together. You don't need to know the terms yet. Use it to get your bearings now and come back to it as you go.
-
-> FounderOS canvas - coming soon.
 
 ## What you make
 Nothing to write for this one. Read or watch the overview, then install the FounderOS Chrome extension. It's what you'll use to save quotes when you go on Sales Safari.

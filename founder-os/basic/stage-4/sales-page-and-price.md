@@ -5,6 +5,7 @@ track: basic
 stage: 4
 order: 2
 title: Write the sales page and set the price
+canvas: [sales.pitch, sales.ctas, research.buys]
 gate: basic-stage-4-ship-and-launch
 submit: [text, link]
 assist: draft

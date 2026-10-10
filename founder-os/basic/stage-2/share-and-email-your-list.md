@@ -5,6 +5,7 @@ track: basic
 stage: 2
 order: 3
 title: Share without being a jerk, and email your list
+canvas: [audience.watering-holes, audience.reputation, audience.list, fixes.email-sequences]
 gate: basic-stage-2-ebombs
 submit: [link, text, file]
 sources: ["thirty-x-500, Sharing and your mailing list"]

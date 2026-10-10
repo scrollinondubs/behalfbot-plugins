@@ -468,6 +468,23 @@ class BasicTrackLintTest(LintContentTest):
         self.edit(BASIC_CARD, "author: Sean Tierney", "author: Sean Tierney\nvideo: https://vimeo.com/123")
         self.assertOneProblem("video must be a YouTube link")
 
+    def test_canvas_takes_section_and_area_ids(self) -> None:
+        for value in ("[]", "[audience]", "[research.pains, sales.ctas, systems]"):
+            self.write(BASIC_CARD, (PLUGIN_DIR / BASIC_CARD).read_text().replace("author: Sean Tierney", f"author: Sean Tierney\ncanvas: {value}"))
+            self.assertEqual(lint_content.lint(self.root), [], value)
+
+    def test_canvas_rejects_unknown_ids(self) -> None:
+        self.edit(BASIC_CARD, "author: Sean Tierney", "author: Sean Tierney\ncanvas: [research.pains, research.money]")
+        self.assertOneProblem("canvas id(s) 'research.money' not in")
+
+    def test_canvas_must_be_a_list(self) -> None:
+        self.edit(BASIC_CARD, "author: Sean Tierney", "author: Sean Tierney\ncanvas: audience")
+        self.assertOneProblem("canvas must be a list")
+
+    def test_canvas_rejects_repeats(self) -> None:
+        self.edit(BASIC_CARD, "author: Sean Tierney", "author: Sean Tierney\ncanvas: [audience, audience]")
+        self.assertOneProblem("canvas lists an id more than once")
+
     def test_order_unique_in_stage(self) -> None:
         self.edit(BASIC_CARD, "order: 3", "order: 1")
         self.assertOneProblem("stage 0 has more than one card at order 1")

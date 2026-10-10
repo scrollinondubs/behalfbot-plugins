@@ -5,6 +5,7 @@ track: basic
 stage: 3
 order: 2
 title: Fixstorm it into ten pitches
+canvas: [fixes.product, sales.pitch]
 gate: basic-stage-3-first-product
 submit: [text, file]
 assist: draft

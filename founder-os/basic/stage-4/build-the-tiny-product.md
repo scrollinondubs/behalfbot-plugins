@@ -5,6 +5,7 @@ track: basic
 stage: 4
 order: 1
 title: Plan backwards, then build the tiny product
+canvas: [fixes.product, systems.process, systems.habits]
 gate: basic-stage-4-ship-and-launch
 submit: [file, link, text]
 assist: draft

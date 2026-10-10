@@ -5,6 +5,7 @@ track: basic
 stage: 3
 order: 1
 title: Pick one pain and turn it into a dream
+canvas: [research.pains, sales.pitch]
 gate: basic-stage-3-first-product
 submit: [text]
 assist: draft
