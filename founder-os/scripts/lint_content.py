@@ -102,9 +102,10 @@ POST_REVENUE_DIR = "post-revenue"
 BASIC_CARD_FIELDS = ("id", "type", "track", "stage", "order", "title", "gate", "submit", "sources")
 BASIC_GATE_FIELDS = ("id", "type", "track", "stage", "title", "signoff")
 BASIC_CARD_SECTIONS = ("What this is", "What you make", "How to submit", "Done when", "Coach checks", "Source")
-BASIC_GATE_SECTIONS = ("What this is", "Why you care", "What you get", "Read the original")
-# extension: the app checks the FounderOS Chrome extension (or the founder
-# chooses to go on without it) and passes the card itself, with no review.
+BASIC_GATE_SECTIONS = ("What this is", "Why you care", "What you get", "Inspired by")
+# extension: the founder reads the card and clicks Continue, which the app
+# enables once it detects the FounderOS Chrome extension or the founder chooses
+# to go on without it. The app passes the card itself, with no review.
 BASIC_SUBMIT_VALUES = ("text", "link", "file", "choice", "extension")
 BASIC_DONE_WHEN = range(2, 6)
 BASIC_SKILL_SECTIONS = {
@@ -777,12 +778,12 @@ def check_track_gate(item: Item, spec: TrackSpec, problems: list[str]) -> None:
         problems.append(f"{rel}: stage {stage} but the file name does not start with 'stage-{stage}-'")
     if f.get("signoff") not in (None, "", "coach"):
         problems.append(f"{rel}: a {spec.name} gate has signoff: coach (the stage passes when every card is accepted)")
-    if "Read the original" in headings(item.body):
-        original = section_text(item.body, "Read the original")
-        if spec.course_url and spec.course_url not in original:
-            problems.append(f"{rel}: ## Read the original must link to {spec.course_url}")
-        if not spec.course_url and not URL.search(original):
-            problems.append(f"{rel}: ## Read the original must link to at least one source")
+    if "Inspired by" in headings(item.body):
+        inspired = section_text(item.body, "Inspired by")
+        if spec.course_url and spec.course_url not in inspired:
+            problems.append(f"{rel}: ## Inspired by must link to {spec.course_url}")
+        if not spec.course_url and not URL.search(inspired):
+            problems.append(f"{rel}: ## Inspired by must link to at least one source")
     check_learner_text(rel, "\n".join([str(f.get("title", "")), item.body]), problems)
 
 

@@ -15,6 +15,5 @@ Your first product should be small, written, and something you can make with the
 ## What you get
 One pain turned into a dream, a stack of short pitches, one survivor, and a sign-up page for it.
 
-## Read the original
-This stage is our short version of a chapter of 30x500 by Amy Hoy and Alex Hillman. The course is closed to new students; more about it:
-https://30x500.com
+## Inspired by
+Inspired by [30x500 by Amy Hoy and Alex Hillman](https://30x500.com).

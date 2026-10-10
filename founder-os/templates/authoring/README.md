@@ -123,8 +123,9 @@ real cards are the examples.
   `order` (1 to 3, or 1 to 4 in stage 0), `title`, `gate`, `submit` and `sources`.
 - `submit` is a list drawn from `text`, `link`, `file`, `choice`,
   `extension`. `choices` is present exactly when `submit` includes `choice`.
-  `extension` means the app checks for the FounderOS Chrome extension (or the
-  founder chooses to go on without it) and passes the card itself, with no
+  `extension` means the founder reads the card, then clicks Continue. The app
+  enables Continue once it detects the FounderOS Chrome extension, or the
+  founder chooses to go on without it, and passes the card itself, with no
   review. Only the stage 0 overview uses it.
 - `video` (optional, cards and gates) is a YouTube link: watch, youtu.be,
   shorts or embed. The app shows its thumbnail and plays it in a dialog.
@@ -135,7 +136,7 @@ real cards are the examples.
 - Gates live at `basic/gates/stage-<N>-<slug>.md` with
   `id: basic-stage-<N>-<slug>`, `type: gate`, `track: basic`, `stage`, `title`
   and `signoff: coach`. Sections: What this is, Why you care, What you get,
-  Read the original (with the course link).
+  Inspired by (one line, "Inspired by" plus the course link).
 - Each stage has exactly three cards and one gate, except stage 0, which
   has four: the program overview comes first.
 - No em dash anywhere. Learner text (everything except Coach checks, plus the
@@ -158,7 +159,7 @@ real cards are the examples.
   `track: post-revenue`, gates at `post-revenue/gates/stage-<N>-<slug>.md`
   with `id: post-revenue-stage-<N>-<slug>`.
 - There is no single course. `## Source` ends with the link of one of the
-  sources the card lists, and the gate's `## Read the original` links at
+  sources the card lists, and the gate's `## Inspired by` links at
   least one source.
 
 The track is visible in the app but not startable yet. It has no coach or

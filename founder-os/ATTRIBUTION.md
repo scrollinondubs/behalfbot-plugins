@@ -10,7 +10,7 @@ lists in `sources` must be there, and the lint checks it.
 
 ## Sources in use
 
-| Source | Author(s) | Source id | Cards | Read the original |
+| Source | Author(s) | Source id | Cards | Link |
 |---|---|---|---|---|
 | The Mom Test | Rob Fitzpatrick | `mom-test` | `interviews-without-fooling-yourself` (stage 3), `interviews-without-fooling-yourself`, `earlyvangelists-and-commitment` (stage 3), `interviews-without-fooling-yourself` (stage 3), skill `founder-os-mom-test-auditor` | https://www.momtestbook.com |
 | Lean Customer Development | Cindy Alvarez | `lean-customer-development` | `interviews-without-fooling-yourself` (stage 3), `plan-a-riskiest-assumption` (stage 0), `find-the-watering-holes` (stage 1), `problem-hypothesis-heard-enough` (stage 2) | https://www.cindyalvarez.com/lean-customer-development/ |
@@ -18,7 +18,7 @@ lists in `sources` must be there, and the lint checks it.
 | Running Lean (2nd edition, and the 1st edition as a cross-check) | Ash Maurya | `running-lean`, `running-lean-1st-ed` | `plan-a-riskiest-assumption` (stage 0), `first-bowling-pin` (stage 1), `problem-interview-exit-criteria` (stage 3), `solution-interview-reduce-mvp` (stage 4), `ask-for-money` (stage 7), `sean-ellis-test`, `cohort-dashboard-aarrr` (stage 8) | https://ashmaurya.com/books |
 | Love the problem, not your solution (LEANSTACK blog) | Ash Maurya | `love-the-problem` | `plan-a-riskiest-assumption` (stage 0) | https://blog.leanstack.com/love-the-problem-not-your-solution/ |
 | How great leaders inspire action (TED talk; Start With Why, the golden circle) | Simon Sinek | `start-with-why-talk` | `find-your-why` (stage 0) | https://www.ted.com/talks/simon_sinek_how_great_leaders_inspire_action |
-| 30x500 (Sales Safari, painstorming, watering holes, audience first) | Amy Hoy, Alex Hillman | `thirty-x-500` | `audience-first`, `find-the-watering-holes` (stage 1), `sales-safari-pain-log` (stage 2), `e-bombs`, `pain-dream-fix` (stage 6), skills `founder-os-pain-tagger` (stage 2), `founder-os-pain-dream-fix-checker` (stage 6) | https://30x500.com/academy/ |
+| 30x500 (Sales Safari, painstorming, watering holes, audience first) | Amy Hoy, Alex Hillman | `thirty-x-500` | `audience-first`, `find-the-watering-holes` (stage 1), `sales-safari-pain-log` (stage 2), `e-bombs`, `pain-dream-fix` (stage 6), skills `founder-os-pain-tagger` (stage 2), `founder-os-pain-dream-fix-checker` (stage 6) | https://30x500.com |
 | 30x500 course (Part 1 Read Their Mind, Part 2 Build the Business), paraphrased; every card names the lesson it draws on (page cites stay in the coach-only notes) | Amy Hoy, Alex Hillman | cited in full on each card | every card and stage panel in `basic/` (Basic track, stages 0-4), skills `founder-os-basic-coach`, `founder-os-basic-review` | https://30x500.com |
 | The bowling pin strategy (after Geoffrey Moore, Crossing the Chasm) | Chris Dixon | `bowling-pin-strategy` | `first-bowling-pin` (stage 1) | https://cdixon.org/2010/08/21/the-bowling-pin-strategy |
 | Sales Safari updated for 2023 (Stacking the Bricks) | Amy Hoy, Alex Hillman | `sales-safari-2023` | `sales-safari-pain-log` (stage 2) | https://shorts.stackingthebricks.com/updating-sales-safari-2023/ |
