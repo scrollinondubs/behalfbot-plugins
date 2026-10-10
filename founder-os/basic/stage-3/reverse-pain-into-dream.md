@@ -8,7 +8,7 @@ title: Pick one pain and turn it into a dream
 gate: basic-stage-3-first-product
 submit: [text]
 assist: draft
-sources: ["thirty-x-500, pp 76-77, 130-148"]
+sources: ["thirty-x-500, Reversing pain into dreams"]
 author: Sean Tierney
 ---
 ## What this is
@@ -37,4 +37,4 @@ Write it yourself in the box, or press "Draft V1 for me" for a first version bui
 - Three people is a FounderOS number. The course wants a pattern across many posters (pp 76-77).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 76-77, 130-148. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Reversing pain into dreams. The course is closed to new students; more about it: https://30x500.com

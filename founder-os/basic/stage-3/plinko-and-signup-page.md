@@ -9,7 +9,7 @@ gate: basic-stage-3-first-product
 submit: [text, file, link, choice]
 assist: analyse
 choices: [Written guide, Email course, Cheat sheet or template, Workshop or video, Other]
-sources: ["thirty-x-500, pp 176-187, 203"]
+sources: ["thirty-x-500, Product plinko"]
 author: Sean Tierney
 ---
 ## What this is
@@ -38,4 +38,4 @@ Fill in the pass or fail for each pitch yourself, or press "Analyse my pitches" 
 - If they pick Other, ask what the format is and check it against the same rules.
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 176-187, 203. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Product plinko. The course is closed to new students; more about it: https://30x500.com

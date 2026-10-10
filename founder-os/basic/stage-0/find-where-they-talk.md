@@ -3,11 +3,11 @@ id: basic-find-where-they-talk
 type: card
 track: basic
 stage: 0
-order: 2
+order: 3
 title: Find where they talk
 gate: basic-stage-0-people
 submit: [text]
-sources: ["thirty-x-500, pp 39, 56-59, 82"]
+sources: ["thirty-x-500, Finding watering holes"]
 author: Sean Tierney
 ---
 ## What this is
@@ -33,4 +33,4 @@ Write your list with links in the box, and add the search words you used.
 - Three watering holes is a FounderOS number. The course only says one is probably not enough (p 82).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, Watering holes. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Finding watering holes. The course is closed to new students; more about it: https://30x500.com

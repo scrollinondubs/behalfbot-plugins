@@ -7,7 +7,7 @@ order: 3
 title: Mine Safari gold, then list five e-bomb ideas
 gate: basic-stage-1-sales-safari
 submit: [file, link]
-sources: ["thirty-x-500, pp 65-66, 83-99"]
+sources: ["thirty-x-500, Mining Safari gold"]
 author: Sean Tierney
 ---
 ## What this is
@@ -35,4 +35,4 @@ Upload your notes or share a link to them.
 - Three threads is a FounderOS number. The course asks for more than one thread and more than one watering hole (pp 82, 88).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 65-66, 83-99. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Mining Safari gold. The course is closed to new students; more about it: https://30x500.com

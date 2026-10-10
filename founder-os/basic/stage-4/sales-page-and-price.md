@@ -8,7 +8,7 @@ title: Write the sales page and set the price
 gate: basic-stage-4-ship-and-launch
 submit: [text, link]
 assist: draft
-sources: ["thirty-x-500, pp 133-134, 185, 188-193, 216-219"]
+sources: ["thirty-x-500, Sales pages and pricing"]
 author: Sean Tierney
 ---
 ## What this is
@@ -36,4 +36,4 @@ Write your page copy yourself, or press "Draft V1 for me" for a v1 written from 
 - One price only leaves money and anchoring on the table (pp 218-219). A tier can be as simple as the guide alone, the guide plus extras, and the complete package; even a two-sentence group licence counts (pp 217-219).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 133-134, 185, 188-193, 216-219. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Sales pages and pricing. The course is closed to new students; more about it: https://30x500.com

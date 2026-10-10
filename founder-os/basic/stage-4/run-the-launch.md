@@ -8,7 +8,7 @@ title: Run the launch, then plan the next one
 gate: basic-stage-4-ship-and-launch
 submit: [file, link, text]
 assist: draft
-sources: ["thirty-x-500, pp 121-122, 209-215, 220-234"]
+sources: ["thirty-x-500, Launching"]
 author: Sean Tierney
 ---
 ## What this is
@@ -39,4 +39,4 @@ Write your launch emails yourself, or press "Draft V1 for me" for a first set bu
 - One sale to a stranger is a FounderOS number. Sales beyond that are their own worth-it number, not ours.
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 121-122, 209-215, 220-234. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Launching. The course is closed to new students; more about it: https://30x500.com
