@@ -429,7 +429,7 @@ class BasicTrackLintTest(LintContentTest):
         self.assertTrue(any("duplicate id 'basic-find-where-they-talk'" in p for p in problems), problems)
 
     def test_missing_required_field(self) -> None:
-        self.edit(BASIC_CARD, "order: 2\n", "")
+        self.edit(BASIC_CARD, "order: 3\n", "")
         self.assertOneProblem("missing required frontmatter field 'order'")
 
     def test_stage_out_of_range(self) -> None:
@@ -444,10 +444,32 @@ class BasicTrackLintTest(LintContentTest):
 
     def test_three_cards_per_stage(self) -> None:
         (self.root / BASIC_CARD).unlink()
-        self.assertOneProblem("basic: stage 0 needs 3 cards, found 2")
+        self.assertOneProblem("basic: stage 0 needs 4 cards, found 3")
+
+    def test_three_cards_after_stage_0(self) -> None:
+        (self.root / "basic/stage-1/find-the-themes.md").unlink()
+        self.assertOneProblem("basic: stage 1 needs 3 cards, found 2")
+
+    def test_source_names_a_lesson_not_pages(self) -> None:
+        self.edit(BASIC_CARD, '"thirty-x-500, Finding watering holes"', '"thirty-x-500, pp 39, 56-59"')
+        self.assertOneProblem("cites pages; name the lesson instead")
+
+    def test_extension_is_a_submit_value(self) -> None:
+        self.edit(BASIC_CARD, "submit: [text]", "submit: [extension]")
+        self.assertEqual(lint_content.lint(self.root), [])
+
+    def test_video_takes_youtube_links(self) -> None:
+        for url in ("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ",
+                    "https://www.youtube.com/shorts/dQw4w9WgXcQ", "https://www.youtube.com/embed/dQw4w9WgXcQ"):
+            self.write(BASIC_GATE, (PLUGIN_DIR / BASIC_GATE).read_text().replace("signoff: coach", f"signoff: coach\nvideo: {url}"))
+            self.assertEqual(lint_content.lint(self.root), [], url)
+
+    def test_video_rejects_other_links(self) -> None:
+        self.edit(BASIC_CARD, "author: Sean Tierney", "author: Sean Tierney\nvideo: https://vimeo.com/123")
+        self.assertOneProblem("video must be a YouTube link")
 
     def test_order_unique_in_stage(self) -> None:
-        self.edit(BASIC_CARD, "order: 2", "order: 1")
+        self.edit(BASIC_CARD, "order: 3", "order: 1")
         self.assertOneProblem("stage 0 has more than one card at order 1")
 
     def test_gate_per_stage(self) -> None:
@@ -494,11 +516,11 @@ class BasicTrackLintTest(LintContentTest):
         self.assertOneProblem("## Done when has 1 bullet(s); it needs 2 to 5")
 
     def test_source_links_the_course(self) -> None:
-        self.edit(BASIC_CARD, " Want the full version? Take the course: https://stackingthebricks.com/30x500/", "")
+        self.edit(BASIC_CARD, " The course is closed to new students; more about it: https://30x500.com", "")
         self.assertOneProblem("## Source must end with the link to the course")
 
     def test_gate_links_the_course(self) -> None:
-        self.edit(BASIC_GATE, "\nhttps://stackingthebricks.com/30x500/", "")
+        self.edit(BASIC_GATE, "\nhttps://30x500.com", "")
         self.assertOneProblem("## Read the original must link to")
 
     def test_em_dash(self) -> None:
@@ -598,10 +620,13 @@ class BasicContentLoaderTest(unittest.TestCase):
         content = Content(PLUGIN_DIR, include_contrib=False)
         for stage in range(5):
             cards = content.basic_cards(stage)
-            self.assertEqual([c.fields["order"] for c in cards], ["1", "2", "3"])
+            want = ["1", "2", "3", "4"] if stage == 0 else ["1", "2", "3"]
+            self.assertEqual([c.fields["order"] for c in cards], want)
             self.assertTrue(all(c.fields["gate"] == content.basic_gate(stage).id for c in cards))
         first = content.basic_cards(0)[0]
-        self.assertEqual(first.fields["sources"], ["thirty-x-500, pp 5-9, 30, 38-43"])
+        self.assertEqual(first.id, "basic-overview-of-the-program")
+        self.assertEqual(first.fields["submit"], ["extension"])
+        self.assertEqual(first.fields["sources"], ["thirty-x-500, Introduction"])
         self.assertEqual(content.basic_gate(0).id, "basic-stage-0-people")
         with self.assertRaises(LookupError):
             content.basic_gate(5)

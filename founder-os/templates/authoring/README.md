@@ -115,29 +115,38 @@ split it into two notes and link them.
 
 ## Basic track
 
-`basic/` has its own, smaller format. There is no template file: the fifteen
+`basic/` has its own, smaller format. There is no template file: the sixteen
 real cards are the examples.
 
 - Cards live at `basic/stage-<N>/<slug>.md` with `id: basic-<slug>`,
   `type: card`, `track: basic`, `stage` (0 to 4, matching the directory),
-  `order` (1 to 3), `title`, `gate`, `submit` and `sources`.
-- `submit` is a list drawn from `text`, `link`, `file`, `choice`. `choices`
-  is present exactly when `submit` includes `choice`.
+  `order` (1 to 3, or 1 to 4 in stage 0), `title`, `gate`, `submit` and `sources`.
+- `submit` is a list drawn from `text`, `link`, `file`, `choice`,
+  `extension`. `choices` is present exactly when `submit` includes `choice`.
+  `extension` means the app checks for the FounderOS Chrome extension (or the
+  founder chooses to go on without it) and passes the card itself, with no
+  review. Only the stage 0 overview uses it.
+- `video` (optional, cards and gates) is a YouTube link: watch, youtu.be,
+  shorts or embed. The app shows its thumbnail and plays it in a dialog.
+  Admins set it inline on VCL and it comes back in the weekly sync PR.
 - Sections: What this is, What you make, How to submit, Done when (2 to 5
   bullets), Coach checks, Source. Source ends with
-  https://stackingthebricks.com/30x500/.
+  https://30x500.com.
 - Gates live at `basic/gates/stage-<N>-<slug>.md` with
   `id: basic-stage-<N>-<slug>`, `type: gate`, `track: basic`, `stage`, `title`
   and `signoff: coach`. Sections: What this is, Why you care, What you get,
   Read the original (with the course link).
-- Each stage has exactly three cards and one gate.
+- Each stage has exactly three cards and one gate, except stage 0, which
+  has four: the program overview comes first.
 - No em dash anywhere. Learner text (everything except Coach checks, plus the
   title and choices) has no backticks, no snake_case ids, and none of the
   words row, kind, artifact, ledger, meta.
-- A quoted list item keeps its commas: `sources: ["thirty-x-500, pp 38-43"]`
-  is one source. Everything before the first comma is an id in
-  [`../../sources.json`](../../sources.json); the rest is a locator such as
-  page numbers.
+- A quoted list item keeps its commas:
+  `sources: ["thirty-x-500, Choosing your audience"]` is one source.
+  Everything before the first comma is an id in
+  [`../../sources.json`](../../sources.json); the rest names the lesson. The
+  app shows it as "30x500 - Choosing your audience". Never page numbers:
+  learners do not have the book. Page cites stay in Coach checks.
 
 ## Post-revenue track
 

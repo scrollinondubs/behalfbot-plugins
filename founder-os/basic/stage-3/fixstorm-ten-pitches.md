@@ -8,7 +8,7 @@ title: Fixstorm it into ten pitches
 gate: basic-stage-3-first-product
 submit: [text, file]
 assist: draft
-sources: ["thirty-x-500, pp 149-176"]
+sources: ["thirty-x-500, Fixstorming"]
 author: Sean Tierney
 ---
 ## What this is
@@ -37,4 +37,4 @@ Write it yourself in the box, or press "Draft V1 for me" for a first version bui
 - Ten pitches is the course's own number: ten in an hour (p 174).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 149-176. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Fixstorming. The course is closed to new students; more about it: https://30x500.com

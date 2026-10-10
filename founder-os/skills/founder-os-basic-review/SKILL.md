@@ -89,4 +89,4 @@ A full reply, for that card:
 
 Amy Hoy and Alex Hillman, 30x500. FounderOS paraphrases the course and cites
 its pages on each card; it is not a substitute. The full course:
-https://stackingthebricks.com/30x500/
+https://30x500.com

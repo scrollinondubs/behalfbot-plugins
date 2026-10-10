@@ -3,12 +3,12 @@ id: basic-choose-your-audience
 type: card
 track: basic
 stage: 0
-order: 1
+order: 2
 title: Choose an audience you already belong to
 gate: basic-stage-0-people
 submit: [text, choice]
 choices: [Peers, Newcomers, Clients]
-sources: ["thirty-x-500, pp 5-9, 30, 38-43"]
+sources: ["thirty-x-500, Choosing your audience"]
 author: Sean Tierney
 ---
 ## What this is
@@ -34,4 +34,4 @@ Write your descriptive paragraph in the box and choose the audience category.
 - A founder who arrived with an app does not get to pick the audience that fits the app. Park it first (pp 9, 32-33, 127).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, Audience selection. Want the full version? Take their course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Choosing your audience. The course is closed to new students; more about it: https://30x500.com

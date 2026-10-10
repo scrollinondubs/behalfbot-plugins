@@ -7,7 +7,7 @@ order: 2
 title: Zoom out, find the themes, save threads
 gate: basic-stage-1-sales-safari
 submit: [file, link]
-sources: ["thirty-x-500, pp 73-82"]
+sources: ["thirty-x-500, Sales Safari"]
 author: Sean Tierney
 ---
 ## What this is
@@ -36,4 +36,4 @@ Upload your notes or share a link to them, with your saved thread links listed.
 - Ten threads is a FounderOS number. One search word found the course's demo twenty-plus (p 81).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 73-82. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Sales Safari. The course is closed to new students; more about it: https://30x500.com

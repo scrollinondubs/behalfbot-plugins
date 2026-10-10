@@ -26,9 +26,12 @@ and checks:
     cards in evals/seed-cards.txt (promotion into core is eval-gated)
   - every concept note is linked from somewhere, so none sits unused
   - the Basic track under basic/ (when present): five stages 0-4, three cards
-    and one gate per stage, ids prefixed basic-, known submit values, choices
+    per stage (four in stage 0, which opens with the program overview) and
+    one gate per stage, ids prefixed basic-, known submit values, choices
     exactly when submit has choice, the required sections, a link to the
     course, no em dash, and no database words in learner text
+  - a card source names a lesson, never page numbers, and an optional
+    video: on a Basic or Post-revenue card or gate is a YouTube link
   - the Post-revenue track under post-revenue/ (when present): the same
     format over seven stages 0-6, three cards per stage and five in the
     last, with each Source ending in the link of a source the card lists
@@ -100,19 +103,30 @@ BASIC_CARD_FIELDS = ("id", "type", "track", "stage", "order", "title", "gate", "
 BASIC_GATE_FIELDS = ("id", "type", "track", "stage", "title", "signoff")
 BASIC_CARD_SECTIONS = ("What this is", "What you make", "How to submit", "Done when", "Coach checks", "Source")
 BASIC_GATE_SECTIONS = ("What this is", "Why you care", "What you get", "Read the original")
-BASIC_SUBMIT_VALUES = ("text", "link", "file", "choice")
+# extension: the app checks the FounderOS Chrome extension (or the founder
+# chooses to go on without it) and passes the card itself, with no review.
+BASIC_SUBMIT_VALUES = ("text", "link", "file", "choice", "extension")
 BASIC_DONE_WHEN = range(2, 6)
 BASIC_SKILL_SECTIONS = {
     "coach": ("Read first", "Current stage only", "How to coach", "Never do the work"),
     "review": ("Input", "How to review", "Reply", "Verdict"),
 }
 BASIC_VERDICT_FENCE = "```founderos-verdict"
-COURSE_URL = "https://stackingthebricks.com/30x500/"
+COURSE_URL = "https://30x500.com"
 EM_DASH = "\u2014"
 COACH_ONLY = "Coach checks"
 LEARNER_BANNED = re.compile(r"\b(rows?|kinds?|artifacts?|ledgers?|meta)\b", re.IGNORECASE)
 SNAKE_CASE = re.compile(r"\b[a-z0-9]+_[a-z0-9_]+\b")
 URL = re.compile(r"https?://\S+")
+# Learners do not have the book, so a source names the lesson ("thirty-x-500,
+# Choosing your audience"), never pages.
+PAGE_LOCATOR = re.compile(r"(^|[\s,])(pp?\.?|pages?)\s*\d", re.IGNORECASE)
+# The four forms of a YouTube link the app accepts for video:, each with the
+# 11-character video id.
+YOUTUBE_URL = re.compile(
+    r"https?://(?:(?:www\.|m\.)?youtube\.com/(?:watch\?(?:\S*&)?v=|shorts/|embed/)|youtu\.be/)"
+    r"[A-Za-z0-9_-]{11}(?:[?&#]\S*)?"
+)
 
 REGISTRY_FILE = "sources.json"
 REGISTRY_FIELDS = ("id", "title", "author", "url", "kind")
@@ -601,7 +615,7 @@ class TrackSpec:
 # basic/ ends every Source with the 30x500 course link. post-revenue/ draws on
 # many sources, so its Source ends with the link of one it lists.
 TRACKS = (
-    TrackSpec("basic", BASIC_DIR, BASIC_STAGES, {}, COURSE_URL),
+    TrackSpec("basic", BASIC_DIR, BASIC_STAGES, {0: 4}, COURSE_URL),
     TrackSpec("post-revenue", POST_REVENUE_DIR, range(0, 7), {6: 5}, None),
 )
 
@@ -721,6 +735,12 @@ def check_track_card(item: Item, spec: TrackSpec, gate_stage: dict[str, int | No
     if "sources" in f and not isinstance(sources, list):
         problems.append(f"{rel}: sources must be a list")
         sources = []
+    for entry in sources or []:
+        locator = str(entry).split(",", 1)[1].strip() if "," in str(entry) else ""
+        if PAGE_LOCATOR.search(locator):
+            problems.append(f"{rel}: source {entry!r} cites pages; name the lesson instead, "
+                            "e.g. \"thirty-x-500, Choosing your audience\"")
+    check_video(item, problems)
 
     done = [ln for ln in section_text(item.body, "Done when").splitlines() if ln.startswith("- ")]
     if "Done when" in headings(item.body) and len(done) not in BASIC_DONE_WHEN:
@@ -740,8 +760,18 @@ def check_track_card(item: Item, spec: TrackSpec, gate_stage: dict[str, int | No
     check_learner_text(rel, learner, problems)
 
 
+def check_video(item: Item, problems: list[str]) -> None:
+    """video: is optional; when present it is one YouTube link."""
+    if "video" not in item.fields:
+        return
+    video = item.fields["video"]
+    if not isinstance(video, str) or not YOUTUBE_URL.fullmatch(video):
+        problems.append(f"{item.rel}: video must be a YouTube link (watch, youtu.be, shorts or embed), got {video!r}")
+
+
 def check_track_gate(item: Item, spec: TrackSpec, problems: list[str]) -> None:
     f, rel = item.fields, item.rel
+    check_video(item, problems)
     stage = check_track_common(item, spec, BASIC_GATE_FIELDS, BASIC_GATE_SECTIONS, problems)
     if stage is not None and not item.path.stem.startswith(f"stage-{stage}-"):
         problems.append(f"{rel}: stage {stage} but the file name does not start with 'stage-{stage}-'")

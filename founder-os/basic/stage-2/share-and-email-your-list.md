@@ -7,7 +7,7 @@ order: 3
 title: Share without being a jerk, and email your list
 gate: basic-stage-2-ebombs
 submit: [link, text, file]
-sources: ["thirty-x-500, pp 100-120"]
+sources: ["thirty-x-500, Sharing and your mailing list"]
 author: Sean Tierney
 ---
 ## What this is
@@ -36,4 +36,4 @@ Share links to your first 5 comments and posts, and paste your sent email in the
 - A link to the e-bomb is fine after a real answer. A comment that is mostly the link fails the living room test (pp 101, 109-110).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 100-120. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Sharing and your mailing list. The course is closed to new students; more about it: https://30x500.com

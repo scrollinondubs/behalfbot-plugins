@@ -7,7 +7,7 @@ order: 2
 title: Write and publish five e-bombs
 gate: basic-stage-2-ebombs
 submit: [link, text]
-sources: ["thirty-x-500, pp 60-72, 83-99"]
+sources: ["thirty-x-500, Education bombs"]
 author: Sean Tierney
 ---
 ## What this is
@@ -35,4 +35,4 @@ Share the link to each e-bomb, and note the quote or theme each one came from.
 - Five e-bombs is a FounderOS number. The course gives no count before a product. It does say a library matters before pitching gatekeepers (p 113) and that people need many exposures before they buy (p 62).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, pp 60-72, 83-99. Want the full version? Take the course: https://stackingthebricks.com/30x500/
+Amy Hoy and Alex Hillman, 30x500, Education bombs. The course is closed to new students; more about it: https://30x500.com
