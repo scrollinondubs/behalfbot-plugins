@@ -12,6 +12,9 @@ assist: analyse
 choices: [Written guide, Email course, Cheat sheet or template, Workshop or video, Other]
 sources: ["thirty-x-500, Product plinko"]
 author: Sean Tierney
+requires: [basic-fixstorm-ten-pitches, basic-set-up-your-home-base]
+teaches: [product-plinko, landing-pages]
+produces: [product-choice, signup-page]
 ---
 ## What this is
 Every pitch has to pass your own limits first: can you build it, launch it and keep it running with the skills, time and money you have today, will it fit your life and feel satisfying, and does it do no harm. Then your customer's: is the format familiar to them, do they already buy things like it at prices like it, and do they believe something like it can help. Run the checks yourself, or let us run them on every pitch and say which survive and why; then you agree or argue with any call. What survives should be tiny, and your pitch lines are enough for a "coming soon" page with a signup box.

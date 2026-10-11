@@ -10,6 +10,9 @@ gate: basic-stage-0-people
 submit: [text]
 sources: ["thirty-x-500, Finding watering holes"]
 author: Sean Tierney
+requires: [basic-choose-your-audience]
+teaches: [watering-holes, audience-jargon]
+produces: [watering-hole-list]
 ---
 ## What this is
 The places your audience gathers online are what the 30x500 method calls watering holes: forums, groups, subreddits, mailing lists. People write things there late at night that they would never say to your face, so this is where you listen. You find them by pairing what the audience calls itself, the tools and jargon it uses, and venue words like forum or group. If nothing turns up, look for your group inside a bigger community.

@@ -10,6 +10,7 @@ gate: basic-stage-0-people
 submit: [extension]
 sources: ["thirty-x-500, Introduction"]
 author: Sean Tierney
+teaches: [audience-first]
 ---
 ## What this is
 Most founders start with an idea. They build it, launch it, and hear crickets. Then comes the slog: customer development, pivots, chasing product-market fit, rebuilding, launching again. Lots of good builders never make it out of that loop.

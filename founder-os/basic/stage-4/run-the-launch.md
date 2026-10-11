@@ -11,6 +11,9 @@ submit: [file, link, text]
 assist: draft
 sources: ["thirty-x-500, Launching"]
 author: Sean Tierney
+requires: [basic-sales-page-and-price, basic-share-and-email-your-list]
+teaches: [launch-planning, email-marketing]
+produces: [launch-emails, launch-results]
 ---
 ## What this is
 A launch is a dinner party: a date and time, an RSVP deadline, reminders, and an end. Send three to seven emails that each help on their own and build toward a yes or no, then open the doors with a clear closing time. Decide ahead how many sales would make it worth it, and afterwards celebrate, look back honestly, and go back to Safari and e-bombs.

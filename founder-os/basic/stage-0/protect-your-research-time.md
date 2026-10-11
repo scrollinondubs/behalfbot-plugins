@@ -10,6 +10,9 @@ gate: basic-stage-0-people
 submit: [text]
 sources: ["thirty-x-500, Staying motivated", sliding-doors]
 author: Sean Tierney
+requires: [basic-overview-of-the-program]
+teaches: [founder-motivation]
+produces: [sliding-doors-vision]
 ---
 ## What this is
 Before embarking on a journey to build something that involves protracted effort over many days, you need to fuel up your emotional fuel tank for the inevitable grind that's ahead. The best way to do this is via an exercise called "Sliding Doors" (reference to the Gwyneth Paltrow movie).

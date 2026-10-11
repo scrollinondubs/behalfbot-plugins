@@ -10,6 +10,9 @@ gate: basic-stage-1-sales-safari
 submit: [file, link]
 sources: ["thirty-x-500, Sales Safari"]
 author: Sean Tierney
+requires: [basic-find-where-they-talk]
+teaches: [sales-safari, theme-clustering]
+produces: [theme-list, saved-threads]
 ---
 ## What this is
 You cannot read the whole internet, so survey one watering hole from the top. Read only the topic titles on the first two pages, collect the words and questions people keep using, and group them into themes in whatever way makes sense to you. Then search the place for those words and save every thread that looks even a little promising, without reading it yet.

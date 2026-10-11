@@ -10,6 +10,9 @@ gate: basic-stage-1-sales-safari
 submit: [file, link]
 sources: ["thirty-x-500, Painstorming"]
 author: Sean Tierney
+requires: [basic-find-where-they-talk]
+teaches: [sales-safari, painstorming]
+produces: [safari-notes]
 ---
 ## What this is
 Painstorming means reading one discussion thread slowly, top to bottom, replies included, and writing down what hurts. Read like a researcher asking what you can learn about this person's problem, not like a helper deciding what advice to give. Highlight each quote to capture it with the FounderOS Chrome extension, then write in your own words what it tells you about the person's situation and feelings.

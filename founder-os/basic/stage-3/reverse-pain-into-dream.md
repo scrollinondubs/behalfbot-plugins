@@ -11,6 +11,9 @@ submit: [text]
 assist: draft
 sources: ["thirty-x-500, Reversing pain into dreams"]
 author: Sean Tierney
+requires: [basic-mine-safari-gold]
+teaches: [pain-dream-fix]
+produces: [dream-statement]
 ---
 ## What this is
 A pitch has three acts: pain, dream, fix. You get the dream straight from the pain in three steps: make the pain crispy with details from your Safari notes, negate it, then obliterate it by describing a world where the pain never existed, in positive words only. Words like "without" and "no more" keep the pain in the reader's head, so leave them out. It feels cheesy at first, and that is fine.

@@ -11,6 +11,9 @@ submit: [text, choice]
 choices: [Peers, Newcomers, Clients]
 sources: ["thirty-x-500, Choosing your audience"]
 author: Sean Tierney
+requires: [basic-overview-of-the-program]
+teaches: [audience-selection]
+produces: [audience-statement]
 ---
 ## What this is
 Products emerge from solving people's needs. We first need to choose the audience that we intend to serve. 30x500 is an amazing framework for deeply understanding an audience, communicating with them and eventually crafting a product that addresses their pains with the ultimate goal of launching a product you know will sell on day one. It all starts with choosing an audience however so this first step is where you begin. If you've already vibecoded a product set that aside for now and think about the people you want to serve.

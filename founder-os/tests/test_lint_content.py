@@ -68,6 +68,16 @@ class LintContentTest(unittest.TestCase):
         self.assertEqual(len(problems), 1, problems)
         self.assertIn(needle, problems[0])
 
+    def assertProblemWithFallout(self, needle: str, fallout: str) -> None:
+        """Exactly one problem matches needle; any others are the knock-on
+        effect on cards whose requires point at the broken card."""
+        problems = lint_content.lint(self.root)
+        main = [p for p in problems if needle in p]
+        self.assertEqual(len(main), 1, problems)
+        for p in problems:
+            if p not in main:
+                self.assertIn(fallout, p, problems)
+
     def test_examples_pass(self) -> None:
         self.assertEqual(lint_content.lint(self.root), [])
 
@@ -416,11 +426,12 @@ class BasicTrackLintTest(LintContentTest):
 
     def test_card_id_needs_basic_prefix(self) -> None:
         self.edit(BASIC_CARD, "id: basic-find-where-they-talk", "id: find-where-they-talk")
-        self.assertOneProblem("must start with 'basic-'")
+        self.assertProblemWithFallout("must start with 'basic-'", "requires names unknown card(s) 'basic-find-where-they-talk'")
 
     def test_card_id_matches_file(self) -> None:
         self.edit(BASIC_CARD, "id: basic-find-where-they-talk", "id: basic-find-them")
-        self.assertOneProblem("must be 'basic-find-where-they-talk'")
+        self.assertProblemWithFallout("must be 'basic-find-where-they-talk'",
+                                      "requires names unknown card(s) 'basic-find-where-they-talk'")
 
     def test_card_id_unique_across_plugin(self) -> None:
         text = (self.root / BASIC_CARD).read_text(encoding="utf-8")
@@ -445,11 +456,13 @@ class BasicTrackLintTest(LintContentTest):
 
     def test_three_cards_per_stage(self) -> None:
         (self.root / BASIC_CARD).unlink()
-        self.assertOneProblem("basic: stage 0 needs 4 cards, found 3")
+        self.assertProblemWithFallout("basic: stage 0 needs 4 cards, found 3",
+                                      "requires names unknown card(s) 'basic-find-where-they-talk'")
 
     def test_three_cards_after_stage_0(self) -> None:
         (self.root / "basic/stage-1/find-the-themes.md").unlink()
-        self.assertOneProblem("basic: stage 1 needs 3 cards, found 2")
+        self.assertProblemWithFallout("basic: stage 1 needs 3 cards, found 2",
+                                      "requires names unknown card(s) 'basic-find-the-themes'")
 
     def test_source_names_a_lesson_not_pages(self) -> None:
         self.edit(BASIC_CARD, '"thirty-x-500, Finding watering holes"', '"thirty-x-500, pp 39, 56-59"')
@@ -507,7 +520,7 @@ class BasicTrackLintTest(LintContentTest):
 
     def test_order_unique_in_stage(self) -> None:
         self.edit(BASIC_CARD, "order: 3", "order: 1")
-        self.assertOneProblem("stage 0 has more than one card at order 1")
+        self.assertProblemWithFallout("stage 0 has more than one card at order 1", "does not come before this card")
 
     def test_gate_per_stage(self) -> None:
         (self.root / "basic/gates/stage-4-ship-and-launch.md").unlink()
@@ -760,6 +773,33 @@ class PostRevenueTrackLintTest(LintContentTest):
     def test_path_fields_are_lists(self) -> None:
         self.edit(PR_CARD, "teaches: [funnel-mapping]", "teaches: funnel-mapping")
         self.assertOneProblem("teaches must be a list")
+
+    def test_requires_must_point_backward(self) -> None:
+        self.edit("post-revenue/stage-0/intro-to-lifecycle-marketing.md", "author: Sean Tierney\n",
+                  "author: Sean Tierney\nrequires: [post-revenue-find-the-leak]\n")
+        self.assertProblemWithFallout("requires 'post-revenue-find-the-leak' (stage 1, order 1), which does not come before",
+                                      "requires forms a cycle")
+
+    def test_requires_within_a_stage_follows_order(self) -> None:
+        self.edit(PR_CARD, "requires: [post-revenue-intro-to-lifecycle-marketing,",
+                  "requires: [post-revenue-intro-to-lifecycle-marketing, post-revenue-map-your-funnel,")
+        problems = lint_content.lint(self.root)
+        self.assertTrue(any("does not come before this card (stage 0, order 3)" in p for p in problems), problems)
+        self.assertTrue(any("requires forms a cycle" in p for p in problems), problems)
+
+    def test_requires_stays_in_its_track(self) -> None:
+        self.edit(PR_CARD, "requires: [post-revenue-intro-to-lifecycle-marketing,",
+                  "requires: [basic-choose-your-audience, post-revenue-intro-to-lifecycle-marketing,")
+        self.assertOneProblem("requires 'basic-choose-your-audience' from the basic track")
+
+    def test_requires_cycle_outside_a_track(self) -> None:
+        text = self.card_copy_text()
+        for ident, other in (("loop-a", "loop-b"), ("loop-b", "loop-a")):
+            card = text.replace("id: map-the-watering-holes", f"id: {ident}")
+            card = card.replace("gate: stage-1-audience\n", "").replace("tier: core", "tier: contrib")
+            card = card.replace("\n---\n", f"\nrequires: [{other}]\n---\n", 1)
+            self.write(f"contrib/{ident}.md", card)
+        self.assertOneProblem("requires forms a cycle: loop-a -> loop-b -> loop-a")
 
     def test_path_fields_are_optional(self) -> None:
         for field in ("author: Sean Tierney\n", "teaches: [funnel-mapping]\n", "produces: [funnel-map]\n"):
