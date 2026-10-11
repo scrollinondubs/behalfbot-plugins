@@ -753,7 +753,7 @@ class PostRevenueTrackLintTest(LintContentTest):
     def test_registry_kind(self) -> None:
         self.registry["sources"][0]["kind"] = "podcast"
         self.save_registry()
-        self.assertOneProblem("kind 'podcast' must be one of book, course, article, tool")
+        self.assertOneProblem("kind 'podcast' must be one of book, course, article, tool, video")
 
     def test_registry_duplicate_id(self) -> None:
         self.registry["sources"].append(dict(self.registry["sources"][0]))

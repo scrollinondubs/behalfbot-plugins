@@ -167,7 +167,7 @@ MAP_IDS = {
 
 REGISTRY_FILE = "sources.json"
 REGISTRY_FIELDS = ("id", "title", "author", "url", "kind")
-REGISTRY_KINDS = ("book", "course", "article", "tool")
+REGISTRY_KINDS = ("book", "course", "article", "tool", "video")
 # Optional card fields for a future intake and path compiler. author is a
 # string; the rest are inline lists. requires names other cards' ids.
 PATH_LIST_FIELDS = ("requires", "teaches", "fits_when", "produces")

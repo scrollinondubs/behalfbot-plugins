@@ -66,7 +66,7 @@ lists in `sources` must be there, and the lint checks it.
 | Business Model Generation (the Business Model Canvas) | Alexander Osterwalder, Yves Pigneur | `business-model-generation` | post-revenue `business-model-canvas` | https://www.strategyzer.com/library/business-model-generation |
 | 12 things I learned from pitching VCs this past week | Sean Tierney | `lessons-from-vc-pitches` | post-revenue `everything-i-know-about-fundraising` (with `yc-seed-guide`, `pg-how-to-raise-money`, `angel`) | https://scrollinondubs.com/2007/12/12/lessons-from-vc-pitches/ |
 | Traction, Lean Analytics, The Startup Owner's Manual, Sean Ellis (rows above) | | | also post-revenue `find-the-leak`, `analytics-and-instrumentation` | |
-| Sliding Doors exercise | Vibecode Lisboa | `sliding-doors` | basic `protect-your-research-time` | https://vibecodelisboa.com/founder-os |
+| Sliding Doors exercise (Nomad Prep, Day 1 Lesson 2) | Nomad Podcast (YouTube) | `sliding-doors` | basic `protect-your-research-time` | https://www.youtube.com/watch?v=SHET7Uuzovk |
 
 ## Sources not cited by a card yet
 
