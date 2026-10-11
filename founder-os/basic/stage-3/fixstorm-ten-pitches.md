@@ -11,6 +11,9 @@ submit: [text, file]
 assist: draft
 sources: ["thirty-x-500, Fixstorming"]
 author: Sean Tierney
+requires: [basic-reverse-pain-into-dream]
+teaches: [fixstorming, pain-dream-fix]
+produces: [pitches]
 ---
 ## What this is
 A fix is any bridge from pain to dream. First question the pain on eight points: its parts, its causes, the different versions of it, and the knowledge, skills, tools, mistakes and beliefs behind it. Then brainstorm fixes with six methods (educate, equip, support, access, outsource, eliminate), choosing formats last because format matters least. Finally line each idea up as three short lines: pain, dream, fix.

@@ -41,7 +41,10 @@ and checks:
   - when the root has sources.json, every registry entry is well formed and
     every card source (core, basic, post-revenue) names an entry in it
   - the optional path fields (author, requires, teaches, fits_when,
-    produces) are well formed, and requires names cards that exist
+    produces) are well formed, requires names cards that exist, the
+    requires graph has no cycle, and on a Basic-format track every requires
+    edge points to an earlier card of the same track by (stage, order), so
+    today's linear order stays a valid path
   - Basic skills (type: basic-skill) say their role, and a review skill ends
     in a founderos-verdict block
 
@@ -967,6 +970,70 @@ def check_path_fields(cards: list[Item], problems: list[str]) -> None:
                 unknown = [v for v in value if ID_SHAPE.match(v) and v not in ids]
                 if unknown:
                     problems.append(f"{rel}: requires names unknown card(s) {', '.join(map(repr, unknown))}")
+    check_requires_order(cards, problems)
+    check_requires_cycles(cards, problems)
+
+
+def track_position(card: Item) -> tuple[str, int, int] | None:
+    """(track, stage, order) for a Basic-format track card, None otherwise."""
+    f = card.fields
+    try:
+        return str(f["track"]), int(str(f["stage"])), int(str(f["order"]))
+    except (KeyError, ValueError):
+        return None
+
+
+def requires_of(card: Item) -> list[str]:
+    value = card.fields.get("requires")
+    return [v for v in value if isinstance(v, str)] if isinstance(value, list) else []
+
+
+def check_requires_order(cards: list[Item], problems: list[str]) -> None:
+    """A track card may only require an earlier card of its own track, so the
+    (stage, order) sequence learners walk today is a valid topological order."""
+    by_id = {str(c.fields.get("id")): c for c in cards}
+    for card in cards:
+        here = track_position(card)
+        if here is None:
+            continue
+        for req in requires_of(card):
+            there = track_position(by_id[req]) if req in by_id else None
+            if there is None:
+                continue
+            if there[0] != here[0]:
+                problems.append(f"{card.rel}: requires {req!r} from the {there[0]} track; requires stays inside its own track")
+            elif there[1:] >= here[1:]:
+                problems.append(
+                    f"{card.rel}: requires {req!r} (stage {there[1]}, order {there[2]}), which does not come before "
+                    f"this card (stage {here[1]}, order {here[2]})"
+                )
+
+
+def check_requires_cycles(cards: list[Item], problems: list[str]) -> None:
+    graph = {str(c.fields.get("id")): requires_of(c) for c in cards}
+    rel = {str(c.fields.get("id")): c.rel for c in cards}
+    state: dict[str, int] = {}
+    reported: set[frozenset[str]] = set()
+
+    def visit(node: str, trail: list[str]) -> None:
+        state[node] = 1
+        trail.append(node)
+        for nxt in graph.get(node, []):
+            if nxt not in graph:
+                continue
+            if state.get(nxt) == 1:
+                loop = trail[trail.index(nxt):]
+                if frozenset(loop) not in reported:
+                    reported.add(frozenset(loop))
+                    problems.append(f"{rel[nxt]}: requires forms a cycle: {' -> '.join(loop + [nxt])}")
+            elif nxt not in state:
+                visit(nxt, trail)
+        trail.pop()
+        state[node] = 2
+
+    for node in sorted(graph):
+        if node not in state:
+            visit(node, [])
 
 
 def lint(root: pathlib.Path, budget_path: pathlib.Path | None = None) -> list[str]:

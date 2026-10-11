@@ -216,3 +216,16 @@ them yet, and leaving them out is always fine.
 | `fits_when` | list of kebab-case tags | Founder situations it suits, e.g. `[has-paying-customers, b2b]` |
 | `produces` | list of kebab-case tags | What the founder walks away with, e.g. `[funnel-map]` |
 
+When `requires` is present, lint checks that it has no cycle, and on a
+Basic-format track that every id it names is an earlier card of the same
+track by `(stage, order)`. That keeps today's sequence a valid path: a
+compiler that breaks ties on `(stage, order)` walks the cards exactly as
+learners see them now.
+
+The shipped `basic/` and `post-revenue/` tracks go further, enforced by
+`tests/test_path_fields.py`: every card carries `teaches`, and every card
+except the first of its track carries `requires`. Pick `teaches` tags as
+reusable skill ids (`sales-safari`, `pricing`), not card slugs; the same
+vocabulary tags podcast episodes and names the skill a founder is stuck on.
+Something only one card makes is a `produces`, not a `teaches`.
+

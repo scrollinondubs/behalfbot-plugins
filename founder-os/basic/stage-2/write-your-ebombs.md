@@ -10,6 +10,9 @@ gate: basic-stage-2-ebombs
 submit: [link, text]
 sources: ["thirty-x-500, Education bombs"]
 author: Sean Tierney
+requires: [basic-mine-safari-gold, basic-set-up-your-home-base]
+teaches: [ebombs, copywriting]
+produces: [ebombs]
 ---
 ## What this is
 An e-bomb is a small, free lesson that fixes one specific problem. The recipe: open with one real question your audience asks, show you understand their exact situation (their own words work best), give one answer rather than a book, and end with your call to action. Make the headline the question itself, not a topic.

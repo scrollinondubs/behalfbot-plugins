@@ -10,6 +10,9 @@ gate: basic-stage-2-ebombs
 submit: [link, text, file]
 sources: ["thirty-x-500, Sharing and your mailing list"]
 author: Sean Tierney
+requires: [basic-write-your-ebombs, basic-find-where-they-talk]
+teaches: [community-sharing, email-marketing]
+produces: [sharing-log, list-email]
 ---
 ## What this is
 Nobody finds a new blog on their own, so share each e-bomb in plain, low-effort ways first: your own social accounts, links to other people's posts, your email list, and helpful comments in watering holes. In a watering hole, learn the culture first and answer the question right there in the comment, so it has value on its own; then link to your e-bomb for anyone who wants more. Every email to your list should help on its own, even if nobody clicks.

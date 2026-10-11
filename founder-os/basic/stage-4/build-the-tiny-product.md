@@ -11,6 +11,9 @@ submit: [file, link, text]
 assist: draft
 sources: ["thirty-x-500, Your first small product"]
 author: Sean Tierney
+requires: [basic-plinko-and-signup-page]
+teaches: [backwards-planning, mvp-scoping]
+produces: [tiny-product]
 ---
 ## What this is
 Describe the finished thing clearly, work backwards to a list of tiny next steps, then cut the list until it fits. Work in blocks of three or four hours at most, and leave yourself a note for next time. Treat the deadline as a challenge, not a whip, and cut whatever you must to ship.

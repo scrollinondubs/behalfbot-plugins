@@ -9,6 +9,7 @@ gate: post-revenue-stage-6-force-multipliers
 submit: [text]
 sources: [behalf-bot]
 author: Sean Tierney
+requires: [post-revenue-we-do-they-do]
 teaches: [ai-assistant, delegation]
 fits_when: [has-paying-customers]
 produces: [assistant-setup]

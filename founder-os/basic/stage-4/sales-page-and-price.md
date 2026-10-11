@@ -11,6 +11,9 @@ submit: [text, link]
 assist: draft
 sources: ["thirty-x-500, Sales pages and pricing"]
 author: Sean Tierney
+requires: [basic-build-the-tiny-product, basic-fixstorm-ten-pitches]
+teaches: [sales-page-copywriting, pricing]
+produces: [sales-page]
 ---
 ## What this is
 Your sales page is your pitch told in full: the pain in your audience's words, a few lines that step back and forth between pain and dream, the dream itself, then the fix revealed late with its parts, and a call to action that is mostly dream plus a buy button. For price, the course gives a recipe: three tiers at roughly 1x, 2.2x and 5x, set next to what this audience already pays.
