@@ -19,7 +19,7 @@ Most founders start with an idea. They build it, launch it, and hear crickets. T
 
 Here's what sold me on it: **30x500 is deterministic.** Most of startup building feels like a dark art. This doesn't. Follow it end to end, don't skip steps, and it works.
 
-So how does FounderOS work? Each stage is a short set of lessons. Each lesson asks you to make something real and submit it. The coach reviews it on the spot and tells you what's missing. You fix it, it passes, and the next part opens up. Every step builds on the one before it.
+So how does FounderOS work? Each stage is a short set of lessons. Each lesson asks you to make something real and submit it. Jax reviews it on the spot and tells you what's missing. You fix it, it passes, and the next part opens up. Every step builds on the one before it.
 
 Where we part ways with 30x500: FounderOS automates some things the course wants you to do by hand. An LLM is your co-pilot. It helps you make sense of your research, brainstorms with you and pokes holes in your thinking. A Chrome extension saves your Sales Safari notes so you're not copying quotes out longhand. A bot can even run parts of the safari for you.
 
