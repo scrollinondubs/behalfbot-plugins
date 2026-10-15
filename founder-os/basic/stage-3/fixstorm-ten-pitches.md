@@ -9,7 +9,7 @@ canvas: [fixes.product, sales.pitch]
 gate: basic-stage-3-first-product
 submit: [text, file]
 assist: draft
-sources: ["thirty-x-500, Fixstorming"]
+sources: ["thirty-x-500, Fixstorming", christensen-institute-jtbd, blank-earlyvangelists]
 author: Sean Tierney
 requires: [basic-reverse-pain-into-dream]
 teaches: [fixstorming, pain-dream-fix]
@@ -17,6 +17,8 @@ produces: [pitches]
 ---
 ## What this is
 A fix is any bridge from pain to dream. First question the pain on eight points: its parts, its causes, the different versions of it, and the knowledge, skills, tools, mistakes and beliefs behind it. Then brainstorm fixes with six methods (educate, equip, support, access, outsource, eliminate), choosing formats last because format matters least. Finally line each idea up as three short lines: pain, dream, fix.
+
+Two ideas help you pick which pitches to keep. First, people "hire" a product to get a job done in their life (Clayton Christensen's jobs to be done). Ask of each pitch: what job is the buyer hiring this fix to do? A job has a practical side, a feeling, and how others see the buyer. Second, your first buyers are what Steve Blank calls earlyvangelists. They have the problem and know it, they are actively searching for a fix and have a timetable, they have cobbled together their own workaround, and they have or can get the money to pay. Those workarounds are in your Safari notes, and each one shows you the job. Keep the pitches that do a job an earlyvangelist is already trying to get done.
 
 ## What you make
 Short answers to the eight questions about your pain, at least one fix idea under each of the six methods, and ten or more three-line pitches: pain, dream, and fix with its method and format.
@@ -41,4 +43,4 @@ Write it yourself in the box, or press "Draft V1 for me" for a first version bui
 - Ten pitches is the course's own number: ten in an hour (p 174).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, Fixstorming. The course is closed to new students; more about it: https://30x500.com
+Amy Hoy and Alex Hillman, 30x500, Fixstorming. Christensen Institute, Jobs to Be Done: https://www.christenseninstitute.org/theory/jobs-to-be-done/ Steve Blank, Perfection By Subtraction (earlyvangelists): https://steveblank.com/2010/03/04/perfection-by-subtraction-the-minimum-feature-set/ The course is closed to new students; more about it: https://30x500.com

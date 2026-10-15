@@ -58,6 +58,11 @@
     {"id": "grid7", "title": "Grid7", "author": "Sean Tierney", "url": "https://grid7.com", "kind": "article"},
     {"id": "behalf-bot", "title": "Behalf.bot", "author": "Sean Tierney", "url": "https://behalf.bot", "kind": "tool"},
     {"id": "business-model-generation", "title": "Business Model Generation", "author": "Alexander Osterwalder and Yves Pigneur", "year": 2010, "url": "https://www.strategyzer.com/library/business-model-generation", "kind": "book"},
-    {"id": "lessons-from-vc-pitches", "title": "12 things I learned from pitching VCs this past week", "author": "Sean Tierney", "year": 2007, "url": "https://scrollinondubs.com/2007/12/12/lessons-from-vc-pitches/", "kind": "article"}
+    {"id": "lessons-from-vc-pitches", "title": "12 things I learned from pitching VCs this past week", "author": "Sean Tierney", "year": 2007, "url": "https://scrollinondubs.com/2007/12/12/lessons-from-vc-pitches/", "kind": "article"},
+    {"id": "blank-earlyvangelists", "title": "Perfection By Subtraction - The Minimum Feature Set", "author": "Steve Blank", "year": 2010, "url": "https://steveblank.com/2010/03/04/perfection-by-subtraction-the-minimum-feature-set/", "kind": "article"},
+    {"id": "cialdini-seven-principles", "title": "The Science of Persuasion: Seven Principles of Persuasion", "author": "Robert Cialdini", "url": "https://www.influenceatwork.com/7-principles-of-persuasion/", "kind": "article"},
+    {"id": "brunson-epiphany-bridge", "title": "What is The Epiphany Bridge?", "author": "Russell Brunson", "year": 2025, "url": "https://www.russellbrunson.com/blog/the-epiphany-bridge", "kind": "article"},
+    {"id": "walker-product-launch", "title": "The Four Key Steps Behind My Product Launch Process", "author": "Jeff Walker", "year": 2022, "url": "https://jeffwalker.com/product-launch-process", "kind": "article"},
+    {"id": "expert-secrets", "title": "Expert Secrets (2020 edition)", "author": "Russell Brunson", "year": 2020, "url": "https://www.expertsecrets.com/", "kind": "book"}
   ]
 }

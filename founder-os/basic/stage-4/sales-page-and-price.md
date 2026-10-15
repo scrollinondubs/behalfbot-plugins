@@ -9,7 +9,7 @@ canvas: [sales.pitch, sales.ctas, research.buys]
 gate: basic-stage-4-ship-and-launch
 submit: [text, link]
 assist: draft
-sources: ["thirty-x-500, Sales pages and pricing"]
+sources: ["thirty-x-500, Sales pages and pricing", brunson-epiphany-bridge, cialdini-seven-principles]
 author: Sean Tierney
 requires: [basic-build-the-tiny-product, basic-fixstorm-ten-pitches]
 teaches: [sales-page-copywriting, pricing]
@@ -17,6 +17,8 @@ produces: [sales-page]
 ---
 ## What this is
 Your sales page is your pitch told in full: the pain in your audience's words, a few lines that step back and forth between pain and dream, the dream itself, then the fix revealed late with its parts, and a call to action that is mostly dream plus a buy button. For price, the course gives a recipe: three tiers at roughly 1x, 2.2x and 5x, set next to what this audience already pays.
+
+Before you reveal the fix, tell the short story of how you found it. Russell Brunson calls this the Epiphany Bridge: start when the problem was at its worst, say what you tried that failed, show the moment it clicked, and say what changed after. The reader lives your "aha" instead of being told to buy. It fits the shape above: your worst moment is the pain, the "aha" opens the dream, and the fix comes after. Then bring back three of Cialdini's principles from your e-bombs. Social proof: show what people like the reader got from your e-bombs or your product. Authority: show why you are worth listening to through your work and your story, not a list of claims. Liking: use the reader's own words and show you are one of them. Every quote, number and result must be real.
 
 ## What you make
 Your sales page copy and the live page itself, with a price and a working buy button.
@@ -37,7 +39,8 @@ Write your page copy yourself, or press "Draft V1 for me" for a v1 written from 
 - A list of benefits instead of a story. The course calls benefits-only selling a route to failure (pp 133-134).
 - Missing the back-and-forth "sandwich" lines, so it reads like fell down, stood up, walked away (pp 190, 193).
 - The fix's parts double as the product outline (pp 188-193).
+- Fake proof fails the page: invented testimonials, made-up numbers, or a story that did not happen. Proof can be small, like a reader's reply to an e-bomb, as long as it is real.
 - One price only leaves money and anchoring on the table (pp 218-219). A tier can be as simple as the guide alone, the guide plus extras, and the complete package; even a two-sentence group licence counts (pp 217-219).
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, Sales pages and pricing. The course is closed to new students; more about it: https://30x500.com
+Amy Hoy and Alex Hillman, 30x500, Sales pages and pricing. Russell Brunson, What is The Epiphany Bridge?: https://www.russellbrunson.com/blog/the-epiphany-bridge Robert Cialdini, The Science of Persuasion: https://www.influenceatwork.com/7-principles-of-persuasion/ The course is closed to new students; more about it: https://30x500.com
