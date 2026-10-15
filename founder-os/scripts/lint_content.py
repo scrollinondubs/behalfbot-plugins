@@ -26,8 +26,9 @@ and checks:
     cards in evals/seed-cards.txt (promotion into core is eval-gated)
   - every concept note is linked from somewhere, so none sits unused
   - the Basic track under basic/ (when present): five stages 0-4, three cards
-    per stage (four in stage 0, which opens with the program overview) and
-    one gate per stage, ids prefixed basic-, known submit values, choices
+    per stage (four in stage 0, which opens with the program overview, and
+    four in stage 2, which ends with the next four e-bombs) and one gate per
+    stage, ids prefixed basic-, known submit values, choices
     exactly when submit has choice, the required sections, a link to the
     course, no em dash, and no database words in learner text
   - a card source names a lesson, never page numbers, and an optional
@@ -652,7 +653,7 @@ class TrackSpec:
 # basic/ ends every Source with the 30x500 course link. post-revenue/ draws on
 # many sources, so its Source ends with the link of one it lists.
 TRACKS = (
-    TrackSpec("basic", BASIC_DIR, BASIC_STAGES, {0: 4}, COURSE_URL),
+    TrackSpec("basic", BASIC_DIR, BASIC_STAGES, {0: 4, 2: 4}, COURSE_URL),
     TrackSpec("post-revenue", POST_REVENUE_DIR, range(0, 7), {6: 5}, None),
 )
 

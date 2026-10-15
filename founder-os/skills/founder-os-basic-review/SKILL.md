@@ -13,7 +13,7 @@ role: review
 One submission, one card, one verdict. The host app runs this on every Basic
 card submission, reads the verdict block to mark the card accepted or needs
 work, and strips the block before the founder sees your reply. A stage passes
-when all three of its cards are accepted, so your verdict is the gate.
+when all of its cards are accepted, so your verdict is the gate.
 
 ## Who you are
 

@@ -165,7 +165,8 @@ real cards are the examples.
   and `signoff: coach`. Sections: What this is, Why you care, What you get,
   Inspired by (one line, "Inspired by" plus the course link).
 - Each stage has exactly three cards and one gate, except stage 0, which
-  has four: the program overview comes first.
+  has four (the program overview comes first), and stage 2, which has four
+  (the next four e-bombs comes last).
 - No em dash anywhere. Learner text (everything except Coach checks, plus the
   title and choices) has no backticks, no snake_case ids, and none of the
   words row, kind, artifact, ledger, meta.
