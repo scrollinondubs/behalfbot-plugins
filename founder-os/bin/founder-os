@@ -4,6 +4,8 @@
     founder-os export --founder-id ID --out alice.zip [--source self-hosted|vcl]
     founder-os import alice.zip [--as-founder ID] [--replace]
     founder-os progress --founder-id ID [--print]
+    founder-os runner setup [--base-url URL] [--env-file PATH]
+    founder-os runner tick
 
 Reads the same environment as founder_ledger.open_ledger():
 
@@ -13,12 +15,17 @@ Reads the same environment as founder_ledger.open_ledger():
     FOUNDER_OS_PROGRESS_WEBHOOK_URL     instructor URL; unset means the webhook is off
     FOUNDER_OS_PROGRESS_WEBHOOK_SECRET  shared HMAC key, required whenever the URL is set
 
+`runner` needs no ledger. It reads FOUNDER_OS_AGENT_KEY and
+FOUNDER_OS_AGENT_BASE_URL; `runner setup` writes them, reading the key from
+the terminal (hidden) or stdin, never from the command line.
+
 The bundle format is docs/bundle-format.md. Exit 0 on success, 1 on a refused
 bundle or ledger error, 2 on bad usage.
 """
 from __future__ import annotations
 
 import argparse
+import getpass
 import json
 import os
 import pathlib
@@ -29,6 +36,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from founder_bundle import SOURCES, export_bundle, import_bundle, progress_payload, send_progress  # noqa: E402
 from founder_bundle.progress import webhook_config  # noqa: E402
 from founder_ledger import LedgerError, open_ledger  # noqa: E402
+from founder_runner import save_key, tick  # noqa: E402
 
 
 def files_dir(args: argparse.Namespace) -> str | None:
@@ -70,6 +78,23 @@ def cmd_progress(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_runner_setup(args: argparse.Namespace) -> int:
+    if sys.stdin.isatty():
+        key = getpass.getpass("Agent key from Safari Hub settings (input hidden): ")
+    else:
+        key = sys.stdin.readline()
+    env_file = pathlib.Path(args.env_file) if args.env_file else None
+    written = save_key(key, env_file, args.base_url)
+    print("agent key saved to " + " and ".join(str(p) for p in written))
+    print("the runner picks it up on the next heartbeat tick")
+    return 0
+
+
+def cmd_runner_tick(args: argparse.Namespace) -> int:
+    print(json.dumps(tick(), sort_keys=True))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="founder-os", description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -93,6 +118,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--founder-id", required=True)
     p.add_argument("--print", action="store_true", help="print the payload instead of sending it")
     p.set_defaults(func=cmd_progress)
+
+    p = sub.add_parser("runner", help="the Safari runner: Hub painstorm and analysis jobs on this machine")
+    rsub = p.add_subparsers(dest="runner_command", required=True)
+    r = rsub.add_parser("setup", help="store the agent key (read hidden from the terminal, or from stdin)")
+    r.add_argument("--base-url", help="Hub base URL (default https://vibecodelisboa.com)")
+    r.add_argument("--env-file", help="secret file to write (default $CUSTOMER_HOME/.env)")
+    r.set_defaults(func=cmd_runner_setup)
+    r = rsub.add_parser("tick", help="claim and run queued jobs once; prints a JSON summary")
+    r.set_defaults(func=cmd_runner_tick)
 
     args = parser.parse_args(argv)
     try:
