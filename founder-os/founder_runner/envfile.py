@@ -52,11 +52,12 @@ def _upsert(path: pathlib.Path, values: dict[str, str]) -> None:
     out = []
     for line in lines:
         name = line.split("=", 1)[0].strip()
+        prefix = ""
         if name.startswith("export "):
-            name = name[len("export "):].strip()
+            name, prefix = name[len("export "):].strip(), "export "
         if name in values:
             if name in pending:
-                out.append(f"{name}={pending.pop(name)}")
+                out.append(f"{prefix}{name}={pending.pop(name)}")
             continue
         out.append(line)
     out.extend(f"{name}={value}" for name, value in pending.items())

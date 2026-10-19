@@ -81,13 +81,16 @@ class RunnerTest(unittest.TestCase):
         claude.write_text(FAKE_CLAUDE, encoding="utf-8")
         claude.chmod(claude.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         self.claude_log = root / "claude.jsonl"
+        self.home = root / "home"
+        self.home.mkdir()
 
     def tearDown(self):
         self.tmp.cleanup()
 
     def run_gate(self, fake: FakeVCL, mode: str = "ok", **extra) -> tuple[dict, subprocess.CompletedProcess]:
-        env = {k: v for k, v in os.environ.items() if not k.startswith("FOUNDER_OS_")}
-        env.update({"PATH": f"{self.bin}{os.pathsep}{env.get('PATH', '')}",
+        env = {k: v for k, v in os.environ.items()
+               if not k.startswith("FOUNDER_OS_") and k not in ("CUSTOMER_HOME", "CHASSIS_HOME")}
+        env.update({"PATH": f"{self.bin}{os.pathsep}{env.get('PATH', '')}", "CUSTOMER_HOME": str(self.home),
                     "FOUNDER_OS_AGENT_KEY": KEY, "FOUNDER_OS_AGENT_BASE_URL": fake.url,
                     "FAKE_CLAUDE_LOG": str(self.claude_log), "FAKE_CLAUDE_MODE": mode,
                     "ANTHROPIC_API_KEY": "YOUR_API_KEY"})
@@ -229,6 +232,23 @@ class RunnerTest(unittest.TestCase):
         self.assertIn("runner setup", summary["reason"])
         self.assertEqual(fake.requests, [])
 
+    def test_key_read_from_env_file_when_not_exported(self):
+        # What the dispatcher leaves behind: .env sourced without set -a.
+        with FakeVCL([packet("from-file", ["a"])], key=KEY) as fake:
+            (self.home / ".env").write_text(f"OTHER=1\nexport FOUNDER_OS_AGENT_KEY={KEY}\n"
+                                            f"FOUNDER_OS_AGENT_BASE_URL={fake.url}\n")
+            summary, proc = self.run_gate(fake, FOUNDER_OS_AGENT_KEY="", FOUNDER_OS_AGENT_BASE_URL="")
+        self.assertEqual((summary["count"], summary["posted"]), (0, 1))
+        self.assertEqual(fake.requests[0]["_auth"], f"Bearer {KEY}")
+        self.assertNotIn(KEY, proc.stdout + proc.stderr)
+
+    def test_env_baked_wins_over_env(self):
+        with FakeVCL([packet("baked", ["a"])], key=KEY) as fake:
+            (self.home / ".env").write_text("FOUNDER_OS_AGENT_KEY=vcl_fos_staleStaleStaleStale000000\n")
+            (self.home / ".env.baked").write_text(f"FOUNDER_OS_AGENT_KEY={KEY}\n")
+            summary, _ = self.run_gate(fake, FOUNDER_OS_AGENT_KEY="")
+        self.assertEqual(summary["posted"], 1)
+
     def test_plain_http_refused_off_localhost(self):
         with FakeVCL([], key=KEY) as fake:
             summary, _ = self.run_gate(fake, FOUNDER_OS_AGENT_BASE_URL="http://example.com")
@@ -295,6 +315,19 @@ class SetupTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn(f"FOUNDER_OS_AGENT_KEY={KEY}", (self.home / ".env").read_text())
         self.assertEqual((self.home / ".env.baked").read_text().splitlines(), ["A=1", f"FOUNDER_OS_AGENT_KEY={KEY}"])
+
+    def test_setup_keeps_an_export_prefix(self):
+        (self.home / ".env").write_text("export FOUNDER_OS_AGENT_KEY=vcl_fos_oldoldoldoldoldold\n")
+        proc = self.setup_cli(KEY + "\n")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual((self.home / ".env").read_text(), f"export FOUNDER_OS_AGENT_KEY={KEY}\n")
+
+    def test_setup_accepts_the_hub_key_shape(self):
+        # VCL mints vcl_fos_ + 43 base64url characters (extension-keys.ts).
+        hub_key = "vcl_fos_" + "Ab9_-" * 8 + "xyz"
+        self.assertEqual(len(hub_key), len("vcl_fos_") + 43)
+        proc = self.setup_cli(hub_key + "\n")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
 
     def test_setup_refuses_a_bad_key_without_echoing_it(self):
         bad = "not-an-agent-key-YOUR_API_KEY"

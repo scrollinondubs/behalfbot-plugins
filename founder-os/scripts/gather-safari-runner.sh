@@ -18,6 +18,37 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# The dispatcher sources .env.baked or .env without `set -a`, so a key added
+# by `founder-os runner setup` after the container booted is a shell variable
+# the dispatcher can see but this process cannot. Read it from the same files
+# the dispatcher does. The value is exported for the runner and never echoed.
+ENV_HOME="${CUSTOMER_HOME:-${CHASSIS_HOME:-}}"
+
+read_env_value() {
+  # $1 variable name. Prints the last assignment in .env.baked, else .env.
+  local f line value
+  [ -n "$ENV_HOME" ] || return 1
+  for f in "$ENV_HOME/.env.baked" "$ENV_HOME/.env"; do
+    [ -f "$f" ] || continue
+    line="$(grep -E "^(export[[:space:]]+)?$1=" "$f" 2>/dev/null | tail -n 1)"
+    [ -n "$line" ] || continue
+    value="${line#*=}"
+    value="${value%\"}"; value="${value#\"}"
+    value="${value%\'}"; value="${value#\'}"
+    printf '%s' "$value"
+    return 0
+  done
+  return 1
+}
+
+if [ -z "${FOUNDER_OS_AGENT_KEY:-}" ]; then
+  FOUNDER_OS_AGENT_KEY="$(read_env_value FOUNDER_OS_AGENT_KEY || true)"
+fi
+if [ -z "${FOUNDER_OS_AGENT_BASE_URL:-}" ]; then
+  FOUNDER_OS_AGENT_BASE_URL="$(read_env_value FOUNDER_OS_AGENT_BASE_URL || true)"
+fi
+export FOUNDER_OS_AGENT_KEY FOUNDER_OS_AGENT_BASE_URL
+
 OUTPUT="$(python3 "$PLUGIN_ROOT/bin/founder-os" runner tick)"
 RC=$?
 

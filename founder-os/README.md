@@ -162,7 +162,7 @@ default it bills the student's Anthropic API key. The runner is the other
 option: **the jobs run on the student's own Claude plan, through Claude Code on
 their own machine**, and the Hub never sees a Claude credential.
 
-How it works. When "Run Safari work on" is set to My BehalfBot, the Hub queues
+When "Run Safari work on" is set to My BehalfBot, the Hub queues
 the job instead of running it. A heartbeat on the student's install claims it
 (`GET /api/founder-os/agent/jobs/next`), runs every step through the local
 `claude -p` with the skill as the system prompt, and posts the raw answers back
@@ -178,11 +178,13 @@ claude -p --output-format json --tools "" --strict-mcp-config --setting-sources 
   --append-system-prompt <skill> [--model <model>]      # prompt on stdin
 ```
 
-`--tools ""` removes every built-in tool, `--strict-mcp-config` with no config
-loads no MCP server, and `--setting-sources ""` skips user and project settings
-so no hook or extra tool rides along. It runs in an empty temporary directory,
-with `ANTHROPIC_API_KEY` removed from its environment so Claude Code uses the
-login, not an API key. The runner never reads `~/.claude` or the keychain.
+`--tools ""` removes every built-in tool and `--strict-mcp-config` with no
+config loads no MCP server. Claude Code's own start-up event confirms both:
+`tools: []`, `mcp_servers: []`. `--setting-sources ""` tells it not to load the
+student's user or project settings files. It runs in an empty temporary
+directory, so no `CLAUDE.md` from the install gets pulled in, and with
+`ANTHROPIC_API_KEY` removed from its environment, so Claude Code uses the login
+and not an API key. The runner never reads `~/.claude` or the keychain.
 
 ### Setup
 
@@ -194,10 +196,13 @@ login, not an API key. The runner never reads `~/.claude` or the keychain.
    bin/founder-os runner setup
    ```
 
-   It writes `FOUNDER_OS_AGENT_KEY` to `$CUSTOMER_HOME/.env` (mode 0600), and to
-   `.env.baked` too when that file exists, because the dispatcher reads that one
-   first. The key is never taken from the command line and never printed.
+   It writes `FOUNDER_OS_AGENT_KEY` to `$CUSTOMER_HOME/.env` (mode 0600). If
+   `.env.baked` exists it goes there too, since the dispatcher reads that one
+   first. The key never goes on the command line and is never printed. In a
+   shell where `CUSTOMER_HOME` is not set, add `--env-file <install root>/.env`.
    `--base-url http://localhost:3000` points it at a local Hub for testing.
+   No restart needed: the heartbeat gate reads the key from those files when
+   it is not already in its environment.
 3. Make sure `claude` is installed and logged in on the account that runs the
    heartbeat: run `claude` once.
 4. Add the heartbeat to `$CUSTOMER_HOME/HEARTBEATS.md`, under a
@@ -221,11 +226,11 @@ login, not an API key. The runner never reads `~/.claude` or the keychain.
 
 **The dispatcher tick is the floor on cadence.** It ticks every 900 seconds by
 default, so `every 2m` means every 15 minutes unless the install sets
-`DISPATCHER_INTERVAL_SECONDS=120`. The Hub shows "last seen" for the runner, so
-a slow tick is visible to the student, not silent.
+`DISPATCHER_INTERVAL_SECONDS=120`. The Hub shows when the runner last checked
+in, so the student can see a slow tick.
 
 A tick stops claiming new jobs after `FOUNDER_OS_RUNNER_TICK_BUDGET` seconds
-(600) so it never holds the dispatcher for long, and each claude call times out
+(600), so other heartbeats are not kept waiting, and each claude call times out
 after `FOUNDER_OS_RUNNER_STEP_TIMEOUT` seconds (300). A step that fails or times
 out posts an error, which the Hub shows on the thread with a Retry. A step that
 would start within a minute of the 20-minute lease ending posts an error
