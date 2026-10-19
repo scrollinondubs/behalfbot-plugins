@@ -154,6 +154,88 @@ that tells their cohort instructor their stage and gate status, and nothing
 else. The format, the id remapping rules and the webhook's privacy boundary are
 in [`docs/bundle-format.md`](docs/bundle-format.md).
 
+## Safari runner
+
+The Safari Hub on vibecodelisboa.com runs two model-heavy jobs on a student's
+Sales Safari work: the painstorm over a thread, and the e-bomb analysis. By
+default it bills the student's Anthropic API key. The runner is the other
+option: **the jobs run on the student's own Claude plan, through Claude Code on
+their own machine**, and the Hub never sees a Claude credential.
+
+When "Run Safari work on" is set to My BehalfBot, the Hub queues
+the job instead of running it. A heartbeat on the student's install claims it
+(`GET /api/founder-os/agent/jobs/next`), runs every step through the local
+`claude -p` with the skill as the system prompt, and posts the raw answers back
+(`POST /api/founder-os/agent/jobs/:id/result`). The Hub parses and checks them
+the same way it checks its own model output. Up to three jobs per tick. Nothing
+queued costs one HTTP request and zero tokens.
+
+The model gets no tools. Every call is:
+
+```
+claude -p --output-format json --tools "" --strict-mcp-config --setting-sources "" \
+  --disable-slash-commands --no-session-persistence \
+  --append-system-prompt <skill> [--model <model>]      # prompt on stdin
+```
+
+`--tools ""` removes every built-in tool and `--strict-mcp-config` with no
+config loads no MCP server. Claude Code's own start-up event confirms both:
+`tools: []`, `mcp_servers: []`. `--setting-sources ""` tells it not to load the
+student's user or project settings files. It runs in an empty temporary
+directory, so no `CLAUDE.md` from the install gets pulled in, and with
+`ANTHROPIC_API_KEY` removed from its environment, so Claude Code uses the login
+and not an API key. The runner never reads `~/.claude` or the keychain.
+
+### Setup
+
+1. In the Safari Hub, Settings, "Run Safari work on", choose My BehalfBot and
+   copy the agent key. It is shown once.
+2. On the install, run this and paste the key when asked (input is hidden):
+
+   ```
+   bin/founder-os runner setup
+   ```
+
+   It writes `FOUNDER_OS_AGENT_KEY` to `$CUSTOMER_HOME/.env` (mode 0600). If
+   `.env.baked` exists it goes there too, since the dispatcher reads that one
+   first. The key never goes on the command line and is never printed. In a
+   shell where `CUSTOMER_HOME` is not set, add `--env-file <install root>/.env`.
+   `--base-url http://localhost:3000` points it at a local Hub for testing.
+   No restart needed: the heartbeat gate reads the key from those files when
+   it is not already in its environment.
+3. Make sure `claude` is installed and logged in on the account that runs the
+   heartbeat: run `claude` once.
+4. Add the heartbeat to `$CUSTOMER_HOME/HEARTBEATS.md`, under a
+   `## founder-os-safari-runner` heading:
+
+   ```yaml
+   schedule: every 2m
+   gather: ${FOUNDER_OS_RUNNER_GATHER_SCRIPT}
+   condition: threshold count > 0
+   prompt: <plugin dir>/scheduled-tasks/founder-os-safari-runner-prompt.md
+   model: haiku
+   budget: 0.05
+   criticality: normal
+   max_fires_per_day: 2
+   realert_after: 24h
+   ```
+
+   Render the prompt from `scheduled-tasks/founder-os-safari-runner-prompt.md.template`
+   like any other plugin prompt. It fires only when the student has to act:
+   the Hub rejected the key, or `claude` is missing.
+
+**The dispatcher tick is the floor on cadence.** It ticks every 900 seconds by
+default, so `every 2m` means every 15 minutes unless the install sets
+`DISPATCHER_INTERVAL_SECONDS=120`. The Hub shows when the runner last checked
+in, so the student can see a slow tick.
+
+A tick stops claiming new jobs after `FOUNDER_OS_RUNNER_TICK_BUDGET` seconds
+(600), so other heartbeats are not kept waiting, and each claude call times out
+after `FOUNDER_OS_RUNNER_STEP_TIMEOUT` seconds (300). A step that fails or times
+out posts an error, which the Hub shows on the thread with a Retry. A step that
+would start within a minute of the 20-minute lease ending posts an error
+instead of racing it. A 409 (the lease moved on) is dropped quietly.
+
 ## Core vs contrib
 
 **`core/` is the only thing the coach loads.** It is curated and small. The
@@ -202,11 +284,14 @@ founder-os/
   templates/examples/    one filled example of each, linted like real content
   scripts/lint_content.py  content lint, run by validate.sh
   scripts/ledger_migrate.py  apply ledger migrations to the configured backend
+  scripts/gather-safari-runner.sh  the Safari runner's heartbeat gate
   founder_ledger/        storage interface and its Postgres and SQLite adapters
   founder_bundle/        founder bundle export/import and the progress webhook
   founder_stage/         gate evidence counting, submissions and decisions
   founder_eval/          eval sets, scoring and the runner
-  bin/founder-os         CLI: export, import, progress
+  founder_runner/        the Safari runner: claim Hub jobs, run them through claude -p, post results
+  bin/founder-os         CLI: export, import, progress, runner setup and tick
+  scheduled-tasks/       the Safari runner heartbeat's prompt template
   docs/                  the bundle format, and implementation notes such as the ledger on Turso
   tests/                 offline test suites, run by CI
   schema/                ledger schema and migrations
