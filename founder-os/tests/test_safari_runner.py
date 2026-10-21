@@ -46,6 +46,27 @@ FAKE_CLAUDE = textwrap.dedent("""\
         fh.write(json.dumps({"argv": sys.argv[1:], "stdin": prompt, "cwd": os.getcwd(),
                              "env": dict(os.environ)}) + "\\n")
     mode = os.environ.get("FAKE_CLAUDE_MODE", "ok")
+    with open(os.environ["FAKE_CLAUDE_LOG"], encoding="utf-8") as fh:
+        call_no = sum(1 for _ in fh)
+    # What CLI 2.1.280 writes to stderr for a full model id, success included.
+    noise = ('Warning: Advisor disabled for this model\\n'
+             '[claude-code:unrecognized_model] {"model":"claude-sonnet-5-5","query_source":"sdk"}\\n')
+    if mode in ("model-404", "auth", "overloaded-once", "overloaded-always", "garbled-once", "ok-noisy"):
+        sys.stderr.write(noise)
+    if mode == "model-404":
+        print(json.dumps({"type": "result", "subtype": "success", "is_error": True, "api_error_status": 404,
+                          "result": "There's an issue with the selected model (claude-sonnet-5-5)."}))
+        sys.exit(1)
+    if mode == "auth":
+        print(json.dumps({"type": "result", "subtype": "success", "is_error": True, "api_error_status": 401,
+                          "result": "Invalid API key - Please run /login"}))
+        sys.exit(1)
+    if mode == "overloaded-always" or (mode == "overloaded-once" and call_no == 1):
+        print(json.dumps({"type": "result", "subtype": "success", "is_error": True, "api_error_status": 529,
+                          "result": "API Error: 529 Overloaded"}))
+        sys.exit(1)
+    if mode == "garbled-once" and call_no == 1:
+        sys.exit(1)
     if mode == "fail" or (mode == "fail-second" and "second" in prompt):
         sys.stderr.write("Error: simulated model failure\\n")
         sys.exit(1)
@@ -93,7 +114,7 @@ class RunnerTest(unittest.TestCase):
         env.update({"PATH": f"{self.bin}{os.pathsep}{env.get('PATH', '')}", "CUSTOMER_HOME": str(self.home),
                     "FOUNDER_OS_AGENT_KEY": KEY, "FOUNDER_OS_AGENT_BASE_URL": fake.url,
                     "FAKE_CLAUDE_LOG": str(self.claude_log), "FAKE_CLAUDE_MODE": mode,
-                    "ANTHROPIC_API_KEY": "YOUR_API_KEY"})
+                    "ANTHROPIC_API_KEY": "YOUR_API_KEY", "FOUNDER_OS_RUNNER_RETRY_BACKOFF": "0"})
         env.update(extra)
         proc = subprocess.run(["bash", str(GATHER)], capture_output=True, text=True, env=env, timeout=60)
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -171,6 +192,58 @@ class RunnerTest(unittest.TestCase):
             self.run_gate(fake, mode="is_error")
         self.assertIn("error_during_execution", fake.results()[0]["body"]["error"])
 
+    def test_real_error_in_stdout_json_beats_stderr_noise(self):
+        # The 2026-10-21 prod failure: exit 1, only noise on stderr, the cause in stdout JSON.
+        with FakeVCL([packet("run-404", ["x", "never run"], model="claude-sonnet-5-5")], key=KEY) as fake:
+            summary, proc = self.run_gate(fake, mode="model-404")
+        error = fake.results()[0]["body"]["error"]
+        self.assertIn("claude exited 1: API error 404: There's an issue with the selected model", error)
+        self.assertNotIn("unrecognized_model", error)
+        self.assertNotIn("Advisor disabled", error)
+        self.assertEqual(len(self.claude_calls()), 1, "a 404 is not transient, no retry")
+        self.assertNotIn("retrying", proc.stderr)
+
+    def test_noise_alone_on_stderr_is_not_the_error(self):
+        with FakeVCL([packet("run-garbled", ["x"])], key=KEY) as fake:
+            self.run_gate(fake, mode="garbled-once")
+        body = fake.results()[0]["body"]
+        self.assertNotIn("error", body, "an unparseable failure is retried and the retry succeeded")
+        self.assertEqual(len(self.claude_calls()), 2)
+
+    def test_noisy_stderr_on_success_is_ignored(self):
+        with FakeVCL([packet("run-noisy", ["a", "b"])], key=KEY) as fake:
+            self.run_gate(fake, mode="ok-noisy")
+        self.assertEqual([o["key"] for o in fake.results()[0]["body"]["outputs"]], ["chunk-0", "chunk-1"])
+
+    def test_transient_failure_is_retried_once_and_succeeds(self):
+        job = packet("run-529", ["first", "second"])
+        with FakeVCL([job], key=KEY) as fake:
+            summary, proc = self.run_gate(fake, mode="overloaded-once")
+        body = fake.results()[0]["body"]
+        self.assertNotIn("error", body)
+        self.assertEqual([o["key"] for o in body["outputs"]], ["chunk-0", "chunk-1"])
+        self.assertEqual([c["stdin"] for c in self.claude_calls()], ["first", "first", "second"])
+        self.assertEqual(summary["failed_steps"], 0)
+        self.assertIn("step chunk-0 failed, retrying once", proc.stderr)
+
+    def test_transient_failure_is_retried_only_once(self):
+        with FakeVCL([packet("run-529s", ["x"])], key=KEY) as fake:
+            self.run_gate(fake, mode="overloaded-always")
+        self.assertIn("API error 529: API Error: 529 Overloaded", fake.results()[0]["body"]["error"])
+        self.assertEqual(len(self.claude_calls()), 2)
+
+    def test_auth_failure_is_not_retried(self):
+        with FakeVCL([packet("run-401", ["x"])], key=KEY) as fake:
+            self.run_gate(fake, mode="auth")
+        self.assertIn("API error 401: Invalid API key", fake.results()[0]["body"]["error"])
+        self.assertEqual(len(self.claude_calls()), 1)
+
+    def test_retry_skipped_when_the_step_budget_cannot_fit_it(self):
+        with FakeVCL([packet("run-tight", ["x"])], key=KEY) as fake:
+            self.run_gate(fake, mode="overloaded-always", FOUNDER_OS_RUNNER_RETRY_BACKOFF="295")
+        self.assertIn("529", fake.results()[0]["body"]["error"])
+        self.assertEqual(len(self.claude_calls()), 1, "300s step timeout minus 295s backoff is under the floor")
+
     def test_409_is_dropped_quietly_and_the_tick_continues(self):
         jobs = [packet("lost", ["a"]), packet("kept", ["b"], kind="ebomb_analysis", phase="analysis")]
         with FakeVCL(jobs, key=KEY, result_status={"lost": 409}) as fake:
@@ -206,6 +279,11 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(summary["count"], 1)
         self.assertIn("rejected the agent key", summary["reason"])
         self.assertEqual(fake.results(), [])
+
+    def test_missing_claude_is_not_retried(self):
+        with FakeVCL([packet("x", ["a"])], key=KEY) as fake:
+            _, proc = self.run_gate(fake, FOUNDER_OS_RUNNER_CLAUDE=str(self.bin / "no-such-claude"))
+        self.assertNotIn("retrying", proc.stderr)
 
     def test_missing_claude_alerts_and_posts_error(self):
         with FakeVCL([packet("x", ["a"]), packet("y", ["b"])], key=KEY) as fake:

@@ -35,6 +35,7 @@ ENV_BASE_URL = "FOUNDER_OS_AGENT_BASE_URL"
 ENV_CLAUDE = "FOUNDER_OS_RUNNER_CLAUDE"
 ENV_STEP_TIMEOUT = "FOUNDER_OS_RUNNER_STEP_TIMEOUT"
 ENV_TICK_BUDGET = "FOUNDER_OS_RUNNER_TICK_BUDGET"
+ENV_RETRY_BACKOFF = "FOUNDER_OS_RUNNER_RETRY_BACKOFF"
 DEFAULT_BASE_URL = "https://vibecodelisboa.com"
 KEY_PREFIX = "vcl_fos_"
 NEXT_PATH = "/api/founder-os/agent/jobs/next"
@@ -45,12 +46,25 @@ DEFAULT_TICK_BUDGET = 600
 # Stop starting steps this close to the lease deadline: the post has to land
 # before the Hub hands the job to a later claim.
 LEASE_MARGIN = 60
+# One retry per step, after this pause, for a failure that looks transient.
+RETRY_BACKOFF = 25
+# A retry with less time than this left is not worth starting.
+MIN_RETRY_TIMEOUT = 30
 HTTP_TIMEOUT = 30
 MAX_ERROR_CHARS = 300
 LOOPBACK = {"localhost", "127.0.0.1", "::1"}
 # urllib's default User-Agent is refused by Cloudflare.
 USER_AGENT = "behalfbot-founder-os-runner/1"
 CHILD_ENV_DROP = ("ANTHROPIC_API_KEY", ENV_KEY)
+# Lines Claude Code writes to stderr on every run with a full model id, success
+# included (CLI 2.1.280). Left in, they hide the real cause of a failure.
+STDERR_NOISE = ("[claude-code:unrecognized_model]", "Warning: Advisor disabled")
+TRANSIENT_STATUS = {408, 429}
+TRANSIENT_WORDS = ("rate limit", "rate_limit", "overloaded", "timed out", "timeout", "econnreset",
+                   "socket hang up", "network error", "internal server error", "service unavailable",
+                   "bad gateway", "api error: 5")
+PERMANENT_WORDS = ("not logged in", "/login", "authentication", "invalid api key", "unauthorized",
+                   "oauth token", "credit balance")
 
 
 class HubUnreachable(Exception):
@@ -62,7 +76,12 @@ class AuthRejected(Exception):
 
 
 class StepFailed(Exception):
-    """A claude call that produced no usable text."""
+    """A claude call that produced no usable text. transient marks a failure
+    worth one retry: rate limit, overload, a 5xx, or no parseable answer."""
+
+    def __init__(self, message: str, transient: bool = False):
+        super().__init__(message)
+        self.transient = transient
 
 
 class ClaudeMissing(StepFailed):
@@ -147,6 +166,49 @@ def _short(text: str) -> str:
     return text[:MAX_ERROR_CHARS]
 
 
+def _strip_noise(stderr: str) -> str:
+    return "\n".join(line for line in (stderr or "").splitlines()
+                     if not any(line.strip().startswith(n) for n in STDERR_NOISE))
+
+
+def _json_object(stdout: str) -> dict | None:
+    try:
+        out = json.loads(stdout or "")
+    except ValueError:
+        return None
+    return out if isinstance(out, dict) else None
+
+
+def _json_detail(out: dict) -> str:
+    """The error claude put in its JSON result. subtype reads "success" even
+    when is_error is set, so it is named only when it says something else."""
+    parts = []
+    status = out.get("api_error_status")
+    if status is not None:
+        parts.append(f"API error {status}")
+    sub = out.get("subtype")
+    if sub and sub != "success":
+        parts.append(str(sub))
+    head = " ".join(parts)
+    text = _short(str(out.get("result") or ""))
+    return f"{head}: {text}" if head and text else head or text
+
+
+def _is_transient(status, text: str) -> bool:
+    low = text.lower()
+    if status in (401, 403) or any(w in low for w in PERMANENT_WORDS):
+        return False
+    if isinstance(status, int) and (status in TRANSIENT_STATUS or status >= 500):
+        return True
+    return any(w in low for w in TRANSIENT_WORDS)
+
+
+def _json_failure(out: dict, prefix: str) -> StepFailed:
+    detail = _json_detail(out)
+    return StepFailed(prefix + (f": {detail}" if detail else ""),
+                      transient=_is_transient(out.get("api_error_status"), detail))
+
+
 def run_claude(system: str, prompt: str, model: str | None, timeout: float, claude_bin: str) -> str:
     env = {k: v for k, v in os.environ.items() if k not in CHILD_ENV_DROP}
     # An empty directory, so no CLAUDE.md from the install root rides along
@@ -158,22 +220,33 @@ def run_claude(system: str, prompt: str, model: str | None, timeout: float, clau
         except FileNotFoundError:
             raise ClaudeMissing(f"claude CLI not found ({claude_bin}); install Claude Code and log in") from None
         except subprocess.TimeoutExpired:
+            # Not retried: it already spent the whole step timeout.
             raise StepFailed(f"claude timed out after {int(timeout)}s") from None
+    out = _json_object(proc.stdout)
     if proc.returncode != 0:
-        detail = _short(proc.stderr) or _short(proc.stdout)
-        raise StepFailed(f"claude exited {proc.returncode}" + (f": {detail}" if detail else ""))
-    try:
-        out = json.loads(proc.stdout)
-    except ValueError:
-        raise StepFailed("claude printed something other than JSON") from None
-    if not isinstance(out, dict) or out.get("is_error") or out.get("subtype", "success") != "success":
-        detail = _short(str(out.get("result", ""))) if isinstance(out, dict) else ""
-        sub = out.get("subtype") if isinstance(out, dict) else None
-        raise StepFailed(f"claude reported an error ({sub or 'is_error'})" + (f": {detail}" if detail else ""))
+        prefix = f"claude exited {proc.returncode}"
+        if out is not None and (out.get("is_error") or out.get("result")):
+            raise _json_failure(out, prefix)
+        detail = _short(_strip_noise(proc.stderr)) or _short(proc.stdout)
+        transient = not detail or _is_transient(None, detail)
+        raise StepFailed(prefix + (f": {detail}" if detail else ""), transient=transient)
+    if out is None:
+        raise StepFailed("claude printed something other than JSON", transient=True)
+    if out.get("is_error") or out.get("subtype", "success") != "success":
+        sub = out.get("subtype")
+        label = sub if sub and sub != "success" else "is_error"
+        raise _json_failure(out, f"claude reported an error ({label})")
     result = out.get("result")
     if not isinstance(result, str):
         raise StepFailed("claude returned no result text")
     return result
+
+
+def _backoff() -> float:
+    try:
+        return max(0, int(os.environ.get(ENV_RETRY_BACKOFF, "") or RETRY_BACKOFF))
+    except ValueError:
+        return RETRY_BACKOFF
 
 
 def _deadline(packet: dict) -> float | None:
@@ -208,9 +281,13 @@ def _packet_problem(packet: dict) -> str | None:
 
 
 def run_job(packet: dict, *, step_timeout: float, claude_bin: str,
-            clock: Callable[[], float]) -> tuple[dict, bool]:
+            clock: Callable[[], float], sleep: Callable[[float], None] = time.sleep) -> tuple[dict, bool]:
     """Run every step. Returns (result body, stop_tick). stop_tick is set when
-    the lease deadline cut the job short or claude is missing."""
+    the lease deadline cut the job short or claude is missing.
+
+    A transient failure is retried once after the backoff, inside the same
+    budget: the step's two attempts and the pause together stay within
+    step_timeout and clear of the lease margin."""
     phase = packet["phase"]
     deadline = _deadline(packet)
     outputs = []
@@ -221,8 +298,20 @@ def run_job(packet: dict, *, step_timeout: float, claude_bin: str,
             if left <= 0:
                 return {"phase": phase, "error": f"lease deadline reached before step {step['key']}"}, True
             timeout = min(timeout, left)
+        step_end = clock() + timeout
         try:
-            text = run_claude(packet["system"], step["prompt"], packet.get("model"), timeout, claude_bin)
+            try:
+                text = run_claude(packet["system"], step["prompt"], packet.get("model"), timeout, claude_bin)
+            except ClaudeMissing:
+                raise
+            except StepFailed as exc:
+                backoff = _backoff()
+                left = step_end - clock() - backoff
+                if not exc.transient or left < MIN_RETRY_TIMEOUT:
+                    raise
+                log(f"job {packet['id']}: step {step['key']} failed, retrying once in {backoff}s")
+                sleep(backoff)
+                text = run_claude(packet["system"], step["prompt"], packet.get("model"), left, claude_bin)
         except ClaudeMissing as exc:
             return {"phase": phase, "error": str(exc)}, True
         except StepFailed as exc:
