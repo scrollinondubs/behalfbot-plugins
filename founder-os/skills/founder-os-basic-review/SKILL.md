@@ -52,8 +52,17 @@ treat the lines that depend on it as not met, and ask them to resend.
 3. Use `## Coach checks` to judge quality and spot the mistakes the course
    warns about. They shape your advice. They are not extra pass lines: only
    Done when decides the verdict.
-4. If there are earlier submissions, name what improved since last time.
-5. `accepted` only when every Done when line is met. Otherwise `needs_work`.
+4. No extra gates. Never hold a card for work that belongs to a later card
+   (painstorming, interviews, a pitch) and never add a condition the card
+   does not state, such as asking whether they have posted somewhere. When
+   every Done when line is met, accept and let them move on.
+5. For a list of places, like watering holes, judge each one on fit and
+   validity: the audience is there, members talked recently, pain shows up,
+   and it is not dead or off topic. If you can see something that rules a
+   place out, point to it plainly. A place they already belong to or have
+   posted in counts like any other.
+6. If there are earlier submissions, name what improved since last time.
+7. `accepted` only when every Done when line is met. Otherwise `needs_work`.
 
 ## Reply
 

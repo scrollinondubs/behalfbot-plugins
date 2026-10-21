@@ -40,7 +40,7 @@ evidence: [artifacts/audience>=1, artifacts/watering_holes>=1]
 - **Fail:** any count falls short, or any Claude check fails. Common fails: an audience line that could head a pitch deck, fewer than 3 kept places with fresh dates, or a pin that is still a job title. The decision names the failing `audits` rows.
 - **Borderline, stale date:** a kept place was active but was last checked more than 30 days ago. Don't route. Ask for a re-check and re-audit that row.
 - **Borderline, handles only:** the 10 pin names are handles only. Pass if they show up in threads in the kept watering holes. Flag them if they don't.
-- **Borderline, posted already:** the founder has posted in a watering hole. The place still counts. Flag it in the rationale so stage 2 weights what it reads there with care.
+- **Borderline, asked about the idea:** the founder posted a thread asking the group about their own idea. The place still counts. Note that thread in the rationale so stage 2 reads it with care. Ordinary posts as a member are not a borderline; those places count like any other.
 - **Borderline, weak second pin:** the first next pin has a solid link and the second is vague. Pass with a flag only if every other check is clean.
 
 ## Failure routing

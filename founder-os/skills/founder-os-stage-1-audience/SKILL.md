@@ -71,6 +71,10 @@ Work the three cards in order.
    Every activity note carries the date it was checked. A [[watering-hole]]
    where only vendors answer is dropped. Fewer than three keepers means back
    to step 1 with more terms.
+   Judge places on fit only: the audience is there, recent member-to-member
+   talk, visible pain, on topic. A place the founder already belongs to or
+   has posted in counts like any other. Do not ask for painstorming or any
+   later-card work before they move on.
 5. **`first-bowling-pin`, steps 1 and 2.** List five to eight narrower groups
    inside the audience and score them, one line of evidence per score. Scores
    without evidence are guesses; send the founder to the kept watering holes
