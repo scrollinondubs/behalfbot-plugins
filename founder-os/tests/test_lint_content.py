@@ -564,7 +564,6 @@ class BasicTrackLintTest(LintContentTest):
         self.assertOneProblem("missing section(s) ## Why you care")
 
     def test_done_when_bullet_count(self) -> None:
-        self.edit(BASIC_CARD, "- You have not posted anything in any of them yet.\n", "")
         self.edit(BASIC_CARD, "- You list three or more watering holes, each with a working link.\n", "")
         self.edit(BASIC_CARD, "- Each place shows recent conversation between members, not only announcements or sales posts.\n", "")
         self.assertOneProblem("## Done when has 1 bullet(s); it needs 2 to 5")

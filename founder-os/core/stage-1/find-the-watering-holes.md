@@ -26,7 +26,7 @@ Wrong card if the audience is still "small businesses" or "creators". Narrow it 
 - A busy thread count matters more than a big member count. Ten thousand members and nothing posted since March is a graveyard.
 - Your audience is often a sub-group inside a bigger community. Search inside large spaces before deciding they are not online.
 - "They're not online" usually means you haven't searched properly yet.
-- This stage is for watching. You read, you take notes, and you post nothing.
+- This stage is for finding and reading. Being a member already is fine, even helpful. A place you have posted in is just as valuable. What waits for later is asking the group about your idea.
 
 ## Procedure
 
@@ -50,9 +50,9 @@ Wrong card if the audience is still "small businesses" or "creators". Narrow it 
 ## Anti-patterns
 
 - **Headcount hunting.** The list gives member counts and no recent dates. Ask for threads from the past week.
-- **The founder's own feed.** Every entry is a place you already hang out. Check whether any entry came from searching.
+- **The founder's own feed.** Every entry is a place you already hang out and none came from searching. Places you know are welcome; add at least one you found by searching.
 - **Vendor showrooms.** The "community" is a tool company's help forum where staff answer every post. Look for members answering each other.
-- **Posting before reading.** You've already dropped a "would you use this?" poll in the dispatcher Slack. Stop. Posting belongs to a later stage, and the thread will skew whatever you read there afterwards.
+- **Asking about your idea.** You've already dropped a "would you use this?" poll in the dispatcher Slack. Stop. Pitching belongs to a later stage, and that thread will skew whatever you read there afterwards. Ordinary posts from being a member are fine.
 - **Giving up early.** You decide a B2B audience "isn't online" after two searches. Look at the search sheet. If it's thin, so was the search.
 - **Stale snapshots.** Activity notes with no date, or dates from months ago. Re-check before the gate.
 
