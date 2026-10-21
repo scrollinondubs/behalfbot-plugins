@@ -231,8 +231,13 @@ in, so the student can see a slow tick.
 
 A tick stops claiming new jobs after `FOUNDER_OS_RUNNER_TICK_BUDGET` seconds
 (600), so other heartbeats are not kept waiting, and each claude call times out
-after `FOUNDER_OS_RUNNER_STEP_TIMEOUT` seconds (300). A step that fails or times
-out posts an error, which the Hub shows on the thread with a Retry. A step that
+after `FOUNDER_OS_RUNNER_STEP_TIMEOUT` seconds (300). A step that fails with a
+transient error (rate limit, overloaded, a 5xx, or no readable answer) is
+retried once after 25 seconds (`FOUNDER_OS_RUNNER_RETRY_BACKOFF`), inside the
+same step timeout and lease margin; an auth error, a missing CLI or a step that
+timed out is not retried. A step that still fails posts an error, which the Hub
+shows on the thread with a Retry. The error is the one claude put in its JSON
+output, not the warnings Claude Code prints to stderr on every run. A step that
 would start within a minute of the 20-minute lease ending posts an error
 instead of racing it. A 409 (the lease moved on) is dropped quietly.
 
