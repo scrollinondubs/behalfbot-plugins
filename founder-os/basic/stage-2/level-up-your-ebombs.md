@@ -17,19 +17,19 @@ produces: [ebomb-score, ebomb-plan]
 ## What this is
 Your first e-bomb is out, so advanced mode is open. Here's the tour before you write the next four.
 
-To find what to write next: Spin this turns one e-bomb into ten or more new ideas on the same pain. The Gold tab and the Detective Board pull the pains, jargon, worldview and buys from all your notes into one place. The watering hole survey shows what a place keeps talking about, so you can pick your next place to read and share.
+To find what to write next: Spin this turns one e-bomb into ten or more new ideas on the same pain. The Gold tab and the Detective Board pull the pains, jargon, worldview and buys from all your notes into one place. The watering hole survey shows what a place keeps talking about, to pick your next one.
 
 To write it better: the Scorecard in the e-bomb builder rates an e-bomb out of 8 on Amy and Alex's four points. Crispy pain, a real fix, a clear next step, and a link to the obvious next thing.
 
-Then Ray Edwards' headline test. **A good headline does five jobs.** It grabs attention, picks out your exact reader, pulls them into the first line, carries one big idea, and gives them a reason to trust you. His five templates: how-to, transactional (do this, get that), reason-why, probing question, and if-then (if you can do this easy thing, you can get this big result). Write a lot of bad headlines first. He says that's the secret.
+Then Ray Edwards' headline test. **A good headline does five jobs.** It grabs attention, picks out your exact reader, pulls them into the first line, carries one big idea, and gives them a reason to trust you. His five templates: how-to, transactional (do this, get that), reason-why, probing question, and if-then (if you can do this easy thing, you can get this big result).
 
-His sales copy opens with three moves that work for an e-bomb too. Name the person and their problem in their words. Show what it costs them if it stays unsolved. Then tell the story of the fix.
+Open the way Edwards opens his sales copy: name the person and their problem in their words, show what it costs them, then tell the story of the fix.
 
 ## What you make
 Your first e-bomb scored out of 8, its headline rewritten three ways, and a short plan for the next four: four seeds from Spin this, each with its e-bomb type, plus one new watering hole.
 
 ## How to submit
-Paste your score with one line on the weakest point, your three new headlines, and your four seeds in the box. Add the link to your new watering hole.
+Paste your score and weakest point, three new headlines and four seeds in the box, plus the link to your new watering hole.
 
 ## Done when
 - Your first e-bomb has a score out of 8 and one line on its weakest point.
