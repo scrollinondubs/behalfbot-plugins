@@ -241,6 +241,14 @@ output, not the warnings Claude Code prints to stderr on every run. A step that
 would start within a minute of the 20-minute lease ending posts an error
 instead of racing it. A 409 (the lease moved on) is dropped quietly.
 
+Each output the runner posts carries a `usage` object with what Claude Code
+reported for that step: input, output, cache-read and cache-write tokens summed
+over every model it ran, the model names, and its `total_cost_usd`. A step that
+was retried reports both attempts. The Hub prices the tokens at API list prices
+and shows the student what the job would have cost on their API key; the run
+itself bills their Claude plan, as before. A Hub that predates this ignores the
+field.
+
 ## Core vs contrib
 
 **`core/` is the only thing the coach loads.** It is curated and small. The
