@@ -26,7 +26,7 @@ bundle and the eval harness are in place. Gate minimums were ruled by Sean on 20
 ## Basic track
 
 `basic/` is a second, shorter track: five stages, three cards each (stage 0
-opens with a fourth, the program overview, and stage 2 ends with a fourth, the next four e-bombs), built on
+opens with a fourth, the program overview; stage 2 adds the level-up lesson and the next four e-bombs; stage 3 ends with a fourth, the one-page product direction), built on
 Amy Hoy and Alex Hillman's [30x500](https://30x500.com).
 It ends at a first sale to a stranger. Cards are paraphrased, name the 30x500
 lesson they draw on and point to the course; they are a short version, not a substitute. The ten
@@ -36,8 +36,8 @@ stages above are the Advanced track and are unchanged.
 |---|---|---|
 | 0 | Pick your people | Audience you belong to, watering holes, weekly research time |
 | 1 | Sales Safari | Painstorm one thread, themes and saved threads, Safari gold and e-bomb ideas |
-| 2 | E-bombs and your list | Home base, the first e-bomb, sharing it and the first email, the next four e-bombs |
-| 3 | Your first tiny product | Pain into dream, ten pitches, plinko and a sign-up page |
+| 2 | E-bombs and your list | Home base, the first e-bomb, sharing it and the first email, level up (score, spin, headlines), the next four e-bombs |
+| 3 | Your first tiny product | Pain into dream, ten pitches, plinko and a sign-up page, one-page product direction |
 | 4 | Ship it small and launch | Build it, sales page and price, launch and the first sale |
 
 Each card says what to make, how to submit it (`text`, `link`, `file`,

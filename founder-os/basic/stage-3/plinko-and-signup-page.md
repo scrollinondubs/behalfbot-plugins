@@ -10,7 +10,7 @@ gate: basic-stage-3-first-product
 submit: [text, file, link, choice]
 assist: analyse
 choices: [Written guide, Email course, Cheat sheet or template, Workshop or video, Other]
-sources: ["thirty-x-500, Product plinko"]
+sources: ["thirty-x-500, Product plinko", "mom-test, Chapter 1"]
 author: Sean Tierney
 requires: [basic-fixstorm-ten-pitches, basic-set-up-your-home-base]
 teaches: [product-plinko, landing-pages]
@@ -40,6 +40,7 @@ Fill in the pass or fail for each pitch yourself, or press "Analyse my pitches" 
 - No complaints about a format is not a no. If they pay for similar things it may pass (p 186).
 - The course's tiny first products: a book written in a day, a 50-page PDF, a white paper that started a software company (pp 181-182).
 - If they pick Other, ask what the format is and check it against the same rules.
+- Mom Test check (Rob Fitzpatrick). Count what people did, not what they said they would do. A buy, a recommendation or a workaround in the notes is evidence. "I'd totally buy that", a compliment or a "yes" to "would you use this?" is not. If the student asked anyone about the winner, flag future and opinion questions ("would you", "do you think") and nudge them to ask about the last time it happened, then listen more than they talk.
 
 ## Source
-Amy Hoy and Alex Hillman, 30x500, Product plinko. The course is closed to new students; more about it: https://30x500.com
+Amy Hoy and Alex Hillman, 30x500, Product plinko. The coach also checks your evidence with Rob Fitzpatrick's The Mom Test: https://www.momtestbook.com The course is closed to new students; more about it: https://30x500.com

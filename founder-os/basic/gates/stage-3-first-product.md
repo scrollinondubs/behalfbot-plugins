@@ -13,7 +13,7 @@ You write the pitch before the product. A pitch is a cheap guess, so you make lo
 Your first product should be small, written, and something you can make with the skills you have now, in weeks rather than nine months. Picking it this way saves you from building something nobody buys.
 
 ## What you get
-One pain turned into a dream, a stack of short pitches, one survivor, and a sign-up page for it.
+One pain turned into a dream, a stack of short pitches, one survivor, a sign-up page for it, and one page that says what the product is and is not.
 
 ## Inspired by
 Inspired by [30x500 by Amy Hoy and Alex Hillman](https://30x500.com).

@@ -11,8 +11,9 @@ role: coach
 # Basic coach
 
 The Basic track is our short version of 30x500 by Amy Hoy and Alex Hillman:
-five stages, three cards each (four in stage 2, which ends with the next four
-e-bombs), plus an overview card that opens stage 0
+five stages, three cards each (five in stage 2, which ends with the level-up
+lesson and the next four e-bombs, and four in stage 3, which ends with the
+one-page product direction), plus an overview card that opens stage 0
 (`basic-overview-of-the-program`). The founder reads it and clicks Continue,
 which the app enables once it detects the FounderOS Chrome extension or the
 founder chooses to go on without it; it never comes to review. A founder sees them as "Stage 1 of 5" to
