@@ -63,7 +63,10 @@ FAKE_CLAUDE = textwrap.dedent("""\
         sys.exit(1)
     if mode == "overloaded-always" or (mode == "overloaded-once" and call_no == 1):
         print(json.dumps({"type": "result", "subtype": "success", "is_error": True, "api_error_status": 529,
-                          "result": "API Error: 529 Overloaded"}))
+                          "result": "API Error: 529 Overloaded", "total_cost_usd": 0.01,
+                          "modelUsage": {"claude-sonnet-5-5": {"inputTokens": 100, "outputTokens": 0,
+                                                               "cacheReadInputTokens": 0,
+                                                               "cacheCreationInputTokens": 0}}}))
         sys.exit(1)
     if mode == "garbled-once" and call_no == 1:
         sys.exit(1)
@@ -74,8 +77,19 @@ FAKE_CLAUDE = textwrap.dedent("""\
         print(json.dumps({"type": "result", "subtype": "error_during_execution", "is_error": True,
                           "result": "overloaded"}))
         sys.exit(0)
-    print(json.dumps({"type": "result", "subtype": "success", "is_error": False,
-                      "result": json.dumps({"echo": prompt})}))
+    out = {"type": "result", "subtype": "success", "is_error": False, "result": json.dumps({"echo": prompt})}
+    if mode == "usage-legacy":
+        out["usage"] = {"input_tokens": 7, "output_tokens": 9, "cache_read_input_tokens": 3,
+                        "cache_creation_input_tokens": 5}
+    elif mode != "no-usage":
+        out["total_cost_usd"] = 0.123456
+        out["modelUsage"] = {
+            "claude-sonnet-5-5": {"inputTokens": 1200, "outputTokens": 3400, "cacheReadInputTokens": 600,
+                                  "cacheCreationInputTokens": 2900, "costUSD": 0.12},
+            "claude-haiku-5-5": {"inputTokens": 10, "outputTokens": 20, "cacheReadInputTokens": 0,
+                                 "cacheCreationInputTokens": 0, "costUSD": 0.003456},
+        }
+    print(json.dumps(out))
 """)
 
 
@@ -169,6 +183,28 @@ class RunnerTest(unittest.TestCase):
             self.assertNotIn("FOUNDER_OS_AGENT_KEY", call["env"])
             self.assertFalse(pathlib.Path(call["cwd"]).exists(), "claude runs in a throwaway empty directory")
 
+    def test_each_output_carries_what_claude_says_it_used(self):
+        with FakeVCL([packet("run-u", ["one", "two"], model="claude-sonnet-5-5")], key=KEY) as fake:
+            self.run_gate(fake)
+        outputs = fake.results()[0]["body"]["outputs"]
+        self.assertEqual(len(outputs), 2)
+        for out in outputs:
+            self.assertEqual(out["usage"], {"input_tokens": 1210, "output_tokens": 3420, "cache_read_tokens": 600,
+                                            "cache_creation_tokens": 2900, "cost_usd": 0.123456,
+                                            "models": ["claude-haiku-5-5", "claude-sonnet-5-5"]})
+
+    def test_usage_block_is_read_when_model_usage_is_missing(self):
+        with FakeVCL([packet("run-l", ["one"])], key=KEY) as fake:
+            self.run_gate(fake, mode="usage-legacy")
+        self.assertEqual(fake.results()[0]["body"]["outputs"][0]["usage"],
+                         {"input_tokens": 7, "output_tokens": 9, "cache_read_tokens": 3,
+                          "cache_creation_tokens": 5, "cost_usd": None, "models": []})
+
+    def test_no_usage_in_the_json_sends_no_usage(self):
+        with FakeVCL([packet("run-n", ["one"])], key=KEY) as fake:
+            self.run_gate(fake, mode="no-usage")
+        self.assertNotIn("usage", fake.results()[0]["body"]["outputs"][0])
+
     def test_model_null_omits_the_flag(self):
         with FakeVCL([packet("run-2", ["only"], model=None)], key=KEY) as fake:
             self.run_gate(fake)
@@ -225,6 +261,10 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual([c["stdin"] for c in self.claude_calls()], ["first", "first", "second"])
         self.assertEqual(summary["failed_steps"], 0)
         self.assertIn("step chunk-0 failed, retrying once", proc.stderr)
+        first = body["outputs"][0]["usage"]
+        self.assertEqual(first["input_tokens"], 1310, "the failed attempt's tokens count too")
+        self.assertEqual(first["cost_usd"], 0.133456)
+        self.assertEqual(body["outputs"][1]["usage"]["input_tokens"], 1210)
 
     def test_transient_failure_is_retried_only_once(self):
         with FakeVCL([packet("run-529s", ["x"])], key=KEY) as fake:

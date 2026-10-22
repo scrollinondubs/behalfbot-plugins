@@ -3,7 +3,9 @@
 Claims jobs from GET /api/founder-os/agent/jobs/next until it answers 204 or
 three jobs are done, runs every step through `claude -p`, and posts the outputs
 (or one error) to POST /api/founder-os/agent/jobs/:id/result. The HTTP contract
-is section B of the agent-runner plan; the Hub owns parsing and checking.
+is section B of the agent-runner plan; the Hub owns parsing and checking. Each
+output also carries the tokens and models Claude Code reported for that step,
+so the Hub can show what the job would have cost on the student's API key.
 
 The claude call is the whole of the model access. This module never reads
 ~/.claude, the keychain or any OAuth credential: it starts the CLI the student
@@ -82,6 +84,7 @@ class StepFailed(Exception):
     def __init__(self, message: str, transient: bool = False):
         super().__init__(message)
         self.transient = transient
+        self.usage: dict | None = None
 
 
 class ClaudeMissing(StepFailed):
@@ -209,7 +212,56 @@ def _json_failure(out: dict, prefix: str) -> StepFailed:
                       transient=_is_transient(out.get("api_error_status"), detail))
 
 
-def run_claude(system: str, prompt: str, model: str | None, timeout: float, claude_bin: str) -> str:
+def _int(value) -> int:
+    return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else 0
+
+
+def claude_usage(out: dict) -> dict | None:
+    """What one claude -p call used, from its JSON: token totals over every
+    model it ran (modelUsage, else the usage block), the models, and
+    total_cost_usd. The Hub prices the tokens itself; cost_usd is what Claude
+    Code says the call would cost at API prices. None when the JSON has none
+    of these."""
+    per_model = out.get("modelUsage")
+    totals = {"input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_creation_tokens": 0}
+    models: list[str] = []
+    if isinstance(per_model, dict) and per_model:
+        for name, u in per_model.items():
+            if not isinstance(u, dict):
+                continue
+            models.append(str(name))
+            totals["input_tokens"] += _int(u.get("inputTokens"))
+            totals["output_tokens"] += _int(u.get("outputTokens"))
+            totals["cache_read_tokens"] += _int(u.get("cacheReadInputTokens"))
+            totals["cache_creation_tokens"] += _int(u.get("cacheCreationInputTokens"))
+    elif isinstance(out.get("usage"), dict):
+        u = out["usage"]
+        totals["input_tokens"] = _int(u.get("input_tokens"))
+        totals["output_tokens"] = _int(u.get("output_tokens"))
+        totals["cache_read_tokens"] = _int(u.get("cache_read_input_tokens"))
+        totals["cache_creation_tokens"] = _int(u.get("cache_creation_input_tokens"))
+    cost = out.get("total_cost_usd")
+    cost = float(cost) if isinstance(cost, (int, float)) and not isinstance(cost, bool) and cost >= 0 else None
+    if not models and cost is None and not any(totals.values()):
+        return None
+    return {**totals, "cost_usd": cost, "models": sorted(models)}
+
+
+def add_usage(a: dict | None, b: dict | None) -> dict | None:
+    """Two calls' usage as one: a retried step reports both attempts."""
+    if a is None or b is None:
+        return a or b
+    costs = [c for c in (a.get("cost_usd"), b.get("cost_usd")) if c is not None]
+    merged = {k: a.get(k, 0) + b.get(k, 0)
+              for k in ("input_tokens", "output_tokens", "cache_read_tokens", "cache_creation_tokens")}
+    return {**merged, "cost_usd": round(sum(costs), 6) if costs else None,
+            "models": sorted(set(a.get("models", [])) | set(b.get("models", [])))}
+
+
+def run_claude(system: str, prompt: str, model: str | None, timeout: float, claude_bin: str) -> dict:
+    """One claude -p call. Returns {"text", "usage"}; usage is None when the
+    JSON carried none. A failure raises StepFailed with whatever usage the
+    failed call reported on it."""
     env = {k: v for k, v in os.environ.items() if k not in CHILD_ENV_DROP}
     # An empty directory, so no CLAUDE.md from the install root rides along
     # into the student's painstorm.
@@ -226,7 +278,7 @@ def run_claude(system: str, prompt: str, model: str | None, timeout: float, clau
     if proc.returncode != 0:
         prefix = f"claude exited {proc.returncode}"
         if out is not None and (out.get("is_error") or out.get("result")):
-            raise _json_failure(out, prefix)
+            raise _with_usage(_json_failure(out, prefix), out)
         detail = _short(_strip_noise(proc.stderr)) or _short(proc.stdout)
         transient = not detail or _is_transient(None, detail)
         raise StepFailed(prefix + (f": {detail}" if detail else ""), transient=transient)
@@ -235,11 +287,16 @@ def run_claude(system: str, prompt: str, model: str | None, timeout: float, clau
     if out.get("is_error") or out.get("subtype", "success") != "success":
         sub = out.get("subtype")
         label = sub if sub and sub != "success" else "is_error"
-        raise _json_failure(out, f"claude reported an error ({label})")
+        raise _with_usage(_json_failure(out, f"claude reported an error ({label})"), out)
     result = out.get("result")
     if not isinstance(result, str):
-        raise StepFailed("claude returned no result text")
-    return result
+        raise _with_usage(StepFailed("claude returned no result text"), out)
+    return {"text": result, "usage": claude_usage(out)}
+
+
+def _with_usage(exc: StepFailed, out: dict) -> StepFailed:
+    exc.usage = claude_usage(out)
+    return exc
 
 
 def _backoff() -> float:
@@ -299,9 +356,10 @@ def run_job(packet: dict, *, step_timeout: float, claude_bin: str,
                 return {"phase": phase, "error": f"lease deadline reached before step {step['key']}"}, True
             timeout = min(timeout, left)
         step_end = clock() + timeout
+        spent = None
         try:
             try:
-                text = run_claude(packet["system"], step["prompt"], packet.get("model"), timeout, claude_bin)
+                done = run_claude(packet["system"], step["prompt"], packet.get("model"), timeout, claude_bin)
             except ClaudeMissing:
                 raise
             except StepFailed as exc:
@@ -309,14 +367,19 @@ def run_job(packet: dict, *, step_timeout: float, claude_bin: str,
                 left = step_end - clock() - backoff
                 if not exc.transient or left < MIN_RETRY_TIMEOUT:
                     raise
+                spent = exc.usage
                 log(f"job {packet['id']}: step {step['key']} failed, retrying once in {backoff}s")
                 sleep(backoff)
-                text = run_claude(packet["system"], step["prompt"], packet.get("model"), left, claude_bin)
+                done = run_claude(packet["system"], step["prompt"], packet.get("model"), left, claude_bin)
         except ClaudeMissing as exc:
             return {"phase": phase, "error": str(exc)}, True
         except StepFailed as exc:
             return {"phase": phase, "error": f"step {step['key']}: {exc}"}, False
-        outputs.append({"key": step["key"], "text": text})
+        output = {"key": step["key"], "text": done["text"]}
+        usage = add_usage(spent, done["usage"])
+        if usage is not None:
+            output["usage"] = usage
+        outputs.append(output)
     return {"phase": phase, "outputs": outputs}, False
 
 
