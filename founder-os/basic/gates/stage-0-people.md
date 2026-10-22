@@ -4,6 +4,7 @@ type: gate
 track: basic
 stage: 0
 title: Pick your people
+video: https://youtu.be/UHl1d_fNzBE
 signoff: coach
 ---
 ## What this is

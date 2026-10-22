@@ -683,7 +683,10 @@ class BasicContentLoaderTest(unittest.TestCase):
         first = content.basic_cards(0)[0]
         self.assertEqual(first.id, "basic-overview-of-the-program")
         self.assertEqual(first.fields["submit"], ["extension"])
-        self.assertEqual(first.fields["sources"], ["thirty-x-500, Introduction"])
+        self.assertEqual(
+            first.fields["sources"],
+            ["thirty-x-500, Introduction", "sean-interviews-alex-hillman-nomad-podcast"],
+        )
         self.assertEqual(content.basic_gate(0).id, "basic-stage-0-people")
         with self.assertRaises(LookupError):
             content.basic_gate(5)

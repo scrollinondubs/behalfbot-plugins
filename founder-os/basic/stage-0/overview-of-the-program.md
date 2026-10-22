@@ -5,10 +5,11 @@ track: basic
 stage: 0
 order: 1
 title: Overview of the program
+video: https://youtu.be/VX8r7Nr4ytQ
 canvas: []
 gate: basic-stage-0-people
 submit: [extension]
-sources: ["thirty-x-500, Introduction"]
+sources: ["thirty-x-500, Introduction", sean-interviews-alex-hillman-nomad-podcast]
 author: Sean Tierney
 teaches: [audience-first]
 ---
@@ -17,7 +18,7 @@ Most founders start with an idea. They build it, launch it, and hear crickets. T
 
 30x500 flips the order. You start with people, not an idea. You pick an audience and watch them in the places they already hang out online. Amy Hoy and Alex Hillman call this Sales Safari. You learn their pains in their own words. You help them with small, free fixes, which builds rapport and gives you real empathy for what they deal with. Only then do you sell them a product, and by that point you already know they want it because they told you.
 
-Here's what sold me on it: **30x500 is deterministic.** Most of startup building feels like a dark art. This doesn't. Follow it end to end, don't skip steps, and it works.
+**This 30x500 process is deterministic.** Most of startup building feels like a dark art. This doesn't. Follow it end to end, don't skip steps, and it works.
 
 So how does FounderOS work? Each stage is a short set of lessons. Each lesson asks you to make something real and submit it. Jax reviews it on the spot and tells you what's missing. You fix it, it passes, and the next part opens up. Every step builds on the one before it.
 
