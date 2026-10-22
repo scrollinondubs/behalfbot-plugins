@@ -464,9 +464,13 @@ class BasicTrackLintTest(LintContentTest):
         self.assertProblemWithFallout("basic: stage 1 needs 3 cards, found 2",
                                       "requires names unknown card(s) 'basic-find-the-themes'")
 
-    def test_four_cards_in_stage_2(self) -> None:
+    def test_five_cards_in_stage_2(self) -> None:
         (self.root / "basic/stage-2/next-four-ebombs.md").unlink()
-        self.assertOneProblem("basic: stage 2 needs 4 cards, found 3")
+        self.assertOneProblem("basic: stage 2 needs 5 cards, found 4")
+
+    def test_four_cards_in_stage_3(self) -> None:
+        (self.root / "basic/stage-3/one-page-product-direction.md").unlink()
+        self.assertOneProblem("basic: stage 3 needs 4 cards, found 3")
 
     def test_source_names_a_lesson_not_pages(self) -> None:
         self.edit(BASIC_CARD, '"thirty-x-500, Finding watering holes"', '"thirty-x-500, pp 39, 56-59"')
@@ -673,7 +677,7 @@ class BasicContentLoaderTest(unittest.TestCase):
         content = Content(PLUGIN_DIR, include_contrib=False)
         for stage in range(5):
             cards = content.basic_cards(stage)
-            want = ["1", "2", "3", "4"] if stage in (0, 2) else ["1", "2", "3"]
+            want = [str(n) for n in range(1, {0: 4, 2: 5, 3: 4}.get(stage, 3) + 1)]
             self.assertEqual([c.fields["order"] for c in cards], want)
             self.assertTrue(all(c.fields["gate"] == content.basic_gate(stage).id for c in cards))
         first = content.basic_cards(0)[0]

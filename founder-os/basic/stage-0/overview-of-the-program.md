@@ -25,7 +25,13 @@ Where we part ways with 30x500: FounderOS automates some things the course wants
 
 Amy and Alex would probably have you do more of this by hand, and they have a point. Doing it manually is how you build a gut feel for a market. But most people doing this have a day job and maybe a few free evenings a week. FounderOS is the condensed version: the most effective use of the time you actually have. It pulls together the best of what I've seen work, from 30x500 and a few other sources.
 
-TODO for Sean: add the other sources and where they fit. Jobs To Be Done (Clayton Christensen), The Mom Test (Rob Fitzpatrick), earlyvangelists (Steve Blank).
+30x500 is the spine. Along the way you'll meet a few other people whose ideas fill the gaps:
+
+- Stage 3: Robert Cialdini on why people say yes, and Ray Edwards on headlines.
+- Stage 4: Clayton Christensen's jobs to be done and Steve Blank's earlyvangelists, to pick the pitch. Rob Fitzpatrick's Mom Test, as a check that your evidence is what people did, not what they said they'd do. Nacho Bassino and Richard Rumelt, to put your product on one page.
+- Stage 5: Russell Brunson on telling your story, and Jeff Walker on the launch sequence.
+
+Every card names its source. If one clicks for you, go read the original.
 
 Treat this as an investment. It will feel slow at first, and that's normal. **The progress compounds.** What you're really building is a muscle: the ability to parachute into any market, learn it fast and sell to it. You get to keep that one.
 

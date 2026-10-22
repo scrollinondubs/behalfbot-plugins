@@ -63,6 +63,9 @@
     {"id": "cialdini-seven-principles", "title": "The Science of Persuasion: Seven Principles of Persuasion", "author": "Robert Cialdini", "url": "https://www.influenceatwork.com/7-principles-of-persuasion/", "kind": "article"},
     {"id": "brunson-epiphany-bridge", "title": "What is The Epiphany Bridge?", "author": "Russell Brunson", "year": 2025, "url": "https://www.russellbrunson.com/blog/the-epiphany-bridge", "kind": "article"},
     {"id": "walker-product-launch", "title": "The Four Key Steps Behind My Product Launch Process", "author": "Jeff Walker", "year": 2022, "url": "https://jeffwalker.com/product-launch-process", "kind": "article"},
-    {"id": "expert-secrets", "title": "Expert Secrets (2020 edition)", "author": "Russell Brunson", "year": 2020, "url": "https://www.expertsecrets.com/", "kind": "book"}
+    {"id": "expert-secrets", "title": "Expert Secrets (2020 edition)", "author": "Russell Brunson", "year": 2020, "url": "https://www.expertsecrets.com/", "kind": "book"},
+    {"id": "edwards-pastor", "title": "P.A.S.T.O.R. Masterclass", "author": "Ray Edwards", "year": 2023, "url": "https://www.rayedwards.com/go/p-a-s-t-o-r-masterclass", "kind": "article"},
+    {"id": "rumelt-perils-of-bad-strategy", "title": "The perils of bad strategy (McKinsey Quarterly)", "author": "Richard Rumelt", "year": 2011, "url": "https://www.mckinsey.com/capabilities/strategy-and-corporate-finance/our-insights/the-perils-of-bad-strategy", "kind": "article"},
+    {"id": "product-direction", "title": "Product Direction (free companion course)", "author": "Nacho Bassino", "url": "https://nachobassino.com/pdcc", "kind": "course"}
   ]
 }

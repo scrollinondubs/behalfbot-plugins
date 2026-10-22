@@ -3,14 +3,14 @@ id: basic-next-four-ebombs
 type: card
 track: basic
 stage: 2
-order: 4
+order: 5
 title: Write, publish and share your next four e-bombs
 canvas: [fixes.ebombs, audience.watering-holes, audience.list]
 gate: basic-stage-2-ebombs
 submit: [link, file]
 sources: ["thirty-x-500, Education bombs", cialdini-seven-principles]
 author: Sean Tierney
-requires: [basic-share-and-email-your-list]
+requires: [basic-level-up-your-ebombs]
 teaches: [ebombs, persuasion]
 produces: [ebombs, sharing-log]
 ---
