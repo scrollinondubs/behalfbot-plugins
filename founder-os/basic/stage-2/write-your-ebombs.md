@@ -4,7 +4,7 @@ type: card
 track: basic
 stage: 2
 order: 2
-title: Write and publish five e-bombs
+title: Write and publish your first e-bomb
 canvas: [research.pains, research.jargon, fixes.ebombs, sales.ctas]
 gate: basic-stage-2-ebombs
 submit: [link, text]
@@ -19,17 +19,17 @@ produces: [ebombs]
 An e-bomb is a small, free lesson that fixes one specific problem. The recipe: open with one real question your audience asks, show you understand their exact situation (their own words work best), give one answer rather than a book, and end with your call to action. Make the headline the question itself, not a topic.
 
 ## What you make
-Five published e-bombs on your site, each built from a question in your Safari notes.
+Your first published e-bomb live on your site built from a question in your Safari notes.
 
 ## How to submit
-Share the link to each e-bomb, and note the quote or theme each one came from.
+Share the link to your first e-bomb, and note the painstorming thread it originated from.
 
 ## Done when
-- Five e-bombs are live on your site.
-- Each one opens with a specific question and proof you understand the situation, gives one answer, and ends with your call to action.
-- Each headline only fits this audience; swap in another audience and it would break.
-- No e-bomb mentions your product or app, or asks the reader for anything but their email.
-- Each e-bomb names the quote, theme or worldview note it came from.
+- Your first e-bomb is live on your site.
+- It opens with a specific question and proof you understand the situation, gives one answer, and ends with your call to action.
+- The headline fits this audience; swap in another audience and it would break.
+- It doesn't mention your product or app, or ask the reader for anything but their email.
+- The e-bomb names the quote, theme or worldview note it came from.
 
 ## Coach checks
 - Vague versus sharp: "how to price your work" is a topic; the question a specific poster asked is an e-bomb (pp 83-86, 91).

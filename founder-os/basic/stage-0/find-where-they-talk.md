@@ -5,7 +5,8 @@ track: basic
 stage: 0
 order: 3
 title: Find where they talk
-canvas: [audience.watering-holes, research.jargon]
+video: https://youtu.be/mDl8MkNbe78
+canvas: [audience.watering-holes]
 gate: basic-stage-0-people
 submit: [text]
 sources: ["thirty-x-500, Finding watering holes"]
@@ -25,13 +26,13 @@ Write your list with links in the box, and add the search words you used.
 
 ## Done when
 - You list three or more watering holes, each with a working link.
-- Your search words are included: five or more names the audience calls itself, five or more jargon or tool words, and the venue words you paired them with.
+- Your search words are included: names the audience calls itself and venue and/or jargon & tool words.
 - Each place shows recent conversation between members, not only announcements or sales posts.
 
 ## Coach checks
 - Did they really search many combinations, or stop at the first subreddit? The course demo searches a lot and clicks on everything (pp 57-58).
 - A mix of formats is a good sign: forums, groups, product support communities, review threads, marketplaces (p 57).
-- Insider jargon in the search words is the tell that they really belong to this group (pp 58-59).
+- Did they include the search terms with the URL that got them there?
 - Common mistake: declaring the audience offline before searching inside bigger communities (p 59).
 - Three watering holes is a FounderOS number. The course only says one is probably not enough (p 82).
 - Judge each place on fit: is this audience there, is the talk recent and between members, does pain show up, is it on topic. If something you can see rules a place out (dead for months, all vendor posts, a different audience), point to it.
