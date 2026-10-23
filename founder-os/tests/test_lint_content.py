@@ -569,7 +569,7 @@ class BasicTrackLintTest(LintContentTest):
 
     def test_done_when_bullet_count(self) -> None:
         self.edit(BASIC_CARD, "- You list three or more watering holes, each with a working link.\n", "")
-        self.edit(BASIC_CARD, "- Each place shows recent conversation between members, not only announcements or sales posts.\n", "")
+        self.edit(BASIC_CARD, "- At least three of your places have threads where members talk with each other, with enough posts and comments to mine for pain and jargon. Old or quiet places count.\n", "")
         self.assertOneProblem("## Done when has 1 bullet(s); it needs 2 to 5")
 
     def test_source_links_the_course(self) -> None:
