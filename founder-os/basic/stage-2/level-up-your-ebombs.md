@@ -3,7 +3,7 @@ id: basic-level-up-your-ebombs
 type: card
 track: basic
 stage: 2
-order: 4
+order: 3
 title: "Level up: score it, spin it, sharpen the headline"
 canvas: [fixes.ebombs, audience.watering-holes]
 gate: basic-stage-2-ebombs

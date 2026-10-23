@@ -3,7 +3,7 @@ id: basic-share-and-email-your-list
 type: card
 track: basic
 stage: 2
-order: 3
+order: 2
 title: Share the e-bomb in various watering holes and email your list
 canvas: [audience.watering-holes, audience.reputation, audience.list, fixes.email-sequences]
 gate: basic-stage-2-ebombs

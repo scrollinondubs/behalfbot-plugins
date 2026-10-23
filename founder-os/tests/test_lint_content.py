@@ -459,14 +459,14 @@ class BasicTrackLintTest(LintContentTest):
         self.assertProblemWithFallout("basic: stage 0 needs 4 cards, found 3",
                                       "requires names unknown card(s) 'basic-find-where-they-talk'")
 
-    def test_three_cards_after_stage_0(self) -> None:
+    def test_four_cards_in_stage_1(self) -> None:
         (self.root / "basic/stage-1/find-the-themes.md").unlink()
-        self.assertProblemWithFallout("basic: stage 1 needs 3 cards, found 2",
+        self.assertProblemWithFallout("basic: stage 1 needs 4 cards, found 3",
                                       "requires names unknown card(s) 'basic-find-the-themes'")
 
-    def test_five_cards_in_stage_2(self) -> None:
+    def test_four_cards_in_stage_2(self) -> None:
         (self.root / "basic/stage-2/next-four-ebombs.md").unlink()
-        self.assertOneProblem("basic: stage 2 needs 5 cards, found 4")
+        self.assertOneProblem("basic: stage 2 needs 4 cards, found 3")
 
     def test_four_cards_in_stage_3(self) -> None:
         (self.root / "basic/stage-3/one-page-product-direction.md").unlink()
@@ -569,7 +569,7 @@ class BasicTrackLintTest(LintContentTest):
 
     def test_done_when_bullet_count(self) -> None:
         self.edit(BASIC_CARD, "- You list three or more watering holes, each with a working link.\n", "")
-        self.edit(BASIC_CARD, "- Each place shows recent conversation between members, not only announcements or sales posts.\n", "")
+        self.edit(BASIC_CARD, "- At least three of your places have threads where members talk with each other, with enough posts and comments to mine for pain and jargon. Old or quiet places count.\n", "")
         self.assertOneProblem("## Done when has 1 bullet(s); it needs 2 to 5")
 
     def test_source_links_the_course(self) -> None:
@@ -677,7 +677,7 @@ class BasicContentLoaderTest(unittest.TestCase):
         content = Content(PLUGIN_DIR, include_contrib=False)
         for stage in range(5):
             cards = content.basic_cards(stage)
-            want = [str(n) for n in range(1, {0: 4, 2: 5, 3: 4}.get(stage, 3) + 1)]
+            want = [str(n) for n in range(1, {0: 4, 1: 4, 2: 4, 3: 4}.get(stage, 3) + 1)]
             self.assertEqual([c.fields["order"] for c in cards], want)
             self.assertTrue(all(c.fields["gate"] == content.basic_gate(stage).id for c in cards))
         first = content.basic_cards(0)[0]
