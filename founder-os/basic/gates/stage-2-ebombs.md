@@ -3,7 +3,7 @@ id: basic-stage-2-ebombs
 type: gate
 track: basic
 stage: 2
-title: E-bombs and your list
+title: Deliver a cadence of tiny fixes to build your list
 signoff: coach
 ---
 ## What this is

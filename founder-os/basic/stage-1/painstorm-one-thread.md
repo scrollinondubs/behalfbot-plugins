@@ -4,7 +4,7 @@ type: card
 track: basic
 stage: 1
 order: 1
-title: Painstorm one thread
+title: Mining pain on the Internet - the manual approach to Painstorming
 canvas: [research.pains, research.buys, systems.tools]
 gate: basic-stage-1-sales-safari
 submit: [file, link]

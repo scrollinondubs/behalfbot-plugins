@@ -3,7 +3,7 @@ id: basic-stage-4-ship-and-launch
 type: gate
 track: basic
 stage: 4
-title: Ship it small and launch
+title: Launch and earn your first revenue
 signoff: coach
 ---
 ## What this is
