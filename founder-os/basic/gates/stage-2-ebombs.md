@@ -13,7 +13,7 @@ You start teaching in public. Each e-bomb is a small, free fix for one problem y
 People try your advice, get a result, and start to trust you before you ever ask for money. A list built this way buys far more often than a list built any other way. You do not need to be famous or a great writer. You need to answer a real question well.
 
 ## What you get
-A home on the web with a signup form, five published e-bombs, helpful comments in your watering holes, and the first people on your list.
+Five published e-bombs on your home base, helpful comments in your watering holes, and the first people on your list.
 
 ## Inspired by
 Inspired by [30x500 by Amy Hoy and Alex Hillman](https://30x500.com).

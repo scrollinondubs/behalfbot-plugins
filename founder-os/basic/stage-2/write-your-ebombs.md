@@ -3,7 +3,7 @@ id: basic-write-your-ebombs
 type: card
 track: basic
 stage: 2
-order: 2
+order: 1
 title: Write and publish your first "e-bomb"
 canvas: [research.pains, research.jargon, fixes.ebombs, sales.ctas]
 gate: basic-stage-2-ebombs

@@ -3,7 +3,7 @@ id: basic-next-four-ebombs
 type: card
 track: basic
 stage: 2
-order: 5
+order: 4
 title: Write, publish and share your next four e-bombs
 canvas: [fixes.ebombs, audience.watering-holes, audience.list]
 gate: basic-stage-2-ebombs
