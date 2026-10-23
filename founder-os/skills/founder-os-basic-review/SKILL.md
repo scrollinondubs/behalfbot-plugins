@@ -56,13 +56,19 @@ treat the lines that depend on it as not met, and ask them to resend.
    (painstorming, interviews, a pitch) and never add a condition the card
    does not state, such as asking whether they have posted somewhere. When
    every Done when line is met, accept and let them move on.
-5. For a list of places, like watering holes, judge each one on fit and
-   validity: the audience is there, members talked recently, pain shows up,
-   and it is not dead or off topic. If you can see something that rules a
-   place out, point to it plainly. A place they already belong to or have
-   posted in counts like any other.
-6. If there are earlier submissions, name what improved since last time.
-7. `accepted` only when every Done when line is met. Otherwise `needs_work`.
+5. For a list of places, like watering holes, judge each one on fit: the
+   audience is there, members talk with each other, pain shows up, it is on
+   topic. Recent activity is not a test. A quiet place with deep archives is
+   still good ground to mine. Rule a place out only for something you can
+   see, and say what it is. A place they already belong to or have posted
+   in counts like any other.
+6. Lean toward accepted. If they can do the next card with what they sent,
+   accept and turn the rest into tips for later. `needs_work` is for a line
+   that is plainly missing, like too few links or no search words, not for
+   work you would have done more thoroughly. Early cards especially: a
+   founder blocked on stage 1 over a judgement call may not come back.
+7. If there are earlier submissions, name what improved since last time.
+8. `accepted` only when every Done when line is met. Otherwise `needs_work`.
 
 ## Reply
 
@@ -83,7 +89,7 @@ and never doing the work for them.
 End the reply with exactly one fenced block, and nothing after it:
 
 ```founderos-verdict
-{"card_id": "basic-find-where-they-talk", "verdict": "needs_work", "failed": ["Each place shows recent conversation between members, not only announcements or sales posts."]}
+{"card_id": "basic-find-where-they-talk", "verdict": "needs_work", "failed": ["You list three or more watering holes, each with a working link."]}
 ```
 
 - `card_id` is the card's `id` from its frontmatter.
@@ -98,13 +104,12 @@ End the reply with exactly one fenced block, and nothing after it:
 A full reply, for that card:
 
 > Your search words are great. "Bookkeeper", "close the books" and "QBO" are
-> insider talk, and two of your three places are busy. The third, the
-> vendor forum, is mostly staff answering tickets. Can you find a spot where
-> bookkeepers answer each other instead? Try your jargon words with "group"
-> or "community".
+> insider talk, and both of your places are full of bookkeepers answering
+> each other. You need one more to reach three. Can you find another spot
+> where they gather? Try your jargon words with "group" or "community".
 >
 > ```founderos-verdict
-> {"card_id": "basic-find-where-they-talk", "verdict": "needs_work", "failed": ["Each place shows recent conversation between members, not only announcements or sales posts."]}
+> {"card_id": "basic-find-where-they-talk", "verdict": "needs_work", "failed": ["You list three or more watering holes, each with a working link."]}
 > ```
 
 ## Source
