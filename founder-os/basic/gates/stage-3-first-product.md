@@ -3,7 +3,7 @@ id: basic-stage-3-first-product
 type: gate
 track: basic
 stage: 3
-title: Your first tiny product
+title: Pitch your first product
 signoff: coach
 ---
 ## What this is

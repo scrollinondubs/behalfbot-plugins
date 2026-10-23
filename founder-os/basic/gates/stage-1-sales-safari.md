@@ -3,7 +3,7 @@ id: basic-stage-1-sales-safari
 type: gate
 track: basic
 stage: 1
-title: Sales Safari
+title: Develop impossibly deep customer empathy
 signoff: coach
 ---
 ## What this is

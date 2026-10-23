@@ -4,7 +4,7 @@ type: card
 track: basic
 stage: 1
 order: 2
-title: Zoom out, find the themes, save threads
+title: The Agentified FounderOS approach to Painstorming
 canvas: [research.jargon, research.pains, audience.watering-holes]
 gate: basic-stage-1-sales-safari
 submit: [file, link]
