@@ -47,7 +47,10 @@ fi
 if [ -z "${FOUNDER_OS_AGENT_BASE_URL:-}" ]; then
   FOUNDER_OS_AGENT_BASE_URL="$(read_env_value FOUNDER_OS_AGENT_BASE_URL || true)"
 fi
-export FOUNDER_OS_AGENT_KEY FOUNDER_OS_AGENT_BASE_URL
+if [ -z "${RMAPI_BIN:-}" ]; then
+  RMAPI_BIN="$(read_env_value RMAPI_BIN || true)"
+fi
+export FOUNDER_OS_AGENT_KEY FOUNDER_OS_AGENT_BASE_URL RMAPI_BIN
 
 OUTPUT="$(python3 "$PLUGIN_ROOT/bin/vcl-runner" tick)"
 RC=$?

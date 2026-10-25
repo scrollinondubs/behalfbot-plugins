@@ -14,6 +14,11 @@ child's environment so the work bills the student's Claude plan, the same
 unset the chassis dispatcher does before its own `claude -p` calls, and the
 agent key is removed too because the model has no use for it.
 
+A tablet_send job has no model steps: the runner downloads the reading file the
+Hub built (from the Hub's own origin, with the agent key) and uploads it to the
+student's reMarkable with `rmapi`, then posts {"ok": true, "doc_path": ...} or
+{"error": ...}.
+
 stdout is reserved for the one-line JSON summary the heartbeat gate prints;
 every log line goes to stderr and names only the base URL, job id, kind, phase
 and status codes.
@@ -23,6 +28,8 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import posixpath
+import re
 import subprocess
 import sys
 import tempfile
@@ -61,6 +68,15 @@ CHILD_ENV_DROP = ("ANTHROPIC_API_KEY", ENV_KEY)
 # Lines Claude Code writes to stderr on every run with a full model id, success
 # included (CLI 2.1.280). Left in, they hide the real cause of a failure.
 STDERR_NOISE = ("[claude-code:unrecognized_model]", "Warning: Advisor disabled")
+ENV_RMAPI = "RMAPI_BIN"
+TABLET_KIND = "tablet_send"
+TABLET_TARGET = "remarkable"
+TABLET_EXTENSIONS = (".pdf", ".epub")
+MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024
+RMAPI_TIMEOUT = 120
+# What rmapi -ni prints when it has no token to use.
+RMAPI_UNPAIRED = ("missing token", "one-time code", "device token", "user token")
+RMAPI_LOG_PREFIX = re.compile(r"^(?:(?:ERROR|WARNING|INFO|TRACE): \d{4}/\d\d/\d\d \d\d:\d\d:\d\d \S+: )?(?:Error:\s+)?")
 TRANSIENT_STATUS = {408, 429}
 TRANSIENT_WORDS = ("rate limit", "rate_limit", "overloaded", "timed out", "timeout", "econnreset",
                    "socket hang up", "network error", "internal server error", "service unavailable",
@@ -91,6 +107,10 @@ class ClaudeMissing(StepFailed):
     """The claude binary is not on PATH."""
 
 
+class TabletFailed(Exception):
+    """A tablet_send that cannot finish. The message is the error posted."""
+
+
 def log(msg: str) -> None:
     print(f"[vcl-runner] {msg}", file=sys.stderr, flush=True)
 
@@ -100,6 +120,22 @@ def _int_env(name: str, default: int) -> int:
         return max(1, int(os.environ.get(name, "") or default))
     except ValueError:
         return default
+
+
+def _origin(url: str) -> tuple:
+    parts = urllib.parse.urlsplit(url)
+    return parts.scheme, parts.hostname, parts.port
+
+
+class _KeepKeyOnHub(urllib.request.HTTPRedirectHandler):
+    """urllib re-sends Authorization on every redirect. A redirect off the
+    Hub's origin is followed without it."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None and _origin(newurl) != _origin(req.full_url):
+            new.remove_header("Authorization")
+        return new
 
 
 class HubClient:
@@ -135,6 +171,28 @@ class HubClient:
         except ValueError:
             parsed = None
         return status, parsed if isinstance(parsed, dict) else None
+
+    def download(self, url: str, limit: int = MAX_DOWNLOAD_BYTES) -> bytes:
+        """GET a file the Hub built. Only from the Hub's own origin, because
+        the agent key goes with the request."""
+        url = urllib.parse.urljoin(self.base_url + "/", url)
+        if _origin(url) != _origin(self.base_url):
+            raise TabletFailed("file_url is not on the Hub")
+        req = urllib.request.Request(url, method="GET", headers={
+            "Authorization": f"Bearer {self._key}", "User-Agent": USER_AGENT, "Accept": "*/*"})
+        try:
+            with urllib.request.build_opener(_KeepKeyOnHub).open(req, timeout=self.timeout) as resp:
+                data = resp.read(limit + 1)
+        except urllib.error.HTTPError as exc:
+            raise TabletFailed(f"download failed: HTTP {exc.code}") from None
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            reason = getattr(exc, "reason", exc)
+            raise TabletFailed(f"download failed: {type(reason).__name__}") from None
+        if len(data) > limit:
+            raise TabletFailed("download failed: file too large")
+        if not data:
+            raise TabletFailed("download failed: empty file")
+        return data
 
     def next_job(self) -> dict | None:
         status, packet = self._request("GET", NEXT_PATH)
@@ -383,6 +441,91 @@ def run_job(packet: dict, *, step_timeout: float, claude_bin: str,
     return {"phase": phase, "outputs": outputs}, False
 
 
+def _tablet_problem(packet: dict) -> str | None:
+    if not isinstance(packet.get("id"), str) or not packet["id"]:
+        return "no id"
+    tablet = packet.get("tablet")
+    if not isinstance(tablet, dict):
+        return "no tablet"
+    if tablet.get("target") != TABLET_TARGET:
+        return f"unsupported tablet target {str(tablet.get('target'))[:32]!r}"
+    for field in ("file_url", "filename", "folder"):
+        if not isinstance(tablet.get(field), str) or (field != "folder" and not tablet[field]):
+            return f"no tablet.{field}"
+    name = posixpath.basename(tablet["filename"].replace("\\", "/")).strip()
+    if name in ("", ".", "..") or not name.lower().endswith(TABLET_EXTENSIONS):
+        return "tablet.filename must be a .pdf or .epub name"
+    if ".." in tablet["folder"].split("/"):
+        return "tablet.folder must not contain .."
+    return None
+
+
+def _folder_chain(folder: str) -> list[str]:
+    """Every folder from the top down, so a missing parent is made first:
+    /A/B -> [/A, /A/B]. The root is never made."""
+    parts = [p for p in folder.split("/") if p]
+    return ["/" + "/".join(parts[:i + 1]) for i in range(len(parts))]
+
+
+def _rmapi_detail(text: str) -> str:
+    lines = [RMAPI_LOG_PREFIX.sub("", line).strip() for line in (text or "").splitlines()]
+    return _short(" ".join(line for line in lines if line))
+
+
+def run_rmapi(rmapi_bin: str, args: list[str], timeout: float) -> None:
+    """One rmapi call. -ni makes an unpaired rmapi exit instead of waiting
+    forever for a one-time code; stdin is closed as a second guard."""
+    env = {k: v for k, v in os.environ.items() if k not in CHILD_ENV_DROP}
+    try:
+        proc = subprocess.run([rmapi_bin, "-ni", *args], stdin=subprocess.DEVNULL, capture_output=True,
+                              text=True, timeout=timeout, env=env)
+    except (FileNotFoundError, PermissionError):
+        raise TabletFailed("rmapi not found") from None
+    except subprocess.TimeoutExpired:
+        raise TabletFailed(f"upload failed: rmapi {args[0]} timed out after {int(timeout)}s") from None
+    if proc.returncode == 0:
+        return
+    text = f"{proc.stderr}\n{proc.stdout}"
+    if any(marker in text.lower() for marker in RMAPI_UNPAIRED):
+        raise TabletFailed("rmapi not paired")
+    detail = _rmapi_detail(proc.stderr) or _rmapi_detail(proc.stdout) or f"rmapi exited {proc.returncode}"
+    raise TabletFailed(f"upload failed: {args[0]}: {detail}")
+
+
+def run_tablet(client: HubClient, packet: dict, *, rmapi_bin: str,
+               clock: Callable[[], float]) -> tuple[dict, bool]:
+    """Download the file the Hub built and put it on the reMarkable. Returns
+    (result body, stop_tick); stop_tick is set only when the lease is too
+    close to start."""
+    tablet = packet["tablet"]
+    timeout = RMAPI_TIMEOUT
+    deadline = _deadline(packet)
+    if deadline is not None:
+        left = deadline - clock() - LEASE_MARGIN
+        if left <= 0:
+            return {"error": "lease deadline reached before upload"}, True
+        timeout = min(timeout, left)
+    name = posixpath.basename(tablet["filename"].replace("\\", "/")).strip()
+    folders = _folder_chain(tablet["folder"])
+    try:
+        data = client.download(tablet["file_url"])
+        with tempfile.TemporaryDirectory(prefix="vcl-runner-tablet-") as tmp:
+            path = os.path.join(tmp, name)
+            with open(path, "wb") as fh:
+                fh.write(data)
+            # mkdir on a folder that exists prints "entry already exists" and exits 0.
+            for folder in folders:
+                run_rmapi(rmapi_bin, ["mkdir", folder], timeout)
+            target = folders[-1] if folders else "/"
+            run_rmapi(rmapi_bin, ["put", path, target], timeout)
+    except TabletFailed as exc:
+        return {"error": str(exc)}, False
+    except OSError as exc:
+        return {"error": f"upload failed: could not write the file ({type(exc).__name__})"}, False
+    # rmapi names the document after the file, without its extension.
+    return {"ok": True, "doc_path": posixpath.join(target, os.path.splitext(name)[0])}, False
+
+
 def tick(client: HubClient | None = None, *, max_jobs: int = MAX_JOBS,
          clock: Callable[[], float] = time.time) -> dict:
     """One heartbeat. Always returns the gate summary, never raises.
@@ -406,6 +549,7 @@ def tick(client: HubClient | None = None, *, max_jobs: int = MAX_JOBS,
     step_timeout = _int_env(ENV_STEP_TIMEOUT, DEFAULT_STEP_TIMEOUT)
     budget = _int_env(ENV_TICK_BUDGET, DEFAULT_TICK_BUDGET)
     claude_bin = os.environ.get(ENV_CLAUDE, "").strip() or "claude"
+    rmapi_bin = os.environ.get(ENV_RMAPI, "").strip() or "rmapi"
     started = clock()
     try:
         while summary["jobs"] < max_jobs:
@@ -416,8 +560,20 @@ def tick(client: HubClient | None = None, *, max_jobs: int = MAX_JOBS,
             if packet is None:
                 break
             summary["jobs"] += 1
-            problem = _packet_problem(packet)
-            if problem:
+            if packet.get("kind") == TABLET_KIND:
+                problem = _tablet_problem(packet)
+                if problem:
+                    log(f"job {packet.get('id')!s:.64}: malformed tablet packet ({problem})")
+                    if not (isinstance(packet.get("id"), str) and packet["id"]):
+                        summary["reason"] = f"malformed task packet ({problem})"
+                        break
+                    body, stop = {"error": f"malformed task packet: {problem}"}, False
+                else:
+                    log(f"job {packet['id']}: {TABLET_KIND} to {TABLET_TARGET}, base {client.base_url}")
+                    body, stop = run_tablet(client, packet, rmapi_bin=rmapi_bin, clock=clock)
+                    if "error" in body:
+                        log(f"job {packet['id']}: {body['error']}")
+            elif problem := _packet_problem(packet):
                 log(f"job {packet.get('id')!s:.64}: malformed task packet ({problem})")
                 if isinstance(packet.get("id"), str) and packet["id"] and isinstance(packet.get("phase"), str):
                     body, stop = {"phase": packet["phase"], "error": f"malformed task packet: {problem}"}, False

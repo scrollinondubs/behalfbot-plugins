@@ -4,7 +4,9 @@ The Hub at vibecodelisboa.com queues model-heavy jobs for a founder who chose
 "My BehalfBot" as the runner. This package claims them over HTTP, runs each
 step through the local `claude -p` (the student's own Claude Code login, no
 tools), and posts the raw text back. The Hub parses and checks it exactly as it
-checks its own model output.
+checks its own model output. A tablet_send job skips claude: the runner
+downloads the file the Hub built and uploads it to the student's reMarkable
+with rmapi.
 
     tick()        one heartbeat: claim up to three jobs, run them, post results
     save_key()    store the agent key in the install's .env, the chassis secret file
