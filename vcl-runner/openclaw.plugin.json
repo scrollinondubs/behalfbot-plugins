@@ -1,8 +1,8 @@
 {
   "id": "behalfbot-vcl-runner",
   "name": "Behalf.bot - VCL runner",
-  "description": "Runs a student's queued Vibecode Lisboa Hub jobs on their own install, through the local `claude -p` on their own Claude plan, instead of on an API key. A heartbeat claims each job from the Hub, runs every step with no tools in an empty directory, and posts the raw answers back; the Hub builds every prompt and checks every answer. Ships no course content: the skill and prompts arrive with each job.",
-  "version": "1.0.0",
+  "description": "Runs a student's queued Vibecode Lisboa Hub jobs on their own install, through the local `claude -p` on their own Claude plan, instead of on an API key. A heartbeat claims each job from the Hub, runs every step with no tools in an empty directory, and posts the raw answers back; the Hub builds every prompt and checks every answer. Ships no course content: the skill and prompts arrive with each job. A tablet_send job skips claude and uploads a reading file the Hub built to the student's reMarkable with rmapi.",
+  "version": "1.1.0",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -57,19 +57,27 @@
         "name": "claude",
         "install": "Claude Code, installed and logged in on the account that runs the heartbeat (run `claude` once)",
         "_explanation": "Every job step runs through `claude -p` on the student's own login."
+      },
+      {
+        "name": "rmapi",
+        "install": "rmapi (github.com/ddvk/rmapi), on PATH or named by RMAPI_BIN, paired once by running `rmapi` in a terminal as the account that runs the heartbeat (README: reMarkable)",
+        "_explanation": "Optional. Only for tablet_send jobs, which the Hub queues only when the student turned on reMarkable in the Hub. Without it those jobs post \"rmapi not found\"; every other job is unaffected."
       }
     ]
   },
   "license": "MIT",
   "_declares": {
     "network_egress": [
-      "agent_base_url (https://vibecodelisboa.com by default) - GET /api/founder-os/agent/jobs/next and POST /api/founder-os/agent/jobs/:id/result on each heartbeat tick, only when an agent key is set"
+      "agent_base_url (https://vibecodelisboa.com by default) - GET /api/founder-os/agent/jobs/next and POST /api/founder-os/agent/jobs/:id/result on each heartbeat tick, only when an agent key is set",
+      "agent_base_url again for a tablet_send job - GET the job's file_url, refused unless it is on the same scheme, host and port as agent_base_url",
+      "the reMarkable cloud, through rmapi, for a tablet_send job only"
     ],
-    "credentials": "FOUNDER_OS_AGENT_KEY, read from the environment only and sent only as the Bearer header to agent_base_url. Never logged, never passed to the claude child process. The runner never reads ~/.claude, the keychain or any OAuth credential: it starts the claude CLI the student already logged into, with ANTHROPIC_API_KEY removed from the child's environment so the work bills the student's Claude plan.",
-    "subprocesses": "claude -p --output-format json --tools \"\" --strict-mcp-config --setting-sources \"\" --disable-slash-commands --no-session-persistence --append-system-prompt <skill> [--model <model>], prompt on stdin, in an empty temporary directory. No tools and no MCP servers.",
+    "credentials": "FOUNDER_OS_AGENT_KEY, read from the environment only and sent only as the Bearer header to agent_base_url (a tablet_send file_url on any other origin is refused before any request). Never logged, never passed to the claude or rmapi child process. rmapi keeps its own reMarkable token in its own config file; the runner never reads it. The runner never reads ~/.claude, the keychain or any OAuth credential: it starts the claude CLI the student already logged into, with ANTHROPIC_API_KEY removed from the child's environment so the work bills the student's Claude plan.",
+    "subprocesses": "claude -p --output-format json --tools \"\" --strict-mcp-config --setting-sources \"\" --disable-slash-commands --no-session-persistence --append-system-prompt <skill> [--model <model>], prompt on stdin, in an empty temporary directory. No tools and no MCP servers. For a tablet_send job only: rmapi -ni mkdir <folder> and rmapi -ni put <file> <folder>, stdin closed, so an unpaired rmapi exits instead of waiting for a code.",
     "filesystem": [
       "${CUSTOMER_HOME}/.env (and .env.baked when present) - written by `vcl-runner setup` only, mode 0600",
-      "a temporary empty directory per claude call, removed afterwards"
+      "a temporary empty directory per claude call, removed afterwards",
+      "a temporary directory holding the downloaded file for a tablet_send job, removed afterwards"
     ]
   }
 }

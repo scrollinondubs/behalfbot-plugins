@@ -93,14 +93,48 @@ over every model it ran, the model names, and its `total_cost_usd`. The Hub
 prices the tokens at API list prices and shows the student what the job would
 have cost on their API key.
 
+## reMarkable (tablet_send jobs)
+
+When the student turns on reMarkable in the Hub, "Send unread to my tablet"
+queues a `tablet_send` job. It has no model steps and never starts `claude`.
+The runner downloads the reading file the Hub built (`tablet.file_url`, with
+the agent key, and only from the Hub's own origin), then uploads it with
+[rmapi](https://github.com/ddvk/rmapi):
+
+```
+rmapi -ni mkdir <folder>          # each missing level; an existing folder is fine
+rmapi -ni put <file> <folder>
+```
+
+and posts `{"ok": true}`, or `{"error": "..."}` with one of `rmapi not found`,
+`rmapi not paired`, `upload failed: ...` or `download failed: ...`. The Hub
+shows the error on the thread. The reMarkable token stays in rmapi's own
+config; the Hub never sees it.
+
+Pairing is one time, on the install, as the account that runs the heartbeat:
+
+1. Install rmapi and put it on that account's PATH, or set `RMAPI_BIN` to its
+   full path in the install's `.env`.
+2. Open https://my.remarkable.com/device/desktop/connect while logged in to
+   your reMarkable account and copy the one-time code.
+3. Run `rmapi` in a terminal and paste the code when it asks. Then `ls` should
+   list your tablet's folders; `exit` to leave.
+
+rmapi saves its token to `~/.rmapi`, or `rmapi/rmapi.conf` under the user
+config directory (`RMAPI_CONFIG` overrides the path). The runner always passes
+`-ni`, so an unpaired rmapi fails at once with `rmapi not paired` instead of
+waiting for a code. If the tablet is unlinked in the reMarkable account, pair
+again the same way. A file whose name is already in the folder fails with
+`upload failed: put: entry already exists`.
+
 ## Layout
 
 ```
 bin/vcl-runner                    CLI: setup, tick
-vcl_runner/                       claim Hub jobs, run them through claude -p, post results
+vcl_runner/                       claim Hub jobs, run them through claude -p (or rmapi), post results
 scripts/gather-vcl-runner.sh      the heartbeat gate (JSON on stdout, work done here)
 scheduled-tasks/                  the heartbeat's prompt template
-tests/test_vcl_runner.py          offline suite: fake Hub on 127.0.0.1, fake claude on PATH
+tests/test_vcl_runner.py          offline suite: fake Hub on 127.0.0.1, fake claude and rmapi
 ```
 
 Run the tests with `python3 vcl-runner/tests/test_vcl_runner.py`.

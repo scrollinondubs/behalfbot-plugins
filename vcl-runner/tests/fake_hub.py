@@ -3,7 +3,8 @@
 A real HTTP server on 127.0.0.1, so the runner's sockets, status handling and
 headers are exercised for real. `jobs` is the queue GET jobs/next serves, one
 packet per call, then 204. `result_status` maps a job id to the status its
-result POST gets (200 by default). Every request is recorded with its
+result POST gets (200 by default). `files` maps a path to the bytes a GET on it
+serves, for tablet_send downloads. Every request is recorded with its
 Authorization header and parsed body.
 """
 from __future__ import annotations
@@ -17,8 +18,9 @@ RESULT_PREFIX = "/api/founder-os/agent/jobs/"
 
 
 class FakeHub:
-    def __init__(self, jobs=None, *, key="", result_status=None, next_status=None):
+    def __init__(self, jobs=None, *, key="", result_status=None, next_status=None, files=None):
         self.jobs = list(jobs or [])
+        self.files = dict(files or {})
         self.key = key
         self.result_status = dict(result_status or {})
         self.next_status = next_status
@@ -48,6 +50,16 @@ class FakeHub:
 
             def do_GET(self):
                 self._record()
+                if self.path in fake.files:
+                    if not self._authorised():
+                        return self._send(401, {"error": "bad key"})
+                    raw = fake.files[self.path]
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/epub+zip")
+                    self.send_header("Content-Length", str(len(raw)))
+                    self.end_headers()
+                    self.wfile.write(raw)
+                    return
                 if self.path != NEXT:
                     return self._send(404, {"error": "not found"})
                 if not self._authorised():
