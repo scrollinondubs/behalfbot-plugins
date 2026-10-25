@@ -6,7 +6,9 @@ step through the local `claude -p` (the student's own Claude Code login, no
 tools), and posts the raw text back. The Hub parses and checks it exactly as it
 checks its own model output. A tablet_send job skips claude: the runner
 downloads the file the Hub built and uploads it to the student's reMarkable
-with rmapi.
+with rmapi. A tablet_pull job skips it too: the runner reads the student's
+highlights and handwriting back off that document (annotations.py) and sends
+them to the Hub.
 
     tick()        one heartbeat: claim up to three jobs, run them, post results
     save_key()    store the agent key in the install's .env, the chassis secret file

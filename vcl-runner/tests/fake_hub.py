@@ -4,8 +4,11 @@ A real HTTP server on 127.0.0.1, so the runner's sockets, status handling and
 headers are exercised for real. `jobs` is the queue GET jobs/next serves, one
 packet per call, then 204. `result_status` maps a job id to the status its
 result POST gets (200 by default). `files` maps a path to the bytes a GET on it
-serves, for tablet_send downloads; `redirects` maps a path to a 302 Location. Every request is recorded with its
-Authorization header and parsed body.
+serves, for tablet_send downloads; `redirects` maps a path to a 302 Location.
+A POST under /api/founder-os/agent/tablet-pulls/ is a tablet_pull upload: its
+raw bytes go to `uploads`, and `upload_status` maps a path prefix to the status
+it gets (200 with {"status": "imported"} by default). Every request is
+recorded with its Authorization header and parsed body.
 """
 from __future__ import annotations
 
@@ -15,17 +18,20 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 NEXT = "/api/founder-os/agent/jobs/next"
 RESULT_PREFIX = "/api/founder-os/agent/jobs/"
+UPLOAD_PREFIX = "/api/founder-os/agent/tablet-pulls/"
 
 
 class FakeHub:
     def __init__(self, jobs=None, *, key="", result_status=None, next_status=None, files=None,
-                 redirects=None):
+                 redirects=None, upload_status=None):
         self.jobs = list(jobs or [])
         self.files = dict(files or {})
         self.redirects = dict(redirects or {})
         self.key = key
         self.result_status = dict(result_status or {})
         self.next_status = next_status
+        self.upload_status = dict(upload_status or {})
+        self.uploads: list[dict] = []
         self.requests: list[dict] = []
         fake = self
 
@@ -80,7 +86,16 @@ class FakeHub:
 
             def do_POST(self):
                 length = int(self.headers.get("Content-Length") or 0)
-                body = json.loads(self.rfile.read(length) or b"null")
+                raw = self.rfile.read(length)
+                if self.path.startswith(UPLOAD_PREFIX):
+                    self._record()
+                    fake.uploads.append({"path": self.path, "type": self.headers.get("Content-Type"),
+                                         "data": raw, "_auth": self.headers.get("Authorization")})
+                    if not self._authorised():
+                        return self._send(401, {"error": "bad key"})
+                    status = next((v for k, v in fake.upload_status.items() if self.path.startswith(k)), 200)
+                    return self._send(status, {"status": "imported"} if status == 200 else {"error": "scripted"})
+                body = json.loads(raw or b"null")
                 self._record(body)
                 if not (self.path.startswith(RESULT_PREFIX) and self.path.endswith("/result")):
                     return self._send(404, {"error": "not found"})
@@ -97,7 +112,7 @@ class FakeHub:
         self._thread = threading.Thread(target=self.server.serve_forever, daemon=True)
 
     def results(self) -> list[dict]:
-        return [r for r in self.requests if r["method"] == "POST"]
+        return [r for r in self.requests if r["method"] == "POST" and r["path"].endswith("/result")]
 
     def __enter__(self):
         self._thread.start()

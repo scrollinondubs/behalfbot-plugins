@@ -19,6 +19,11 @@ Hub built (from the Hub's own origin, with the agent key) and uploads it to the
 student's reMarkable with `rmapi`, then posts {"ok": true, "doc_path": ...} or
 {"error": ...}.
 
+A tablet_pull job has none either: the runner reads the student's marks back
+off that document (`rmapi stat`, then `rmapi get` when it changed), sends the
+Hub one PNG per page with handwriting and the PDF it sits on, and posts the
+highlighted text with the result. annotations.py does the reading.
+
 stdout is reserved for the one-line JSON summary the heartbeat gate prints;
 every log line goes to stderr and names only the base URL, job id, kind, phase
 and status codes.
@@ -38,6 +43,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Callable
+
+from . import annotations
 
 ENV_KEY = "FOUNDER_OS_AGENT_KEY"
 ENV_BASE_URL = "FOUNDER_OS_AGENT_BASE_URL"
@@ -74,6 +81,13 @@ TABLET_TARGET = "remarkable"
 TABLET_EXTENSIONS = (".pdf", ".epub")
 MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024
 RMAPI_TIMEOUT = 120
+PULL_KIND = "tablet_pull"
+# Vercel takes about 4.5 MB of request body.
+MAX_UPLOAD_BYTES = 4 * 1024 * 1024
+MAX_PULL_PAGES = 40
+MAX_PULL_HIGHLIGHTS = 500
+# The Hub reads each handwritten page with a vision model before it answers.
+UPLOAD_TIMEOUT = 150
 # What rmapi -ni prints when it has no token to use.
 RMAPI_UNPAIRED = ("missing token", "one-time code", "device token", "user token")
 RMAPI_LOG_PREFIX = re.compile(r"^(?:(?:ERROR|WARNING|INFO|TRACE): \d{4}/\d\d/\d\d \d\d:\d\d:\d\d \S+: )?(?:Error:\s+)?")
@@ -193,6 +207,33 @@ class HubClient:
         if not data:
             raise TabletFailed("download failed: empty file")
         return data
+
+    def upload(self, url: str, data: bytes, content_type: str,
+               timeout: float = UPLOAD_TIMEOUT) -> tuple[int, dict | None]:
+        """POST a file to the Hub (a page image or the PDF of a tablet_pull).
+        Only to the Hub's own origin, because the agent key goes with it. A
+        401 or 403 raises AuthRejected; anything else is the caller's."""
+        url = urllib.parse.urljoin(self.base_url + "/", url)
+        if _origin(url) != _origin(self.base_url):
+            raise TabletFailed("upload url is not on the Hub")
+        req = urllib.request.Request(url, data=data, method="POST", headers={
+            "Authorization": f"Bearer {self._key}", "User-Agent": USER_AGENT,
+            "Content-Type": content_type, "Accept": "application/json"})
+        try:
+            with urllib.request.build_opener(_KeepKeyOnHub).open(req, timeout=timeout) as resp:
+                status, raw = resp.status, resp.read()
+        except urllib.error.HTTPError as exc:
+            status, raw = exc.code, exc.read() or b""
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            reason = getattr(exc, "reason", exc)
+            raise TabletFailed(f"upload failed: {type(reason).__name__}") from None
+        if status in (401, 403):
+            raise AuthRejected(f"POST upload: HTTP {status}")
+        try:
+            parsed = json.loads(raw) if raw else None
+        except ValueError:
+            parsed = None
+        return status, parsed if isinstance(parsed, dict) else None
 
     def next_job(self) -> dict | None:
         status, packet = self._request("GET", NEXT_PATH)
@@ -472,24 +513,26 @@ def _rmapi_detail(text: str) -> str:
     return _short(" ".join(line for line in lines if line))
 
 
-def run_rmapi(rmapi_bin: str, args: list[str], timeout: float) -> None:
-    """One rmapi call. -ni makes an unpaired rmapi exit instead of waiting
-    forever for a one-time code; stdin is closed as a second guard."""
+def run_rmapi(rmapi_bin: str, args: list[str], timeout: float, *, cwd: str | None = None,
+              failure: str = "upload failed") -> str:
+    """One rmapi call; returns its stdout. -ni makes an unpaired rmapi exit
+    instead of waiting forever for a one-time code; stdin is closed as a
+    second guard. `get` writes into cwd."""
     env = {k: v for k, v in os.environ.items() if k not in CHILD_ENV_DROP}
     try:
         proc = subprocess.run([rmapi_bin, "-ni", *args], stdin=subprocess.DEVNULL, capture_output=True,
-                              text=True, timeout=timeout, env=env)
+                              text=True, timeout=timeout, env=env, cwd=cwd)
     except (FileNotFoundError, PermissionError):
         raise TabletFailed("rmapi not found") from None
     except subprocess.TimeoutExpired:
-        raise TabletFailed(f"upload failed: rmapi {args[0]} timed out after {int(timeout)}s") from None
+        raise TabletFailed(f"{failure}: rmapi {args[0]} timed out after {int(timeout)}s") from None
     if proc.returncode == 0:
-        return
+        return proc.stdout
     text = f"{proc.stderr}\n{proc.stdout}"
     if any(marker in text.lower() for marker in RMAPI_UNPAIRED):
         raise TabletFailed("rmapi not paired")
     detail = _rmapi_detail(proc.stderr) or _rmapi_detail(proc.stdout) or f"rmapi exited {proc.returncode}"
-    raise TabletFailed(f"upload failed: {args[0]}: {detail}")
+    raise TabletFailed(f"{failure}: {args[0]}: {detail}")
 
 
 def run_tablet(client: HubClient, packet: dict, *, rmapi_bin: str,
@@ -526,6 +569,118 @@ def run_tablet(client: HubClient, packet: dict, *, rmapi_bin: str,
     return {"ok": True, "doc_path": posixpath.join(target, os.path.splitext(name)[0])}, False
 
 
+def _pull_problem(packet: dict) -> str | None:
+    if not isinstance(packet.get("id"), str) or not packet["id"]:
+        return "no id"
+    tablet = packet.get("tablet")
+    if not isinstance(tablet, dict):
+        return "no tablet"
+    if tablet.get("target") != TABLET_TARGET:
+        return f"unsupported tablet target {str(tablet.get('target'))[:32]!r}"
+    for name in ("doc_path", "pages_url", "document_url"):
+        if not isinstance(tablet.get(name), str) or not tablet[name]:
+            return f"no tablet.{name}"
+    if not tablet["doc_path"].startswith("/") or ".." in tablet["doc_path"].split("/"):
+        return "tablet.doc_path must be an absolute path without .."
+    if tablet.get("since") is not None and not isinstance(tablet.get("since"), str):
+        return "tablet.since is not a string"
+    known = tablet.get("known_pages")
+    if known is not None and not (isinstance(known, dict) and all(isinstance(v, str) for v in known.values())):
+        return "tablet.known_pages is not a map of page to hash"
+    return None
+
+
+def doc_version(stat_stdout: str) -> str | None:
+    """ModifiedClient from `rmapi stat`: when the tablet last changed the
+    document. Any mark the student makes moves it."""
+    try:
+        meta = json.loads(stat_stdout)
+    except ValueError:
+        return None
+    value = meta.get("ModifiedClient") if isinstance(meta, dict) else None
+    return value if isinstance(value, str) and value else None
+
+
+def _with_query(url: str, **params) -> str:
+    sep = "&" if "?" in url else "?"
+    return url + sep + urllib.parse.urlencode(params)
+
+
+def run_pull(client: HubClient, packet: dict, *, rmapi_bin: str,
+             clock: Callable[[], float]) -> tuple[dict, bool]:
+    """Read the student's marks off the document the Hub sent. Returns
+    (result body, stop_tick).
+
+    `rmapi stat` first: when the document has not changed since `since`
+    (the version the Hub last pulled) the result says so and nothing is
+    downloaded. Otherwise `rmapi get`, then each page with handwriting is
+    rendered and posted to pages_url, the PDF first to document_url, except
+    pages whose image the Hub already has (known_pages). The highlights go
+    in the result. A page the Hub refuses is reported, not retried."""
+    tablet = packet["tablet"]
+    doc_path = tablet["doc_path"]
+    known = tablet.get("known_pages") or {}
+    timeout = RMAPI_TIMEOUT
+    deadline = _deadline(packet)
+
+    def time_left() -> float | None:
+        return None if deadline is None else deadline - clock() - LEASE_MARGIN
+
+    left = time_left()
+    if left is not None:
+        if left <= 0:
+            return {"error": "lease deadline reached before the pull"}, True
+        timeout = min(timeout, left)
+    try:
+        version = doc_version(run_rmapi(rmapi_bin, ["stat", doc_path], timeout, failure="pull failed"))
+        if version and tablet.get("since") and version == tablet["since"]:
+            return {"ok": True, "unchanged": True, "doc_version": version}, False
+        with tempfile.TemporaryDirectory(prefix="vcl-runner-pull-") as tmp:
+            run_rmapi(rmapi_bin, ["get", doc_path], timeout, cwd=tmp, failure="pull failed")
+            doc = annotations.read_document(annotations.find_download(tmp))
+    except TabletFailed as exc:
+        return {"error": str(exc)}, False
+    except annotations.AnnotationsUnavailable as exc:
+        return {"error": f"pull failed: {exc}"}, False
+
+    highlights = [{"page": p.page, "inserted": p.inserted, **h}
+                  for p in doc.pages for h in p.highlights][:MAX_PULL_HIGHLIGHTS]
+    inked = [p for p in doc.pages if p.strokes][:MAX_PULL_PAGES]
+    pages = []
+    document_sent = False
+    for p in inked:
+        png = annotations.render_page(p.strokes)
+        digest = annotations.page_hash(png)
+        entry = {"page": p.page, "inserted": p.inserted, "hash": digest}
+        pages.append(entry)
+        if known.get(p.key) == digest:
+            entry["status"] = "known"
+            continue
+        left = time_left()
+        if left is not None and left <= 0:
+            return {"error": "lease deadline reached while sending pages"}, True
+        if len(png) > MAX_UPLOAD_BYTES:
+            entry["status"] = "too large"
+            continue
+        try:
+            if not document_sent:
+                document_sent = True
+                if doc.pdf and len(doc.pdf) <= MAX_UPLOAD_BYTES:
+                    status, _ = client.upload(tablet["document_url"], doc.pdf, "application/pdf")
+                    if status in (404, 409):
+                        return {"error": f"the Hub refused the document (HTTP {status})"}, False
+            status, reply = client.upload(_with_query(tablet["pages_url"], page=p.page, inserted=p.inserted),
+                                          png, "image/png")
+        except TabletFailed as exc:
+            entry["status"] = str(exc)
+            continue
+        if status in (404, 409):
+            return {"error": f"the Hub refused page {p.key} (HTTP {status})"}, False
+        entry["status"] = str((reply or {}).get("status") or "sent")[:40] if status == 200 else f"HTTP {status}"
+    body = {"ok": True, "doc_version": version, "highlights": highlights, "pages": pages}
+    return body, False
+
+
 def tick(client: HubClient | None = None, *, max_jobs: int = MAX_JOBS,
          clock: Callable[[], float] = time.time) -> dict:
     """One heartbeat. Always returns the gate summary, never raises.
@@ -560,7 +715,20 @@ def tick(client: HubClient | None = None, *, max_jobs: int = MAX_JOBS,
             if packet is None:
                 break
             summary["jobs"] += 1
-            if packet.get("kind") == TABLET_KIND:
+            if packet.get("kind") == PULL_KIND:
+                problem = _pull_problem(packet)
+                if problem:
+                    log(f"job {packet.get('id')!s:.64}: malformed tablet packet ({problem})")
+                    if not (isinstance(packet.get("id"), str) and packet["id"]):
+                        summary["reason"] = f"malformed task packet ({problem})"
+                        break
+                    body, stop = {"error": f"malformed task packet: {problem}"}, False
+                else:
+                    log(f"job {packet['id']}: {PULL_KIND} from {TABLET_TARGET}, base {client.base_url}")
+                    body, stop = run_pull(client, packet, rmapi_bin=rmapi_bin, clock=clock)
+                    if "error" in body:
+                        log(f"job {packet['id']}: {body['error']}")
+            elif packet.get("kind") == TABLET_KIND:
                 problem = _tablet_problem(packet)
                 if problem:
                     log(f"job {packet.get('id')!s:.64}: malformed tablet packet ({problem})")
