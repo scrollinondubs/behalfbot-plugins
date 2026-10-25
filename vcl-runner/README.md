@@ -106,7 +106,9 @@ rmapi -ni mkdir <folder>          # each missing level; an existing folder is fi
 rmapi -ni put <file> <folder>
 ```
 
-and posts `{"ok": true}`, or `{"error": "..."}` with one of `rmapi not found`,
+and posts `{"ok": true, "doc_path": "/Safari/Safari reading 2026-10-25"}`
+(the folder plus the document name rmapi gives it: the file name without its
+extension), or `{"error": "..."}` with one of `rmapi not found`,
 `rmapi not paired`, `upload failed: ...` or `download failed: ...`. The Hub
 shows the error on the thread. The reMarkable token stays in rmapi's own
 config; the Hub never sees it.

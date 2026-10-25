@@ -195,7 +195,7 @@ class RunnerTest(unittest.TestCase):
                          (0, 1, 1, 0))
         posts = fake.results()
         self.assertEqual(posts[0]["path"], "/api/founder-os/agent/jobs/tab-1/result")
-        self.assertEqual(posts[0]["body"], {"ok": True})
+        self.assertEqual(posts[0]["body"], {"ok": True, "doc_path": "/Safari/Reading/Safari reading 2026-10-25"})
         download = [r for r in fake.requests if r["path"] == FILE_PATH]
         self.assertEqual(len(download), 1)
         self.assertEqual(download[0]["_auth"], f"Bearer {KEY}")
@@ -218,11 +218,20 @@ class RunnerTest(unittest.TestCase):
             self.assertNotIn(KEY, json.dumps(call))
         self.assertNotIn(KEY, proc.stdout + proc.stderr)
 
+    def test_tablet_send_to_the_root_folder(self):
+        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+            fake.jobs.append(tablet_packet("tab-root", FILE_PATH, folder="/", filename="Week 3.pdf"))
+            self.run_gate(fake)
+        self.assertEqual(fake.results()[0]["body"], {"ok": True, "doc_path": "/Week 3"})
+        self.assertEqual([c["argv"][1] for c in self.rmapi_calls()], ["put"])
+        self.assertEqual(self.rmapi_calls()[0]["argv"][3], "/")
+
     def test_tablet_send_into_an_existing_folder(self):
         with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
             fake.jobs.append(tablet_packet("tab-2", FILE_PATH))
             self.run_gate(fake, FAKE_RMAPI_MODE="folder-exists")
-        self.assertEqual(fake.results()[0]["body"], {"ok": True}, "a relative file_url resolves on the Hub")
+        self.assertEqual(fake.results()[0]["body"], {"ok": True, "doc_path": "/Safari/Safari reading 2026-10-25"},
+                         "a relative file_url resolves on the Hub")
         self.assertEqual([c["argv"][1] for c in self.rmapi_calls()], ["mkdir", "put"])
 
     def test_tablet_send_without_rmapi(self):
@@ -252,6 +261,23 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(fake.results()[0]["body"], {"error": "file_url is not on the Hub"})
         self.assertEqual(self.rmapi_calls(), [])
 
+    def test_tablet_send_rmapi_bin_read_from_env_file(self):
+        (self.home / ".env").write_text(f"RMAPI_BIN={self.bin / 'rmapi'}\n")
+        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+            fake.jobs.append(tablet_packet("tab-env", FILE_PATH))
+            self.run_gate(fake, RMAPI_BIN="", PATH="/usr/bin:/bin")
+        self.assertTrue(fake.results()[0]["body"]["ok"])
+        self.assertEqual(self.rmapi_calls()[-1]["argv"][1], "put")
+
+    def test_tablet_send_redirect_off_the_hub_drops_the_key(self):
+        with FakeHub(files={"/blob.epub": EPUB}) as blob, FakeHub(key=KEY) as fake:
+            blob_url = blob.url.replace("127.0.0.1", "localhost") + "/blob.epub"
+            fake.redirects[FILE_PATH] = blob_url
+            fake.jobs.append(tablet_packet("tab-redir", FILE_PATH))
+            self.run_gate(fake)
+        self.assertTrue(fake.results()[0]["body"]["ok"])
+        self.assertEqual([r["_auth"] for r in blob.requests], [None])
+
     def test_tablet_send_download_failure(self):
         with FakeHub(key=KEY) as fake:
             fake.jobs.append(tablet_packet("tab-7", fake.url + "/missing.epub"))
@@ -272,7 +298,7 @@ class RunnerTest(unittest.TestCase):
             summary, _ = self.run_gate(fake)
         bodies = [r["body"] for r in fake.results()]
         self.assertEqual(summary["posted"], 2)
-        self.assertEqual(bodies[0], {"ok": True})
+        self.assertTrue(bodies[0]["ok"])
         self.assertEqual(json.loads(bodies[1]["outputs"][0]["text"]), {"echo": "after tablet"})
         self.assertEqual(len(self.claude_calls()), 1)
 

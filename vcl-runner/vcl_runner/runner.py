@@ -16,7 +16,8 @@ agent key is removed too because the model has no use for it.
 
 A tablet_send job has no model steps: the runner downloads the reading file the
 Hub built (from the Hub's own origin, with the agent key) and uploads it to the
-student's reMarkable with `rmapi`, then posts {"ok": true} or {"error": ...}.
+student's reMarkable with `rmapi`, then posts {"ok": true, "doc_path": ...} or
+{"error": ...}.
 
 stdout is reserved for the one-line JSON summary the heartbeat gate prints;
 every log line goes to stderr and names only the base URL, job id, kind, phase
@@ -121,6 +122,22 @@ def _int_env(name: str, default: int) -> int:
         return default
 
 
+def _origin(url: str) -> tuple:
+    parts = urllib.parse.urlsplit(url)
+    return parts.scheme, parts.hostname, parts.port
+
+
+class _KeepKeyOnHub(urllib.request.HTTPRedirectHandler):
+    """urllib re-sends Authorization on every redirect. A redirect off the
+    Hub's origin is followed without it."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None and _origin(newurl) != _origin(req.full_url):
+            new.remove_header("Authorization")
+        return new
+
+
 class HubClient:
     def __init__(self, base_url: str, key: str, timeout: float = HTTP_TIMEOUT):
         parts = urllib.parse.urlsplit(base_url)
@@ -155,20 +172,16 @@ class HubClient:
             parsed = None
         return status, parsed if isinstance(parsed, dict) else None
 
-    def same_origin(self, url: str) -> bool:
-        a, b = urllib.parse.urlsplit(self.base_url), urllib.parse.urlsplit(url)
-        return (a.scheme, a.hostname, a.port) == (b.scheme, b.hostname, b.port)
-
     def download(self, url: str, limit: int = MAX_DOWNLOAD_BYTES) -> bytes:
         """GET a file the Hub built. Only from the Hub's own origin, because
         the agent key goes with the request."""
         url = urllib.parse.urljoin(self.base_url + "/", url)
-        if not self.same_origin(url):
+        if _origin(url) != _origin(self.base_url):
             raise TabletFailed("file_url is not on the Hub")
         req = urllib.request.Request(url, method="GET", headers={
             "Authorization": f"Bearer {self._key}", "User-Agent": USER_AGENT, "Accept": "*/*"})
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with urllib.request.build_opener(_KeepKeyOnHub).open(req, timeout=self.timeout) as resp:
                 data = resp.read(limit + 1)
         except urllib.error.HTTPError as exc:
             raise TabletFailed(f"download failed: HTTP {exc.code}") from None
@@ -503,12 +516,14 @@ def run_tablet(client: HubClient, packet: dict, *, rmapi_bin: str,
             # mkdir on a folder that exists prints "entry already exists" and exits 0.
             for folder in folders:
                 run_rmapi(rmapi_bin, ["mkdir", folder], timeout)
-            run_rmapi(rmapi_bin, ["put", path, folders[-1] if folders else "/"], timeout)
+            target = folders[-1] if folders else "/"
+            run_rmapi(rmapi_bin, ["put", path, target], timeout)
     except TabletFailed as exc:
         return {"error": str(exc)}, False
     except OSError as exc:
         return {"error": f"upload failed: could not write the file ({type(exc).__name__})"}, False
-    return {"ok": True}, False
+    # rmapi names the document after the file, without its extension.
+    return {"ok": True, "doc_path": posixpath.join(target, os.path.splitext(name)[0])}, False
 
 
 def tick(client: HubClient | None = None, *, max_jobs: int = MAX_JOBS,
