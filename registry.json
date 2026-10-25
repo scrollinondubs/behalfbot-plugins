@@ -45,12 +45,6 @@
       "min_chassis_version": "0.2.0"
     },
     {
-      "name": "founder-os",
-      "path": "founder-os",
-      "description": "Gated coach for early-stage founders: a fixed sequence of stages from founder fit through audience, pain research, customer discovery, solution test, positioning, content, validation and traction, each ending in a gate that needs ledger evidence rather than self-report. Content is markdown in git (core cards the coach loads, opt-in community contrib); founder state lives in a ledger behind a storage interface (Postgres and SQLite adapters). Ships stage 0-9 cards and gates, ten stage skills that walk a founder to each gate against the ledger, concept notes, four Laya-assisted auditor skills with a Claude-only fallback, coach skills, an eval harness that scores skills and cards against plain Claude, and a founder bundle export/import CLI with an opt-in signed progress webhook, plus the Safari runner, a heartbeat that runs the student's Safari Hub painstorm and e-bomb analysis jobs through their own local Claude Code login.",
-      "min_chassis_version": "0.2.0"
-    },
-    {
       "name": "image-generation",
       "path": "image-generation",
       "description": "Generate images from a text prompt through either a local ComfyUI running FLUX.1 (free, private, minutes) or a hosted image API (paid, seconds, better at text inside the image). One CLI, a flag to switch. Ships the ComfyUI workflow graph with a three-node-id contract so the graph can be swapped without touching the script. Credentials come from the environment only; the script never reads a secret off disk.",
@@ -84,6 +78,12 @@
       "name": "restaurant-booking",
       "path": "restaurant-booking",
       "description": "Book a restaurant table from a chat message: parses natural-language intent, drives TheFork via Playwright, soft-confirms with the installer through a Discord reaction before submitting, and can create the matching Google Calendar event. Strongest coverage where TheFork is strong (Lisbon and wider Europe).",
+      "min_chassis_version": "0.2.0"
+    },
+    {
+      "name": "vcl-runner",
+      "path": "vcl-runner",
+      "description": "Runs a student's queued Vibecode Lisboa Hub jobs on their own install, through the local `claude -p` on their own Claude plan instead of an API key. A heartbeat claims each job, runs every step with no tools in an empty directory, and posts the raw answers back; the Hub builds the prompts and checks the answers. Ships no course content.",
       "min_chassis_version": "0.2.0"
     },
     {
