@@ -129,14 +129,58 @@ waiting for a code. If the tablet is unlinked in the reMarkable account, pair
 again the same way. A file whose name is already in the folder fails with
 `upload failed: put: entry already exists`.
 
+## Reading annotations back (tablet_pull jobs)
+
+The Hub can ask for the student's marks on a document it sent: "Pull my
+annotations" on a reMarkable send, and on its own every six hours for sends of
+the last 30 days. That is a `tablet_pull` job. It has no model steps either:
+the runner never starts `claude` for it, and the Hub reads the handwriting.
+
+```
+rmapi -ni stat <doc_path>        # when the tablet last changed the document
+rmapi -ni get <doc_path>         # only when it changed since the last pull
+```
+
+`stat` gives the document's `ModifiedClient`. When it equals the version the
+Hub last pulled (`tablet.since`), the runner posts
+`{"ok": true, "unchanged": true, "doc_version": ...}` and downloads nothing.
+Otherwise it downloads the document into a temporary directory and reads every
+page with [rmscene](https://github.com/ricklupton/rmscene):
+
+- **highlights**: reMarkable snaps a PDF highlight to the text and stores the
+  text itself, so these go to the Hub as text with their PDF page.
+- **handwriting**: every pen, pencil, marker and highlighter stroke. A page
+  that has any is drawn as a PNG of the ink alone on a transparent page, 1404
+  x 1872 (the tablet's own page units), and posted to `tablet.pages_url` with
+  its page number. Before the first page, the PDF inside the document goes to
+  `tablet.document_url`, so the Hub can lay the ink over the printed page. A
+  page whose image the Hub already has (`tablet.known_pages`, a hash per page)
+  is not sent again.
+
+Pages the student added on the tablet carry the PDF page before them and an
+`inserted` count; deleted pages are left out. Then it posts
+`{"ok": true, "doc_version": ..., "highlights": [...], "pages": [...]}`, or
+`{"error": "..."}` with `rmapi not found`, `rmapi not paired`,
+`pull failed: ...` (the document is gone, or rmscene is missing). Uploads go
+only to the Hub's own origin, with the agent key; each is at most 4 MB.
+
+rmscene is in the BehalfBot image (`rmscene>=0.6,<1`). On an install without
+it, run `pip install 'rmscene>=0.6,<1'` for the account that runs the
+heartbeat; until then every pull posts `pull failed: rmscene not installed`
+and every other job is unaffected. The PNG is drawn with the standard library.
+
 ## Layout
 
 ```
 bin/vcl-runner                    CLI: setup, tick
 vcl_runner/                       claim Hub jobs, run them through claude -p (or rmapi), post results
+vcl_runner/annotations.py         read highlights and handwriting off a reMarkable document (tablet_pull)
 scripts/gather-vcl-runner.sh      the heartbeat gate (JSON on stdout, work done here)
 scheduled-tasks/                  the heartbeat's prompt template
 tests/test_vcl_runner.py          offline suite: fake Hub on 127.0.0.1, fake claude and rmapi
+tests/rm_fixtures.py              a synthetic .rmdoc written with rmscene's own writer
 ```
 
-Run the tests with `python3 vcl-runner/tests/test_vcl_runner.py`.
+Run the tests with `python3 vcl-runner/tests/test_vcl_runner.py`. The tests
+that read a real .rm document skip when rmscene is not installed (CI has no pip
+step); run them where it is, for example inside the BehalfBot container.

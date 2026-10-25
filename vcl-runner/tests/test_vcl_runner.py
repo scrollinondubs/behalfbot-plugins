@@ -5,7 +5,9 @@ Stdlib only, no network beyond 127.0.0.1. The Hub is tests/fake_hub.py, a real
 HTTP server. The claude CLI is a fake script put first on PATH: it records its
 argv, stdin, cwd and environment to a file and answers the way
 `claude -p --output-format json` does. rmapi is faked the same way for
-tablet_send jobs. The runner runs as a subprocess through
+tablet_send and tablet_pull jobs; the document a pull reads is built with
+rmscene's own writer (tests/rm_fixtures.py), and the tests that parse it skip
+when rmscene is not installed. The runner runs as a subprocess through
 the real heartbeat gate, scripts/gather-vcl-runner.sh, so the stdout
 contract is tested too.
 
@@ -16,6 +18,7 @@ from __future__ import annotations
 
 import base64
 import datetime as dt
+import importlib.util
 import json
 import os
 import pathlib
@@ -35,7 +38,11 @@ sys.path.insert(0, str(TESTS))
 
 from fake_hub import FakeHub  # noqa: E402
 
-from vcl_runner import claude_argv, save_key  # noqa: E402
+from vcl_runner import annotations, claude_argv, save_key  # noqa: E402
+from vcl_runner.runner import doc_version  # noqa: E402
+
+HAVE_RMSCENE = importlib.util.find_spec("rmscene") is not None
+NEEDS_RMSCENE = unittest.skipUnless(HAVE_RMSCENE, "rmscene is not installed (the BehalfBot image has it)")
 
 # Distinctive, so a leak anywhere is unambiguous.
 KEY = "vcl_fos_TESTKEY0123456789abcdefLEAKCANARY"
@@ -99,7 +106,7 @@ FAKE_RMAPI = textwrap.dedent("""\
     #!/usr/bin/env python3
     import base64, json, os, sys
     args = sys.argv[1:]
-    entry = {"argv": args, "stdin": sys.stdin.read(), "env": dict(os.environ)}
+    entry = {"argv": args, "stdin": sys.stdin.read(), "env": dict(os.environ), "cwd": os.getcwd()}
     if len(args) >= 3 and args[1] == "put" and os.path.isfile(args[2]):
         with open(args[2], "rb") as fh:
             entry["file"] = base64.b64encode(fh.read()).decode()
@@ -117,6 +124,18 @@ FAKE_RMAPI = textwrap.dedent("""\
         sys.exit(1)
     if mode == "folder-exists" and args[1] == "mkdir":
         print("entry already exists")
+    if args[1] == "stat":
+        if mode == "no-doc":
+            sys.stderr.write("ERROR: 2026/10/25 13:06:35 main.go:95: Error:  file doesn't exist\\n")
+            sys.exit(1)
+        print(json.dumps({"ID": "0a1b", "Name": os.path.basename(args[2]), "Version": 3,
+                          "ModifiedClient": os.environ.get("FAKE_RMAPI_VERSION", "2026-10-25T15:00:00Z"),
+                          "Type": "DocumentType"}, indent=2))
+    if args[1] == "get":
+        name = os.path.basename(args[2]) + ".rmdoc"
+        with open(os.environ["FAKE_RMAPI_DOC"], "rb") as src, open(name, "wb") as dst:
+            dst.write(src.read())
+        print("downloading: [" + os.path.basename(args[2]) + "]...")
 """)
 
 PDF = b"%PDF-1.7\n% not really a pdf\n" + bytes(range(256))
@@ -140,6 +159,40 @@ def tablet_packet(job_id: str, file_url: str, *, folder: str = "/Safari",
                   filename: str = "Safari reading 2026-10-25.pdf", lease_minutes: float = 20) -> dict:
     return {"id": job_id, "kind": "tablet_send", "lease_expires_at": lease(lease_minutes),
             "tablet": {"target": "remarkable", "file_url": file_url, "filename": filename, "folder": folder}}
+
+
+DOC_PATH = "/Safari/Safari reading 2026-10-25 1342"
+PULL_BASE = "/api/founder-os/agent/tablet-pulls/pull-1"
+
+
+def pull_packet(job_id: str = "pull-1", *, since: str | None = None, known: dict | None = None,
+                lease_minutes: float = 20, base: str = "") -> dict:
+    return {"id": job_id, "kind": "tablet_pull", "phase": "pull", "model": None, "system": "", "steps": [],
+            "lease_expires_at": lease(lease_minutes),
+            "tablet": {"target": "remarkable", "doc_path": DOC_PATH, "since": since,
+                       "document_url": f"{base}/api/founder-os/agent/tablet-pulls/{job_id}/document",
+                       "pages_url": f"{base}/api/founder-os/agent/tablet-pulls/{job_id}/pages",
+                       "known_pages": known or {}}}
+
+
+def png_size(png: bytes) -> tuple[int, int]:
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    return int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")
+
+
+def png_alpha(png: bytes, x: int, y: int) -> int:
+    """The alpha of one pixel of a grey + alpha PNG the runner wrote (filter 0 on every row)."""
+    import zlib
+    width, _ = png_size(png)
+    pos, idat = 8, b""
+    while pos < len(png):
+        length = int.from_bytes(png[pos:pos + 4], "big")
+        if png[pos + 4:pos + 8] == b"IDAT":
+            idat += png[pos + 8:pos + 8 + length]
+        pos += 12 + length
+    raw = zlib.decompress(idat)
+    row = y * (1 + width * 2)
+    return raw[row + 1 + x * 2 + 1]
 
 
 class RunnerTest(unittest.TestCase):
@@ -301,6 +354,162 @@ class RunnerTest(unittest.TestCase):
         self.assertTrue(bodies[0]["ok"])
         self.assertEqual(json.loads(bodies[1]["outputs"][0]["text"]), {"echo": "after tablet"})
         self.assertEqual(len(self.claude_calls()), 1)
+
+    def write_doc(self) -> str:
+        path = pathlib.Path(self.tmp.name) / "doc.rmdoc"
+        import rm_fixtures
+        path.write_bytes(rm_fixtures.build_rmdoc())
+        return str(path)
+
+    def test_tablet_pull_unchanged_downloads_nothing(self):
+        with FakeHub(key=KEY) as fake:
+            fake.jobs.append(pull_packet(since="2026-10-25T15:00:00Z"))
+            summary, _ = self.run_gate(fake)
+        self.assertEqual(fake.results()[0]["body"],
+                         {"ok": True, "unchanged": True, "doc_version": "2026-10-25T15:00:00Z"})
+        self.assertEqual([c["argv"] for c in self.rmapi_calls()], [["-ni", "stat", DOC_PATH]])
+        self.assertEqual(fake.uploads, [])
+        self.assertEqual((summary["posted"], summary["failed_steps"]), (1, 0))
+        self.assertEqual(self.claude_calls(), [])
+
+    @NEEDS_RMSCENE
+    def test_tablet_pull_reads_highlights_and_sends_handwritten_pages(self):
+        doc = self.write_doc()
+        with FakeHub(key=KEY) as fake:
+            fake.jobs.append(pull_packet(since="2026-10-24T09:00:00Z"))
+            summary, proc = self.run_gate(fake, FAKE_RMAPI_DOC=doc)
+        import rm_fixtures
+        calls = self.rmapi_calls()
+        self.assertEqual([c["argv"][1:] for c in calls], [["stat", DOC_PATH], ["get", DOC_PATH]])
+        self.assertTrue(calls[1]["cwd"].startswith(tempfile.gettempdir()) or "vcl-runner-pull-" in calls[1]["cwd"])
+        self.assertFalse(pathlib.Path(calls[1]["cwd"]).exists(), "the download is cleaned up")
+
+        paths = [u["path"] for u in fake.uploads]
+        self.assertEqual(paths, [f"{PULL_BASE}/document", f"{PULL_BASE}/pages?page=2&inserted=0",
+                                 f"{PULL_BASE}/pages?page=2&inserted=1"],
+                         "the PDF once, then each page with handwriting; the deleted page is left out")
+        self.assertEqual(fake.uploads[0]["data"], rm_fixtures.PDF_BYTES)
+        self.assertEqual(fake.uploads[0]["type"], "application/pdf")
+        for u in fake.uploads:
+            self.assertEqual(u["_auth"], f"Bearer {KEY}")
+        page2 = fake.uploads[1]["data"]
+        self.assertEqual(fake.uploads[1]["type"], "image/png")
+        self.assertEqual(png_size(page2), (1404, 1872))
+        self.assertEqual(png_alpha(page2, 702 - 525, 400), 255, "a pen stroke at x=-525, y=400 is ink")
+        self.assertEqual(png_alpha(page2, 702, 900), annotations.HIGHLIGHT_ALPHA, "a highlighter is a wash")
+        self.assertEqual(png_alpha(page2, 702, 1500), 0, "the rest of the page is clear")
+
+        body = fake.results()[0]["body"]
+        self.assertEqual(body["doc_version"], "2026-10-25T15:00:00Z")
+        self.assertEqual(body["highlights"], [
+            {"page": 1, "inserted": 0, "text": rm_fixtures.HIGHLIGHT_1, "color": 3},
+            {"page": 1, "inserted": 0, "text": rm_fixtures.HIGHLIGHT_2, "color": 3},
+            {"page": 1, "inserted": 0, "text": rm_fixtures.LEGACY_HIGHLIGHT, "color": 3},
+        ])
+        self.assertEqual([(p["page"], p["inserted"], p["status"]) for p in body["pages"]],
+                         [(2, 0, "imported"), (2, 1, "imported")])
+        self.assertEqual(body["pages"][0]["hash"], annotations.page_hash(page2))
+        self.assertEqual((summary["posted"], summary["failed_steps"]), (1, 0))
+        self.assertEqual(self.claude_calls(), [], "a pull never calls claude")
+        for call in calls:
+            self.assertNotIn(KEY, json.dumps(call))
+        self.assertNotIn(KEY, proc.stdout + proc.stderr)
+
+    @NEEDS_RMSCENE
+    def test_tablet_pull_without_since_always_reads(self):
+        doc = self.write_doc()
+        with FakeHub(key=KEY) as fake:
+            fake.jobs.append(pull_packet(since=None))
+            self.run_gate(fake, FAKE_RMAPI_DOC=doc)
+        self.assertEqual([c["argv"][1] for c in self.rmapi_calls()], ["stat", "get"])
+        self.assertEqual(len(fake.results()[0]["body"]["highlights"]), 3)
+
+    @NEEDS_RMSCENE
+    def test_tablet_pull_skips_pages_the_hub_already_has(self):
+        doc = self.write_doc()
+        with FakeHub(key=KEY) as fake:
+            fake.jobs.append(pull_packet())
+            self.run_gate(fake, FAKE_RMAPI_DOC=doc)
+            hashes = {f"{p['page']}" + (f"+{p['inserted']}" if p["inserted"] else ""): p["hash"]
+                      for p in fake.results()[0]["body"]["pages"]}
+            fake.uploads.clear()
+            fake.requests.clear()
+            fake.jobs.append(pull_packet(known=hashes))
+            self.run_gate(fake, FAKE_RMAPI_DOC=doc)
+        self.assertEqual(fake.uploads, [], "no page and no PDF when every page is already on the Hub")
+        self.assertEqual([p["status"] for p in fake.results()[0]["body"]["pages"]], ["known", "known"])
+
+    @NEEDS_RMSCENE
+    def test_tablet_pull_stops_when_the_hub_refuses_a_page(self):
+        doc = self.write_doc()
+        with FakeHub(key=KEY, upload_status={f"{PULL_BASE}/pages": 409}) as fake:
+            fake.jobs.append(pull_packet())
+            self.run_gate(fake, FAKE_RMAPI_DOC=doc)
+        self.assertEqual(fake.results()[0]["body"], {"error": "the Hub refused page 2 (HTTP 409)"})
+        self.assertEqual(len([u for u in fake.uploads if "/pages" in u["path"]]), 1)
+
+    @NEEDS_RMSCENE
+    def test_tablet_pull_reports_a_page_the_hub_could_not_read(self):
+        doc = self.write_doc()
+        with FakeHub(key=KEY, upload_status={f"{PULL_BASE}/pages?page=2&inserted=0": 502}) as fake:
+            fake.jobs.append(pull_packet())
+            self.run_gate(fake, FAKE_RMAPI_DOC=doc)
+        pages = fake.results()[0]["body"]["pages"]
+        self.assertEqual([p["status"] for p in pages], ["HTTP 502", "imported"], "one bad page does not stop the rest")
+
+    def test_tablet_pull_without_rmscene_posts_a_clear_error(self):
+        shadow = pathlib.Path(self.tmp.name) / "shadow"
+        (shadow / "rmscene").mkdir(parents=True)
+        (shadow / "rmscene" / "__init__.py").write_text("raise ImportError('simulated: not installed')\n")
+        doc = pathlib.Path(self.tmp.name) / "doc.rmdoc"
+        doc.write_bytes(b"PK\x05\x06" + b"\x00" * 18)
+        with FakeHub(key=KEY) as fake:
+            fake.jobs.append(pull_packet())
+            summary, _ = self.run_gate(fake, FAKE_RMAPI_DOC=str(doc), PYTHONPATH=str(shadow))
+        self.assertEqual(fake.results()[0]["body"],
+                         {"error": "pull failed: rmscene not installed: pip install 'rmscene>=0.6,<1' on the BehalfBot"})
+        self.assertEqual(summary["count"], 0, "the Hub shows it on the send; the heartbeat stays quiet")
+
+    def test_tablet_pull_with_rmapi_not_paired(self):
+        with FakeHub(key=KEY) as fake:
+            fake.jobs.append(pull_packet())
+            self.run_gate(fake, FAKE_RMAPI_MODE="not-paired")
+        self.assertEqual(fake.results()[0]["body"], {"error": "rmapi not paired"})
+
+    def test_tablet_pull_of_a_document_that_is_gone(self):
+        with FakeHub(key=KEY) as fake:
+            fake.jobs.append(pull_packet())
+            self.run_gate(fake, FAKE_RMAPI_MODE="no-doc")
+        self.assertEqual(fake.results()[0]["body"], {"error": "pull failed: stat: file doesn't exist"})
+        self.assertEqual(len(self.rmapi_calls()), 1)
+
+    def test_tablet_pull_without_rmapi(self):
+        with FakeHub(key=KEY) as fake:
+            fake.jobs.append(pull_packet())
+            self.run_gate(fake, RMAPI_BIN=str(self.bin / "no-such-rmapi"))
+        self.assertEqual(fake.results()[0]["body"], {"error": "rmapi not found"})
+
+    @NEEDS_RMSCENE
+    def test_tablet_pull_never_sends_the_key_off_the_hub(self):
+        doc = self.write_doc()
+        with FakeHub() as other, FakeHub(key=KEY) as fake:
+            off = other.url.replace("127.0.0.1", "localhost")
+            p = pull_packet()
+            p["tablet"]["pages_url"] = off + "/api/founder-os/agent/tablet-pulls/pull-1/pages"
+            p["tablet"]["document_url"] = off + "/api/founder-os/agent/tablet-pulls/pull-1/document"
+            fake.jobs.append(p)
+            self.run_gate(fake, FAKE_RMAPI_DOC=doc)
+        self.assertEqual(other.requests, [])
+        self.assertEqual({p["status"] for p in fake.results()[0]["body"]["pages"]}, {"upload url is not on the Hub"})
+
+    def test_tablet_pull_bad_doc_path_is_a_malformed_packet(self):
+        with FakeHub(key=KEY) as fake:
+            p = pull_packet()
+            p["tablet"]["doc_path"] = "../etc/passwd"
+            fake.jobs.append(p)
+            self.run_gate(fake)
+        self.assertIn("malformed task packet", fake.results()[0]["body"]["error"])
+        self.assertEqual(self.rmapi_calls(), [])
 
     def test_204_is_a_quiet_no_op(self):
         with FakeHub([], key=KEY) as fake:
@@ -552,6 +761,54 @@ class RunnerTest(unittest.TestCase):
         for text in outputs:
             self.assertNotIn(KEY, text)
             self.assertNotIn("TESTKEY0123456789", text, "not even a fragment of the key")
+
+
+class AnnotationsTest(unittest.TestCase):
+    def test_render_is_deterministic_and_grows_for_writing_below_the_page(self):
+        strokes = [annotations.Stroke([(-100.0, 100.0), (100.0, 2100.0)])]
+        png = annotations.render_page(strokes)
+        self.assertEqual(png, annotations.render_page(strokes), "the same ink hashes the same")
+        self.assertEqual(png_size(png), (1404, 2108))
+        self.assertEqual(png_alpha(png, 702 - 100, 100), 255)
+
+    def test_render_caps_the_height(self):
+        png = annotations.render_page([annotations.Stroke([(0.0, 0.0), (0.0, 99999.0)])])
+        self.assertEqual(png_size(png), (1404, annotations.MAX_HEIGHT))
+
+    def test_doc_version_reads_modified_client(self):
+        self.assertEqual(doc_version('{"ModifiedClient": "2026-10-25T15:00:00Z"}'), "2026-10-25T15:00:00Z")
+        self.assertIsNone(doc_version("not json"))
+        self.assertIsNone(doc_version('{"ModifiedClient": ""}'))
+
+    def test_page_order_from_both_content_formats(self):
+        v2 = {"cPages": {"pages": [
+            {"id": "b", "idx": {"value": "bb"}, "redir": {"value": 1}},
+            {"id": "a", "idx": {"value": "ba"}, "redir": {"value": 0}},
+            {"id": "x", "idx": {"value": "bc"}},
+            {"id": "d", "idx": {"value": "bd"}, "redir": {"value": 2}, "deleted": {"value": 1}}]}}
+        self.assertEqual(annotations._page_order(v2), [("a", 0), ("b", 1), ("x", None)])
+        v1 = {"pages": ["a", "b", "x"], "redirectionPageMap": [0, 1, -1]}
+        self.assertEqual(annotations._page_order(v1), [("a", 0), ("b", 1), ("x", None)])
+
+    def test_a_zip_with_an_escaping_path_is_not_read(self):
+        import io
+        import zipfile
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("../evil.content", "{}")
+        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
+            self.assertEqual(annotations._safe_members(zf), {})
+
+    @NEEDS_RMSCENE
+    def test_read_document_maps_pages(self):
+        import rm_fixtures
+        path = pathlib.Path(tempfile.mkdtemp()) / "doc.rmdoc"
+        path.write_bytes(rm_fixtures.build_rmdoc())
+        doc = annotations.read_document(str(path))
+        self.assertEqual([(p.key, len(p.highlights), len(p.strokes)) for p in doc.pages],
+                         [("1", 3, 0), ("2", 0, 3), ("2+1", 0, 1)])
+        self.assertEqual([s.highlighter for s in doc.pages[1].strokes], [False, False, True])
+        self.assertEqual(doc.pdf, rm_fixtures.PDF_BYTES)
 
 
 class ArgvTest(unittest.TestCase):
