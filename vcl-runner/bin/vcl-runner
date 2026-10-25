@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""vcl-runner - run the student's Vibecode Lisboa Hub jobs on this install.
+
+    vcl-runner setup [--base-url URL] [--env-file PATH]
+    vcl-runner tick
+
+Reads FOUNDER_OS_AGENT_KEY and FOUNDER_OS_AGENT_BASE_URL; `setup` writes them,
+reading the key from the terminal (hidden) or stdin, never from the command
+line. `tick` prints one JSON summary line. Exit 0 on success, 1 on an error,
+2 on bad usage.
+"""
+from __future__ import annotations
+
+import argparse
+import getpass
+import json
+import pathlib
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+from vcl_runner import save_key, tick  # noqa: E402
+
+
+def cmd_setup(args: argparse.Namespace) -> int:
+    if sys.stdin.isatty():
+        key = getpass.getpass("Agent key from the Hub settings (input hidden): ")
+    else:
+        key = sys.stdin.readline()
+    env_file = pathlib.Path(args.env_file) if args.env_file else None
+    written = save_key(key, env_file, args.base_url)
+    print("agent key saved to " + " and ".join(str(p) for p in written))
+    print("the runner picks it up on the next heartbeat tick")
+    return 0
+
+
+def cmd_tick(args: argparse.Namespace) -> int:
+    print(json.dumps(tick(), sort_keys=True))
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="vcl-runner", description=__doc__.split("\n\n")[0])
+    sub = parser.add_subparsers(dest="command", required=True)
+    r = sub.add_parser("setup", help="store the agent key (read hidden from the terminal, or from stdin)")
+    r.add_argument("--base-url", help="Hub base URL (default https://vibecodelisboa.com)")
+    r.add_argument("--env-file", help="secret file to write (default $CUSTOMER_HOME/.env)")
+    r.set_defaults(func=cmd_setup)
+    r = sub.add_parser("tick", help="claim and run queued jobs once; prints a JSON summary")
+    r.set_defaults(func=cmd_tick)
+
+    args = parser.parse_args(argv)
+    try:
+        return args.func(args)
+    except (ValueError, OSError, RuntimeError) as exc:
+        print(f"vcl-runner {args.command}: {exc}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
