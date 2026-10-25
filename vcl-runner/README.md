@@ -97,7 +97,7 @@ have cost on their API key.
 
 When the student turns on reMarkable in the Hub, "Send unread to my tablet"
 queues a `tablet_send` job. It has no model steps and never starts `claude`.
-The runner downloads the reading file the Hub built (`tablet.file_url`, with
+The runner downloads the reading file the Hub built (a PDF, `tablet.file_url`, with
 the agent key, and only from the Hub's own origin), then uploads it with
 [rmapi](https://github.com/ddvk/rmapi):
 

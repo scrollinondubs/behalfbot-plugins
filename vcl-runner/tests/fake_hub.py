@@ -57,7 +57,7 @@ class FakeHub:
                         return self._send(401, {"error": "bad key"})
                     raw = fake.files[self.path]
                     self.send_response(200)
-                    self.send_header("Content-Type", "application/epub+zip")
+                    self.send_header("Content-Type", "application/pdf")
                     self.send_header("Content-Length", str(len(raw)))
                     self.end_headers()
                     self.wfile.write(raw)

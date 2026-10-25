@@ -119,7 +119,7 @@ FAKE_RMAPI = textwrap.dedent("""\
         print("entry already exists")
 """)
 
-EPUB = b"PK\x03\x04 not really an epub " + bytes(range(256))
+PDF = b"%PDF-1.7\n% not really a pdf\n" + bytes(range(256))
 FILE_PATH = "/api/founder-os/agent/tablet/files/abc123"
 
 
@@ -137,7 +137,7 @@ def packet(job_id: str, prompts: list[str], *, model: str | None = None, kind: s
 
 
 def tablet_packet(job_id: str, file_url: str, *, folder: str = "/Safari",
-                  filename: str = "Safari reading 2026-10-25.epub", lease_minutes: float = 20) -> dict:
+                  filename: str = "Safari reading 2026-10-25.pdf", lease_minutes: float = 20) -> dict:
     return {"id": job_id, "kind": "tablet_send", "lease_expires_at": lease(lease_minutes),
             "tablet": {"target": "remarkable", "file_url": file_url, "filename": filename, "folder": folder}}
 
@@ -188,7 +188,7 @@ class RunnerTest(unittest.TestCase):
         return [json.loads(line) for line in self.rmapi_log.read_text(encoding="utf-8").splitlines()]
 
     def test_tablet_send_uploads_to_remarkable_without_claude(self):
-        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+        with FakeHub(key=KEY, files={FILE_PATH: PDF}) as fake:
             fake.jobs.append(tablet_packet("tab-1", fake.url + FILE_PATH, folder="/Safari/Reading"))
             summary, proc = self.run_gate(fake)
         self.assertEqual((summary["count"], summary["jobs"], summary["posted"], summary["failed_steps"]),
@@ -208,9 +208,9 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(len(calls), 3)
         put = calls[2]["argv"]
         self.assertEqual(put[:2], ["-ni", "put"])
-        self.assertEqual(pathlib.Path(put[2]).name, "Safari reading 2026-10-25.epub")
+        self.assertEqual(pathlib.Path(put[2]).name, "Safari reading 2026-10-25.pdf")
         self.assertEqual(put[3], "/Safari/Reading")
-        self.assertEqual(base64.b64decode(calls[2]["file"]), EPUB, "rmapi gets the bytes the Hub served")
+        self.assertEqual(base64.b64decode(calls[2]["file"]), PDF, "rmapi gets the bytes the Hub served")
         self.assertFalse(pathlib.Path(put[2]).exists(), "the downloaded file is cleaned up")
         for call in calls:
             self.assertEqual(call["stdin"], "")
@@ -219,7 +219,7 @@ class RunnerTest(unittest.TestCase):
         self.assertNotIn(KEY, proc.stdout + proc.stderr)
 
     def test_tablet_send_to_the_root_folder(self):
-        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+        with FakeHub(key=KEY, files={FILE_PATH: PDF}) as fake:
             fake.jobs.append(tablet_packet("tab-root", FILE_PATH, folder="/", filename="Week 3.pdf"))
             self.run_gate(fake)
         self.assertEqual(fake.results()[0]["body"], {"ok": True, "doc_path": "/Week 3"})
@@ -227,7 +227,7 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(self.rmapi_calls()[0]["argv"][3], "/")
 
     def test_tablet_send_into_an_existing_folder(self):
-        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+        with FakeHub(key=KEY, files={FILE_PATH: PDF}) as fake:
             fake.jobs.append(tablet_packet("tab-2", FILE_PATH))
             self.run_gate(fake, FAKE_RMAPI_MODE="folder-exists")
         self.assertEqual(fake.results()[0]["body"], {"ok": True, "doc_path": "/Safari/Safari reading 2026-10-25"},
@@ -235,27 +235,27 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual([c["argv"][1] for c in self.rmapi_calls()], ["mkdir", "put"])
 
     def test_tablet_send_without_rmapi(self):
-        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+        with FakeHub(key=KEY, files={FILE_PATH: PDF}) as fake:
             fake.jobs.append(tablet_packet("tab-3", fake.url + FILE_PATH))
             summary, _ = self.run_gate(fake, RMAPI_BIN=str(self.bin / "no-such-rmapi"))
         self.assertEqual(fake.results()[0]["body"], {"error": "rmapi not found"})
         self.assertEqual((summary["count"], summary["posted"], summary["failed_steps"]), (0, 1, 1))
 
     def test_tablet_send_with_rmapi_not_paired(self):
-        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+        with FakeHub(key=KEY, files={FILE_PATH: PDF}) as fake:
             fake.jobs.append(tablet_packet("tab-4", fake.url + FILE_PATH))
             self.run_gate(fake, FAKE_RMAPI_MODE="not-paired")
         self.assertEqual(fake.results()[0]["body"], {"error": "rmapi not paired"})
         self.assertEqual(len(self.rmapi_calls()), 1, "stops at the first call")
 
     def test_tablet_send_upload_failure(self):
-        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+        with FakeHub(key=KEY, files={FILE_PATH: PDF}) as fake:
             fake.jobs.append(tablet_packet("tab-5", fake.url + FILE_PATH))
             self.run_gate(fake, FAKE_RMAPI_MODE="put-fails")
         self.assertEqual(fake.results()[0]["body"], {"error": "upload failed: put: entry already exists"})
 
     def test_tablet_send_refuses_a_file_url_off_the_hub(self):
-        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+        with FakeHub(key=KEY, files={FILE_PATH: PDF}) as fake:
             fake.jobs.append(tablet_packet("tab-6", "https://example.com" + FILE_PATH))
             self.run_gate(fake)
         self.assertEqual(fake.results()[0]["body"], {"error": "file_url is not on the Hub"})
@@ -263,15 +263,15 @@ class RunnerTest(unittest.TestCase):
 
     def test_tablet_send_rmapi_bin_read_from_env_file(self):
         (self.home / ".env").write_text(f"RMAPI_BIN={self.bin / 'rmapi'}\n")
-        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+        with FakeHub(key=KEY, files={FILE_PATH: PDF}) as fake:
             fake.jobs.append(tablet_packet("tab-env", FILE_PATH))
             self.run_gate(fake, RMAPI_BIN="", PATH="/usr/bin:/bin")
         self.assertTrue(fake.results()[0]["body"]["ok"])
         self.assertEqual(self.rmapi_calls()[-1]["argv"][1], "put")
 
     def test_tablet_send_redirect_off_the_hub_drops_the_key(self):
-        with FakeHub(files={"/blob.epub": EPUB}) as blob, FakeHub(key=KEY) as fake:
-            blob_url = blob.url.replace("127.0.0.1", "localhost") + "/blob.epub"
+        with FakeHub(files={"/blob.pdf": PDF}) as blob, FakeHub(key=KEY) as fake:
+            blob_url = blob.url.replace("127.0.0.1", "localhost") + "/blob.pdf"
             fake.redirects[FILE_PATH] = blob_url
             fake.jobs.append(tablet_packet("tab-redir", FILE_PATH))
             self.run_gate(fake)
@@ -280,20 +280,20 @@ class RunnerTest(unittest.TestCase):
 
     def test_tablet_send_download_failure(self):
         with FakeHub(key=KEY) as fake:
-            fake.jobs.append(tablet_packet("tab-7", fake.url + "/missing.epub"))
+            fake.jobs.append(tablet_packet("tab-7", fake.url + "/missing.pdf"))
             self.run_gate(fake)
         self.assertEqual(fake.results()[0]["body"], {"error": "download failed: HTTP 404"})
         self.assertEqual(self.rmapi_calls(), [])
 
     def test_tablet_send_bad_filename_is_a_malformed_packet(self):
-        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+        with FakeHub(key=KEY, files={FILE_PATH: PDF}) as fake:
             fake.jobs.append(tablet_packet("tab-8", FILE_PATH, filename="notes.sh"))
             self.run_gate(fake)
         self.assertIn("malformed task packet", fake.results()[0]["body"]["error"])
         self.assertEqual(self.rmapi_calls(), [])
 
     def test_tablet_send_then_a_claude_job_in_one_tick(self):
-        with FakeHub(key=KEY, files={FILE_PATH: EPUB}) as fake:
+        with FakeHub(key=KEY, files={FILE_PATH: PDF}) as fake:
             fake.jobs += [tablet_packet("tab-9", FILE_PATH), packet("run-after", ["after tablet"])]
             summary, _ = self.run_gate(fake)
         bodies = [r["body"] for r in fake.results()]

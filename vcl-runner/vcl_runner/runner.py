@@ -71,7 +71,7 @@ STDERR_NOISE = ("[claude-code:unrecognized_model]", "Warning: Advisor disabled")
 ENV_RMAPI = "RMAPI_BIN"
 TABLET_KIND = "tablet_send"
 TABLET_TARGET = "remarkable"
-TABLET_EXTENSIONS = (".epub", ".pdf")
+TABLET_EXTENSIONS = (".pdf", ".epub")
 MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024
 RMAPI_TIMEOUT = 120
 # What rmapi -ni prints when it has no token to use.
@@ -454,7 +454,7 @@ def _tablet_problem(packet: dict) -> str | None:
             return f"no tablet.{field}"
     name = posixpath.basename(tablet["filename"].replace("\\", "/")).strip()
     if name in ("", ".", "..") or not name.lower().endswith(TABLET_EXTENSIONS):
-        return "tablet.filename must be an .epub or .pdf name"
+        return "tablet.filename must be a .pdf or .epub name"
     if ".." in tablet["folder"].split("/"):
         return "tablet.folder must not contain .."
     return None
