@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% set active_section = "/dating" %}
+{% block title %}Dating{% endblock %}
+
+{% block topbar %}
+<div class="topbar-inner">
+  <h1>Dating <small>CLIP score training</small></h1>
+  <nav class="subnav">
+    <a href="/dating" class="active">Review</a>
+    <a href="/dating/lost">Lost list{% if stats.queue_pending %} ({{ stats.queue_pending }}){% endif %}</a>
+    <a href="/dating/reviewed">Reviewed</a>
+  </nav>
+  <span class="spacer"></span>
+  <span class="muted small">
+    {% if stats.accuracy is not none %}accuracy {{ stats.accuracy }}% ·{% endif %}
+    fn {{ stats.fn }} · fp {{ stats.fp }} · agree {{ stats.agree }}
+  </span>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "_dating_styles.html" %}
+{% if error %}<section class="panel"><p class="fail">{{ error }}</p></section>{% endif %}
+{% if pending %}
+<section class="panel rate-panel" id="rate-panel">
+  <div class="rate-header">
+    <span id="rate-progress" class="muted"></span>
+    <span id="rate-meta"></span>
+    <span id="rate-agent" class="pill"></span>
+  </div>
+  <div class="rate-stage">
+    <img id="rate-img" src="" alt="profile screenshot">
+  </div>
+  <div class="rate-actions">
+    <button class="btn rate-btn" data-bucket="like" title="shortcut: L">L · Like</button>
+    <button class="btn rate-btn" data-bucket="super-like" title="shortcut: S">S · Super-like</button>
+    <button class="btn rate-btn" data-bucket="pass" title="shortcut: X or P">X · Pass</button>
+    <button class="btn rate-btn" data-bucket="no-opinion" title="shortcut: N">N · No opinion</button>
+    <button class="btn" id="rate-undo" title="shortcut: U">U · Back</button>
+    <button class="btn" id="rate-skip" title="shortcut: right arrow">&rarr; Skip</button>
+  </div>
+  <div id="rate-toast" class="muted small"></div>
+</section>
+<section class="panel rate-done" id="rate-done" hidden>
+  <h2>All caught up</h2>
+  <p class="muted">Every profile has a rating. New swipe-session screenshots land here automatically.</p>
+  <p><a href="/dating/lost" class="btn">Lost list</a> <a href="/dating/reviewed" class="btn">Reviewed</a></p>
+</section>
+
+<script id="pending-data" type="application/json">{{ pending | tojson }}</script>
+<script>
+(function () {
+  const items = JSON.parse(document.getElementById('pending-data').textContent);
+  const rated = new Set();
+  let idx = 0;
+  const img = document.getElementById('rate-img');
+  const meta = document.getElementById('rate-meta');
+  const agentPill = document.getElementById('rate-agent');
+  const progress = document.getElementById('rate-progress');
+  const toast = document.getElementById('rate-toast');
+  let busy = false;
+
+  function remaining() { return items.filter(it => !rated.has(it.id)); }
+
+  function preload(i) {
+    for (let k = i + 1; k <= i + 2 && k < items.length; k++) {
+      if (!rated.has(items[k].id)) new Image().src = '/dating/screenshot/' + encodeURIComponent(items[k].basename);
+    }
+  }
+
+  function show(i) {
+    if (remaining().length === 0) {
+      document.getElementById('rate-panel').hidden = true;
+      document.getElementById('rate-done').hidden = false;
+      return;
+    }
+    // step forward past already-rated entries
+    while (i < items.length && rated.has(items[i].id)) i++;
+    if (i >= items.length) i = items.findIndex(it => !rated.has(it.id));
+    idx = i;
+    const it = items[idx];
+    img.src = '/dating/screenshot/' + encodeURIComponent(it.basename);
+    meta.textContent = it.name + ' · ' + it.age + ' · ' + it.platform + ' · ' + it.date;
+    agentPill.textContent = 'Agent: ' + it.agent_action;
+    agentPill.className = 'pill pill-' + it.agent_action.replace(/[^a-z-]/g, '');
+    progress.textContent = (items.length - remaining().length + 1) + ' / ' + items.length;
+    preload(idx);
+  }
+
+  function next() {
+    let i = idx + 1;
+    while (i < items.length && rated.has(items[i].id)) i++;
+    if (i >= items.length) {
+      const first = items.findIndex(it => !rated.has(it.id));
+      i = first === -1 ? items.length : first;
+    }
+    show(i);
+  }
+
+  function back() {
+    let i = idx - 1;
+    while (i >= 0 && !items[i]) i--;
+    if (i < 0) return;
+    // allow revisiting a rated card to correct it
+    rated.delete(items[i].id);
+    show(i);
+  }
+
+  async function rate(bucket) {
+    if (busy || remaining().length === 0) return;
+    busy = true;
+    const it = items[idx];
+    try {
+      const body = new URLSearchParams({ profile_id: it.id, bucket: bucket });
+      const res = await fetch('/dating/rate', { method: 'POST', body: body });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      rated.add(it.id);
+      toast.textContent = it.name + ' -> ' + bucket + ' (' + data.outcome + '; ' + data.files + ')';
+      next();
+    } catch (e) {
+      toast.textContent = 'FAILED to save ' + it.name + ': ' + e.message;
+    } finally {
+      busy = false;
+    }
+  }
+
+  document.querySelectorAll('.rate-btn').forEach(b =>
+    b.addEventListener('click', () => rate(b.dataset.bucket)));
+  document.getElementById('rate-skip').addEventListener('click', next);
+  document.getElementById('rate-undo').addEventListener('click', back);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'l') rate('like');
+    else if (k === 's') rate('super-like');
+    else if (k === 'x' || k === 'p') rate('pass');
+    else if (k === 'n') rate('no-opinion');
+    else if (k === 'u' || k === 'arrowleft') back();
+    else if (k === 'arrowright') next();
+    else return;
+    e.preventDefault();
+  });
+
+  show(0);
+})();
+</script>
+{% elif not error %}
+<section class="panel rate-done">
+  <h2>All caught up</h2>
+  <p class="muted">No profiles waiting for review. New swipe-session screenshots in
+  <code>{{ inbox }}</code> appear here automatically.</p>
+</section>
+{% endif %}
+{% endblock %}

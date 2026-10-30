@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% set active_section = "/dating" %}
+{% block title %}Dating · Lost list{% endblock %}
+
+{% block topbar %}
+<div class="topbar-inner">
+  <h1>Dating <small>lost list</small></h1>
+  <nav class="subnav">
+    <a href="/dating">Review{% if stats.pending %} ({{ stats.pending }}){% endif %}</a>
+    <a href="/dating/lost" class="active">Lost list</a>
+    <a href="/dating/reviewed">Reviewed</a>
+  </nav>
+  <span class="spacer"></span>
+  <nav class="subnav">
+    <a href="/dating/lost" class="{% if status_filter == 'all' %}active{% endif %}">all</a>
+    <a href="/dating/lost?status=pending" class="{% if status_filter == 'pending' %}active{% endif %}">pending</a>
+    <a href="/dating/lost?status=recovered" class="{% if status_filter == 'recovered' %}active{% endif %}">recovered</a>
+    <a href="/dating/lost?status=lost" class="{% if status_filter == 'lost' %}active{% endif %}">lost</a>
+  </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "_dating_styles.html" %}
+{% if error %}<section class="panel"><p class="fail">{{ error }}</p></section>{% endif %}
+<section class="panel">
+  <p class="muted small">Profiles the agent passed on that you overturned to like or super-like.
+  The swipe subagent checks every profile it encounters against the pending entries and
+  re-likes on a hit. Mark an entry <em>recovered</em> once re-liked, or
+  <em>lost</em> if the person left the platform.</p>
+  {% if entries %}
+  <div class="table-scroll">
+  <table class="status-table lost-table">
+    <thead>
+      <tr><th></th><th>Name</th><th>Age</th><th>Platform</th><th>Swiped</th>
+          <th>Installer</th><th>Status</th><th>Added</th><th>Recovered</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    {% for e in entries %}
+    <tr id="q-{{ e.queue_id }}">
+      <td><img class="thumb" loading="lazy"
+               src="/dating/screenshot/{{ e.basename | urlencode }}" alt="{{ e.name }}"></td>
+      <td>{{ e.name }}</td>
+      <td>{{ e.age }}</td>
+      <td>{{ e.platform }}</td>
+      <td class="muted small">{{ e.date }}</td>
+      <td><span class="pill pill-{{ e.installer_bucket }}">{{ e.installer_bucket }}</span></td>
+      <td class="status-cell status-{{ e.status }}">{{ e.status }}{% if e.match_method %} <span class="muted small">({{ e.match_method }})</span>{% endif %}</td>
+      <td class="muted small">{{ e.added_at }}</td>
+      <td class="muted small">{{ e.recovered_at }}</td>
+      <td class="actions-cell">
+        {% if e.status != 'recovered' %}<button class="btn small-btn" data-qid="{{ e.queue_id }}" data-status="recovered">recovered</button>{% endif %}
+        {% if e.status != 'lost' %}<button class="btn small-btn" data-qid="{{ e.queue_id }}" data-status="lost">lost</button>{% endif %}
+        {% if e.status != 'pending' %}<button class="btn small-btn" data-qid="{{ e.queue_id }}" data-status="pending">reopen</button>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="muted">No entries{% if status_filter != 'all' %} with status "{{ status_filter }}"{% endif %}.</p>
+  {% endif %}
+</section>
+
+<script>
+document.querySelectorAll('.actions-cell .btn').forEach(b =>
+  b.addEventListener('click', async () => {
+    const body = new URLSearchParams({ status: b.dataset.status });
+    if (b.dataset.status === 'recovered') body.set('match_method', 'manual');
+    const res = await fetch('/dating/lost/' + b.dataset.qid + '/status', { method: 'POST', body: body });
+    if (res.ok) location.reload();
+    else alert('Failed: HTTP ' + res.status);
+  }));
+</script>
+{% endblock %}

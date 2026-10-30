@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% set active_section = "/dating" %}
+{% block title %}Dating · Reviewed{% endblock %}
+
+{% block topbar %}
+<div class="topbar-inner">
+  <h1>Dating <small>reviewed</small></h1>
+  <nav class="subnav">
+    <a href="/dating">Review{% if stats.pending %} ({{ stats.pending }}){% endif %}</a>
+    <a href="/dating/lost">Lost list{% if stats.queue_pending %} ({{ stats.queue_pending }}){% endif %}</a>
+    <a href="/dating/reviewed" class="active">Reviewed</a>
+  </nav>
+  <span class="spacer"></span>
+  <span class="muted small">
+    {% if stats.accuracy is not none %}accuracy {{ stats.accuracy }}% ·{% endif %}
+    fn {{ stats.fn }} · fp {{ stats.fp }} · agree {{ stats.agree }}
+  </span>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "_dating_styles.html" %}
+{% if error %}<section class="panel"><p class="fail">{{ error }}</p></section>{% endif %}
+<section class="panel">
+  <p class="muted small">Latest rating per profile (most recent first, showing {{ rows | length }}).
+  Change a bucket to correct a rating - corrections re-sync the lost list automatically.</p>
+  {% if rows %}
+  <div class="table-scroll">
+  <table class="status-table reviewed-table">
+    <thead>
+      <tr><th></th><th>Name</th><th>Age</th><th>Platform</th><th>Swiped</th>
+          <th>Agent</th><th>Installer</th><th>Outcome</th><th>Source</th><th>Reviewed</th></tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><img class="thumb" loading="lazy"
+               src="/dating/screenshot/{{ r.basename | urlencode }}" alt="{{ r.name }}"></td>
+      <td>{{ r.name }}</td>
+      <td>{{ r.age }}</td>
+      <td>{{ r.platform }}</td>
+      <td class="muted small">{{ r.date }}</td>
+      <td><span class="pill pill-{{ r.agent_action }}">{{ r.agent_action }}</span></td>
+      <td>
+        <select class="bucket-select" data-pid="{{ r.id }}">
+          {% for b in ['like', 'super-like', 'pass', 'no-opinion'] %}
+          <option value="{{ b }}" {% if r.installer_bucket == b %}selected{% endif %}>{{ b }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td class="outcome-{{ r.outcome }}">{{ r.outcome }}</td>
+      <td class="muted small">{{ r.source }}</td>
+      <td class="muted small">{{ r.reviewed_at }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="muted">No reviews yet.</p>
+  {% endif %}
+</section>
+
+<script>
+document.querySelectorAll('.bucket-select').forEach(sel =>
+  sel.addEventListener('change', async () => {
+    const body = new URLSearchParams({ profile_id: sel.dataset.pid, bucket: sel.value });
+    const res = await fetch('/dating/rate', { method: 'POST', body: body });
+    if (res.ok) location.reload();
+    else alert('Failed: HTTP ' + res.status);
+  }));
+</script>
+{% endblock %}

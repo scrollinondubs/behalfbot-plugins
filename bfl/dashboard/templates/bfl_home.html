@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% set active_section = "/bfl" %}
+{% block title %}{{ iso }} · BFL{% endblock %}
+
+{% block topbar %}
+<div class="topbar-inner">
+  <a class="btn" href="/bfl?week={{ prev_week }}">← {{ prev_week }}</a>
+  <h1>{{ iso }} <small>{{ monday.strftime("%b %d") }} - {{ sunday.strftime("%b %d, %Y") }}</small></h1>
+  <a class="btn" href="/bfl?week={{ next_week }}">{{ next_week }} →</a>
+  {% if iso != current_week %}<a class="btn subtle" href="/bfl">Today</a>{% endif %}
+  <span class="spacer"></span>
+  <form action="/bfl/search" method="get" class="search-form">
+    <input name="q" type="search" placeholder="search exercise or meal…">
+  </form>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "_bfl_styles.html" %}
+{% if error %}<section class="panel"><p class="fail">{{ error }}</p></section>{% endif %}
+<table class="week-grid">
+  <thead>
+    <tr>
+      <th>Day</th><th>Date</th><th>Type</th><th class="col-optional">Start</th>
+      <th>Workout</th><th>Sleep/Ready</th><th class="col-optional">Meals</th><th class="col-optional">Water</th><th class="col-optional">Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in days %}
+    <tr class="{% if d.data %}has-data{% else %}empty{% endif %}">
+      <td>{{ d.date.strftime("%a") }}</td>
+      <td><a href="/bfl/day/{{ d.date.isoformat() }}">{{ d.date.strftime("%m/%d") }}</a></td>
+      {% if d.data %}
+        <td>{{ d.data.day_type or "-" }}</td>
+        <td class="col-optional">{{ d.data.workout_start or "-" }}</td>
+        <td>
+          {#- Consolidated Workout column - aerobic days show min/km, gym days (upper/lower) show sets/ex. -#}
+          {%- set is_aerobic_day = d.data.day_type == "aerobic" or d.data.aerobic or d.data.runs -%}
+          {%- if is_aerobic_day and d.data.aerobic -%}
+            {{ d.data.aerobic[0].total_minutes }}min {{ d.data.aerobic[0].activity_type }}
+          {%- elif is_aerobic_day and d.data.runs -%}
+            {%- set r = d.data.runs[0] -%}
+            {%- set mins = (r.elapsed_seconds / 60) | round | int -%}
+            {%- set km = (r.distance_m / 1000) | round(2) if r.distance_m else 0 -%}
+            {{ mins }}min · {{ km }}km{% if r.avg_hr %} · {{ r.avg_hr | round | int }}bpm{% endif %}
+          {%- elif d.data.workouts -%}
+            {{ d.data.workouts | length }} sets across {{ d.data.exercises | length }} ex
+          {%- else -%}
+            -
+          {%- endif -%}
+        </td>
+        <td class="week-oura">
+          {%- if d.oura -%}
+            <span class="week-oura-s {{ 'oura-good' if (d.oura.sleep_score or 0) >= 75 else ('oura-warn' if (d.oura.sleep_score or 0) >= 55 else 'oura-bad') }}">{{ d.oura.sleep_score or '-' }}</span>
+            /
+            <span class="week-oura-r {{ 'oura-good' if (d.oura.readiness_score or 0) >= 75 else ('oura-warn' if (d.oura.readiness_score or 0) >= 55 else 'oura-bad') }}">{{ d.oura.readiness_score or '-' }}</span>
+          {%- else -%}-{%- endif -%}
+        </td>
+        <td class="col-optional">{% if d.data.meals %}{{ d.data.meals | length }}/6{% else %}-{% endif %}</td>
+        <td class="col-optional">{{ d.data.total_water_cups or "-" }}</td>
+        <td class="col-optional notes">{{ d.data.notes or "" }}</td>
+      {% else %}
+        <td class="empty-cell" colspan="3">- no data -</td>
+        <td class="week-oura">
+          {%- if d.oura -%}
+            <span class="week-oura-s {{ 'oura-good' if (d.oura.sleep_score or 0) >= 75 else ('oura-warn' if (d.oura.sleep_score or 0) >= 55 else 'oura-bad') }}">{{ d.oura.sleep_score or '-' }}</span>
+            /
+            <span class="week-oura-r {{ 'oura-good' if (d.oura.readiness_score or 0) >= 75 else ('oura-warn' if (d.oura.readiness_score or 0) >= 55 else 'oura-bad') }}">{{ d.oura.readiness_score or '-' }}</span>
+          {%- else -%}-{%- endif -%}
+        </td>
+        <td class="col-optional empty-cell" colspan="3"></td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{#- Body composition is not week-scoped: it always shows the most recent
+    weigh-in, so the reading date is in the header to avoid reading as if it
+    belonged to whichever week is on screen. -#}
+<section class="panel">
+  <h2>Body composition
+    {% if body_comp %}<small class="muted">{{ body_comp.date }}</small>{% endif %}
+  </h2>
+  {% if body_comp %}
+    <div class="stat-row">
+      {% for m in body_comp.metrics %}
+      <div class="stat">
+        <div class="stat-num">{{ m.value }}{% if m.unit %}<span class="stat-unit">{{ m.unit }}</span>{% endif %}</div>
+        <div class="stat-label">{{ m.label }}{% if m.derived %} <span class="pill pill-derived" title="Computed from weight and body fat, not measured by the scale">calc</span>{% endif %}</div>
+        <div class="stat-deltas">
+          {%- for key, span in [("delta_week", "7d"), ("delta_first", "all")] %}
+          {%- set delta = m[key] %}
+          {%- if delta is none %}
+          <span class="stat-delta stat-delta-none">{{ span }} -</span>
+          {%- elif delta == 0 %}
+          <span class="stat-delta">{{ span }} 0</span>
+          {%- else %}
+          <span class="stat-delta {{ 'delta-good' if ((delta < 0) == m.lower_is_better) else 'delta-bad' }}">{{ span }} {{ '+' if delta > 0 }}{{ delta }}</span>
+          {%- endif %}
+          {%- endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="small muted">
+      {%- if body_comp.has_week -%}
+        Compared against {{ body_comp.week_date }} (7d) and {{ body_comp.first_date }} (all).
+      {%- elif body_comp.has_first -%}
+        Compared against {{ body_comp.first_date }} (all). Nothing on the books from 7 or more days back yet.
+      {%- else -%}
+        First reading on the books - trends start with the second one.
+      {%- endif -%}
+      {% if body_comp.metrics | selectattr("derived") | list %}
+        Values marked <span class="pill pill-derived">calc</span> are computed from weight and body fat; the scale does not report them.
+      {% endif %}
+    </p>
+  {% else %}
+    <p class="empty-state">No weigh-ins recorded yet.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Mindfulness
+    {% if mindful %}<small class="muted">{{ mindful.total_minutes }} min this week</small>{% endif %}
+  </h2>
+  {% if mindful and mindful.ever %}
+    <div class="mindful-chart">
+      <div class="intensity-chart">
+        {% for d in mindful.days %}
+        <span class="bar{% if not d.minutes %} bar-empty{% endif %}"
+              style="height: {{ (100 * d.minutes / mindful.peak_minutes) | round(1) }}%"
+              title="{{ d.date.strftime('%a %d %b') }}: {{ d.minutes }} min over {{ d.sessions }} session{{ '' if d.sessions == 1 else 's' }}"></span>
+        {% endfor %}
+      </div>
+      <div class="mindful-labels">
+        {% for d in mindful.days %}
+        <span class="mindful-label">
+          <span class="mindful-day">{{ d.date.strftime("%a") }}</span>
+          <span class="mindful-mins">{{ d.minutes | round | int if d.minutes else "-" }}</span>
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    <p class="small muted">
+      {{ mindful.total_minutes }} min across {{ mindful.days_practiced }} of 7 days
+      ({{ mindful.sessions }} session{{ '' if mindful.sessions == 1 else 's' }}).
+    </p>
+  {% elif mindful %}
+    <p class="empty-state">No mindful minutes have synced yet.</p>
+  {% else %}
+    <p class="empty-state">Mindfulness tracking is not set up yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

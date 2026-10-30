@@ -1,0 +1,162 @@
+{#- Plugin-owned styles. The chassis has no plugin static mount, so they ride
+    inline with each page and use the chassis colour tokens. -#}
+<style>
+/* ── BFL ── */
+.week-nav { display: flex; align-items: center; gap: 12px; }
+
+table.week-grid { width: 100%; border-collapse: collapse; }
+table.week-grid th, table.week-grid td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; font-size: 0.9em; }
+table.week-grid th { background: var(--bg-2); color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 0.75em; letter-spacing: 0.05em; }
+table.week-grid tr.empty { color: var(--muted); }
+table.week-grid .empty-cell { text-align: center; font-style: italic; font-size: 0.85em; }
+table.week-grid a { color: var(--accent); text-decoration: none; }
+table.week-grid a:hover { text-decoration: underline; }
+table.week-grid .notes { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.85em; color: var(--muted); }
+
+.day-nav { flex-wrap: wrap; }
+
+/* BFL week grid - mobile drops Start / Meals / Water / Notes to keep the
+   Type / Workout / Aerobic trio visible on narrow viewports. */
+@media (max-width: 768px) {
+  table.week-grid .col-optional { display: none; }
+}
+
+/* ── Oura Sleep + Recovery panel ── */
+.oura-panel h2 small { font-weight: normal; color: var(--muted); font-size: 0.7em; margin-left: 8px; }
+.oura-scores { display: flex; gap: 14px; margin: 12px 0; flex-wrap: wrap; }
+.oura-score {
+  flex: 0 0 auto;
+  min-width: 90px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.oura-score-num { font-size: 1.8em; font-weight: bold; line-height: 1; }
+.oura-score-label { font-size: 0.75em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+.oura-good .oura-score-num { color: var(--accent-2); }
+.oura-warn .oura-score-num { color: var(--warn); }
+.oura-bad  .oura-score-num { color: var(--danger); }
+
+.oura-session { margin: 10px 0; padding: 10px 12px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 6px; }
+.oura-session header h4 small { color: var(--muted); font-weight: normal; margin-left: 6px; font-size: 0.85em; }
+.oura-stages { display: flex; height: 12px; border-radius: 3px; overflow: hidden; margin: 8px 0; background: var(--bg); }
+.oura-stage { display: block; height: 100%; }
+.oura-deep  { background: #3b5bdb; }
+.oura-rem   { background: #7048e8; }
+.oura-light { background: #4dabf7; }
+.oura-awake { background: #868e96; }
+.oura-metrics { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.85em; color: var(--muted); margin-top: 6px; }
+.oura-metrics span { white-space: nowrap; }
+
+.oura-contrib-block { margin: 10px 0 14px; }
+.oura-contrib { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-size: 0.85em; }
+.oura-contrib-label { flex: 0 0 140px; color: var(--muted); }
+.oura-bar { flex: 1; height: 6px; background: var(--bg-2); border-radius: 3px; overflow: hidden; }
+.oura-bar-fill { display: block; height: 100%; background: var(--accent); }
+.oura-contrib-val { flex: 0 0 30px; text-align: right; color: var(--fg); }
+
+.week-oura { font-size: 0.85em; white-space: nowrap; }
+.week-oura-s.oura-good, .week-oura-r.oura-good { color: var(--accent-2); font-weight: 600; }
+.week-oura-s.oura-warn, .week-oura-r.oura-warn { color: var(--warn); font-weight: 600; }
+.week-oura-s.oura-bad,  .week-oura-r.oura-bad  { color: var(--danger); font-weight: 600; }
+
+.panel { margin: 22px 0; }
+.panel h2 small { font-weight: normal; color: var(--muted); font-size: 0.7em; margin-left: 8px; }
+
+/* Body composition stat tiles - same tile as .oura-score, minus the Oura
+   naming, plus a delta line underneath. */
+.stat-row { display: flex; gap: 14px; margin: 12px 0; flex-wrap: wrap; }
+.stat {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  min-width: 108px;
+  text-align: center;
+}
+.stat-num { font-size: 1.8em; font-weight: bold; line-height: 1; }
+.stat-unit { font-size: 0.45em; font-weight: normal; color: var(--muted); margin-left: 3px; }
+.stat-label { font-size: 0.75em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+.stat-deltas { display: flex; gap: 8px; justify-content: center; margin-top: 8px; font-size: 0.75em; }
+.stat-delta { color: var(--muted); white-space: nowrap; }
+.stat-delta-none { opacity: 0.55; }
+.delta-good { color: var(--accent-2); }
+.delta-bad { color: var(--warn); }
+.pill-derived { color: var(--muted); text-transform: none; letter-spacing: 0; }
+
+/* Mindful minutes - reuses .intensity-chart bars from the aerobic panel. */
+.mindful-chart { max-width: 520px; }
+.mindful-chart .intensity-chart { height: 90px; gap: 6px; }
+.mindful-chart .bar { background: var(--accent); }
+.mindful-chart .bar-empty { background: var(--border); min-height: 2px; }
+.mindful-labels { display: flex; gap: 6px; padding: 0 4px; }
+.mindful-label { flex: 1; min-width: 6px; display: flex; flex-direction: column; align-items: center; gap: 1px; margin-top: 4px; }
+.mindful-day { font-size: 0.72em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.mindful-mins { font-size: 0.82em; }
+
+.exercise { margin: 12px 0; padding: 10px 14px; background: var(--bg-2); border-radius: 6px; border: 1px solid var(--border); }
+.exercise header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.main-badge { color: var(--main-star); font-size: 1em; }
+.muscle { color: var(--muted); font-weight: normal; font-size: 0.85em; }
+
+table.sets { width: 100%; margin-top: 6px; }
+table.sets th, table.sets td { padding: 4px 8px; border-bottom: 1px solid var(--border); text-align: center; font-size: 0.9em; }
+table.sets th { color: var(--muted); font-weight: 500; }
+
+.aerobic { margin: 10px 0; padding: 10px 14px; background: var(--bg-2); border-radius: 6px; border: 1px solid var(--border); }
+.intensity-chart { display: flex; align-items: flex-end; gap: 2px; height: 120px; margin: 10px 0; padding: 4px; background: var(--bg); border-radius: 4px; }
+.intensity-chart .bar { flex: 1; background: var(--accent-2); min-width: 6px; border-radius: 2px 2px 0 0; }
+.intensity-chart .bar:hover { background: var(--accent); }
+
+.meal { margin: 8px 0; padding: 10px 14px; background: var(--bg-2); border-radius: 6px; border: 1px solid var(--border); }
+.meal.has-photo { border-left: 3px solid var(--accent-2); }
+.meal header { display: flex; justify-content: space-between; align-items: center; }
+.meal .portions { color: var(--muted); font-size: 0.85em; }
+.meal p { margin: 6px 0; }
+.meal-photo { width: 100%; max-width: 400px; max-height: 400px; object-fit: cover; border-radius: 4px; margin-top: 8px; cursor: zoom-in; display: block; }
+.meal-photo:hover { max-width: 600px; max-height: 600px; }
+
+/* Macro display - vision/fdc/manual comparison table */
+.macros-block { margin-top: 8px; padding: 8px 10px; background: var(--bg); border-radius: 4px; border: 1px solid var(--border); }
+.macros-headline { font-size: 0.95em; margin: 0 0 6px 0; }
+.macros-source-badge { font-size: 0.7em; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; margin-left: 6px; }
+.macros-source-vision { background: rgba(156,163,175,0.2); color: var(--muted); }
+.macros-source-fdc { background: rgba(59,130,246,0.18); color: #93c5fd; }
+.macros-source-manual { background: rgba(34,197,94,0.18); color: var(--accent-2); }
+table.macros-compare { border-collapse: collapse; font-size: 0.82em; margin-top: 4px; }
+table.macros-compare th, table.macros-compare td { padding: 3px 10px; text-align: right; color: var(--muted); }
+table.macros-compare th:first-child { text-align: left; text-transform: uppercase; font-size: 0.9em; letter-spacing: 0.04em; }
+table.macros-compare tr.row-auth td, table.macros-compare tr.row-auth th { color: var(--fg); font-weight: 500; }
+
+details.macros-items { margin-top: 8px; }
+table.item-table { width: 100%; border-collapse: collapse; font-size: 0.82em; margin-top: 6px; }
+table.item-table th { text-align: left; padding: 4px 8px; color: var(--muted); border-bottom: 1px solid var(--border); font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.04em; }
+table.item-table td { padding: 4px 8px; border-bottom: 1px dashed var(--border); }
+table.item-table td.fdc-desc { color: var(--muted); font-size: 0.9em; }
+
+.macros-form label { display: inline-flex; flex-direction: column; gap: 2px; font-size: 0.78em; color: var(--muted); }
+.macros-form label.wide { flex: 1; min-width: 240px; }
+.macros-form input[type="number"], .macros-form input[type="text"] { padding: 5px 8px; background: var(--bg-2); border: 1px solid var(--border); color: var(--fg); border-radius: 4px; font-size: 0.9em; width: 90px; }
+.macros-form label.wide input { width: 100%; }
+
+.photo-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.photo-actions .inline-form { margin-top: 0; }
+
+.inline-form select { padding: 6px 10px; background: var(--bg); border: 1px solid var(--border); color: var(--fg); border-radius: 4px; max-width: 460px; }
+
+details.edit-box, details.edit-sub { margin: 10px 0; padding: 8px; background: var(--bg); border: 1px dashed var(--border); border-radius: 4px; }
+details summary { cursor: pointer; color: var(--muted); font-size: 0.85em; }
+.inline-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.inline-form input[type="text"], .inline-form input[type="date"] { padding: 6px 10px; background: var(--bg); border: 1px solid var(--border); color: var(--fg); border-radius: 4px; }
+
+.search-form { display: flex; gap: 4px; }
+.search-form input { background: var(--bg); border: 1px solid var(--border); color: var(--fg); padding: 5px 10px; border-radius: 6px; width: 220px; font-size: 0.88em; }
+
+.search-row { display: flex; gap: 14px; padding: 6px 0; border-bottom: 1px dashed var(--border); align-items: center; }
+.search-row a { color: var(--accent); min-width: 90px; }
+
+.empty-state { color: var(--muted); padding: 40px; text-align: center; font-style: italic; }
+.pill { padding: 2px 9px; border-radius: 10px; font-size: 0.78em; background: var(--bg-2); border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
+</style>
