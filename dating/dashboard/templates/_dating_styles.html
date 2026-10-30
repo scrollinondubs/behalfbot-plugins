@@ -1,0 +1,35 @@
+{#- Plugin-owned styles. The chassis has no plugin static mount, so they ride
+    inline with each page and use the chassis colour tokens. -#}
+<style>
+.subnav { display: flex; gap: 4px; align-items: center; }
+.subnav a { padding: 5px 11px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: 0.88em; border: 1px solid transparent; }
+.subnav a:hover { color: var(--accent); }
+.subnav a.active { color: var(--accent); background: rgba(245,158,11,0.12); border-color: var(--border); }
+.rate-panel { display: flex; flex-direction: column; gap: 10px; margin-top: 0; }
+.rate-header { display: flex; align-items: center; gap: 14px; font-size: 0.95em; flex-wrap: wrap; }
+.rate-stage { display: flex; justify-content: center; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.rate-stage img { max-width: 100%; max-height: calc(100vh - 52px - 190px); object-fit: contain; border-radius: 4px; }
+.rate-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.rate-btn[data-bucket="like"]:hover { border-color: var(--accent-2); color: var(--accent-2); }
+.rate-btn[data-bucket="super-like"]:hover { border-color: var(--main-star); color: var(--main-star); }
+.rate-btn[data-bucket="pass"]:hover { border-color: var(--danger); color: var(--danger); }
+.rate-done { text-align: center; padding: 40px; }
+.pill { padding: 2px 9px; border-radius: 10px; font-size: 0.78em; background: var(--bg-2); border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
+.pill-like { color: var(--accent-2); border-color: rgba(16,185,129,0.4); }
+.pill-super-like { color: var(--main-star); border-color: rgba(251,191,36,0.4); }
+.pill-pass { color: var(--danger); border-color: rgba(239,68,68,0.4); }
+.pill-incoming-like { color: var(--accent); border-color: rgba(245,158,11,0.4); }
+.table-scroll { overflow-x: auto; }
+.thumb { width: 52px; height: 78px; object-fit: cover; object-position: top; border-radius: 4px; border: 1px solid var(--border); cursor: zoom-in; }
+.thumb:hover { transform: scale(3.2); transform-origin: left center; position: relative; z-index: 5; }
+.small-btn { font-size: 0.78em; padding: 3px 8px; }
+.actions-cell { white-space: nowrap; }
+.status-cell.status-pending { color: var(--warn); }
+.status-cell.status-recovered { color: var(--accent-2); }
+.status-cell.status-lost { color: var(--muted); }
+.outcome-fn { color: var(--warn); }
+.outcome-fp { color: var(--danger); }
+.outcome-tp, .outcome-tn { color: var(--accent-2); }
+.outcome-no_opinion { color: var(--muted); }
+.bucket-select { padding: 4px 8px; background: var(--bg); border: 1px solid var(--border); color: var(--fg); border-radius: 4px; font-size: 0.88em; }
+</style>

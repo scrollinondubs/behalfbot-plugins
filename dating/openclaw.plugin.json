@@ -2,7 +2,7 @@
   "id": "behalfbot-dating",
   "name": "Behalf.bot — Dating",
   "description": "Dating-app automation as a sandboxed subagent: photo verification consensus engine, behaviour-based catfish screening (reply-gated), concierge framing, Angel Protocol prereq for in-person meets. Bound to a single ops channel; never co-runs with the main session.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -237,6 +237,22 @@
             }
           }
         }
+      },
+      "dashboard": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Dashboard tab (/dating: swipe review, lost list, reviewed) and the emulator DevOps panel. Each knob is read from the env var named in its description; all are optional. The tab reads and writes the dating_profiles, dating_reviews and dating_recovery_queue tables (db/migrations/002_dating_swipes.sql) via BEHALFBOT_PG_DSN, and moves screenshots between the directories below when a rating is saved.",
+        "properties": {
+          "swipes_inbox": { "type": "string", "description": "Env DATING_SWIPES_INBOX. Where swipe sessions drop profile screenshots for review.", "default": "${CUSTOMER_HOME}/logs/dating" },
+          "rhl_picks_dir": { "type": "string", "description": "Env DATING_RHL_PICKS_DIR. Same tree dating-reconcile.py reads; agent likes the installer passes on land in its pass/ folder for curation.", "default": "${CUSTOMER_HOME}/rhl-picks" },
+          "rhl_processed_dir": { "type": "string", "description": "Env DATING_RHL_PROCESSED_DIR. Rated screenshots move here.", "default": "${CUSTOMER_HOME}/rhl-processed" },
+          "taste_refs_dir": { "type": "string", "description": "Env DATING_TASTE_REFS_DIR. False negatives are copied into its positive/ folder.", "default": "${CUSTOMER_HOME}/data/dating/taste-refs" },
+          "adb_serial": { "type": "string", "description": "Env DATING_ADB_SERIAL. Device the emulator panel checks.", "default": "emulator-5554" },
+          "emulator_log": { "type": "string", "description": "Env DATING_EMULATOR_LOG. Emulator stdout log scanned for gfxstream errors; the row is skipped when unset." },
+          "emulator_log_dir": { "type": "string", "description": "Env DATING_EMULATOR_LOG_DIR. Where the recovery hook writes dating-emulator-recovery.log.", "default": "${CUSTOMER_HOME}/logs/scheduled" },
+          "swipe_slots": { "type": "string", "description": "Env DATING_SWIPE_SLOTS. Heartbeat freshness checks as name@hour pairs, e.g. dating-swipe-1@11,dating-swipe-2@15. The row is skipped when unset." },
+          "snapshot_warn_mb": { "type": "integer", "description": "Env DATING_SNAPSHOT_WARN_MB. AVD snapshot dir size (emulator.avd_name, env DATING_AVD_NAME) that flips the panel row to warn.", "default": 500 }
+        }
       }
     },
     "required": ["enabled"]
@@ -244,7 +260,14 @@
   "contracts": {
     "tools": ["verify-match"],
     "skills": ["dating"],
-    "hooks": ["chassis_recovery_dating_emulator"]
+    "hooks": ["chassis_recovery_dating_emulator"],
+    "dashboard": {
+      "tab": "Dating",
+      "prefix": "/dating",
+      "router": "dashboard/tab.py",
+      "templates": "dashboard/templates",
+      "devops_panels": ["dashboard/emulator_panel.py"]
+    }
   },
   "activation": {
     "onStartup": false,

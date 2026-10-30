@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+{% set active_section = "/bfl" %}
+{% block title %}{{ date }} · BFL{% endblock %}
+
+{% block topbar %}
+<div class="topbar-inner day-nav">
+  {% if prev_date %}<a class="btn" href="/bfl/day/{{ prev_date }}">← {{ prev_date }}</a>{% endif %}
+  <h1>{{ date }}
+    {% if day %}<small>{{ day.day_type or "no type" }}{% if day.workout_start %} · started {{ day.workout_start }}{% endif %}</small>{% endif %}
+  </h1>
+  {% if next_date %}<a class="btn" href="/bfl/day/{{ next_date }}">{{ next_date }} →</a>{% endif %}
+  <a class="btn subtle" href="/bfl">Week view</a>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "_bfl_styles.html" %}
+{% if error %}<section class="panel"><p class="fail">{{ error }}</p></section>{% endif %}
+
+{% if oura %}
+<section class="panel oura-panel">
+  <h2>Sleep + Recovery
+    <small class="muted">Oura</small>
+  </h2>
+  <div class="oura-scores">
+    <div class="oura-score {{ 'oura-good' if (oura.readiness_score or 0) >= 75 else ('oura-warn' if (oura.readiness_score or 0) >= 55 else 'oura-bad') }}">
+      <div class="oura-score-num">{{ oura.readiness_score or '-' }}</div>
+      <div class="oura-score-label">Readiness</div>
+    </div>
+    <div class="oura-score {{ 'oura-good' if (oura.sleep_score or 0) >= 75 else ('oura-warn' if (oura.sleep_score or 0) >= 55 else 'oura-bad') }}">
+      <div class="oura-score-num">{{ oura.sleep_score or '-' }}</div>
+      <div class="oura-score-label">Sleep</div>
+    </div>
+  </div>
+
+  {% if oura.sessions %}
+    {% for s in oura.sessions %}
+    <div class="oura-session">
+      <header>
+        <h4>
+          {% if s.type == 'long_sleep' %}Main sleep{% elif s.type == 'late_nap' %}Nap{% else %}{{ s.type or 'Sleep' }}{% endif %}
+          {% if s.total_sleep_duration %}
+            <small class="muted">
+              {% set mins = (s.total_sleep_duration / 60) | round | int %}
+              {{ (mins // 60) }}h{{ '%02d' | format(mins % 60) }}
+              {% if s.efficiency %}· {{ s.efficiency }}% efficient{% endif %}
+            </small>
+          {% endif %}
+        </h4>
+      </header>
+      {% if s.total_sleep_duration %}
+      <div class="oura-stages" title="Deep / REM / Light / Awake">
+        {% if s.deep_sleep_duration %}<span class="oura-stage oura-deep" style="flex: {{ s.deep_sleep_duration }}" title="Deep {{ (s.deep_sleep_duration / 60) | round | int }}min"></span>{% endif %}
+        {% if s.rem_sleep_duration %}<span class="oura-stage oura-rem"  style="flex: {{ s.rem_sleep_duration }}"  title="REM {{ (s.rem_sleep_duration / 60) | round | int }}min"></span>{% endif %}
+        {% if s.light_sleep_duration %}<span class="oura-stage oura-light" style="flex: {{ s.light_sleep_duration }}" title="Light {{ (s.light_sleep_duration / 60) | round | int }}min"></span>{% endif %}
+        {% if s.awake_duration %}<span class="oura-stage oura-awake" style="flex: {{ s.awake_duration }}" title="Awake {{ (s.awake_duration / 60) | round | int }}min"></span>{% endif %}
+      </div>
+      {% endif %}
+      <div class="oura-metrics">
+        {% if s.average_heart_rate %}<span>HR {{ s.average_heart_rate | round | int }}</span>{% endif %}
+        {% if s.lowest_heart_rate %}<span>HR low {{ s.lowest_heart_rate }}</span>{% endif %}
+        {% if s.average_hrv %}<span>HRV {{ s.average_hrv | round | int }}</span>{% endif %}
+        {% if s.average_breath %}<span>breath {{ s.average_breath | round(1) }}</span>{% endif %}
+        {% if s.spo2_percentage_avg %}<span>SpO2 {{ s.spo2_percentage_avg | round(1) }}%</span>{% endif %}
+        {% if s.latency %}<span>latency {{ (s.latency / 60) | round | int }}min</span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if oura.temperature_deviation is not none %}
+  <p class="muted small">Body-temp deviation: {{ '%+.2f' | format(oura.temperature_deviation) }}°C{% if oura.temperature_trend_deviation is not none %} (trend {{ '%+.2f' | format(oura.temperature_trend_deviation) }}°C){% endif %}</p>
+  {% endif %}
+
+  <details class="edit-box">
+    <summary>Contributor breakdown</summary>
+    {% if oura.readiness_contributors %}
+    <div class="oura-contrib-block">
+      <strong>Readiness</strong>
+      {% for k, v in oura.readiness_contributors.items() %}
+      <div class="oura-contrib">
+        <span class="oura-contrib-label">{{ k.replace('_', ' ') }}</span>
+        <span class="oura-bar"><span class="oura-bar-fill" style="width: {{ v or 0 }}%"></span></span>
+        <span class="oura-contrib-val">{{ v or '-' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if oura.sleep_contributors %}
+    <div class="oura-contrib-block">
+      <strong>Sleep</strong>
+      {% for k, v in oura.sleep_contributors.items() %}
+      <div class="oura-contrib">
+        <span class="oura-contrib-label">{{ k.replace('_', ' ') }}</span>
+        <span class="oura-bar"><span class="oura-bar-fill" style="width: {{ v or 0 }}%"></span></span>
+        <span class="oura-contrib-val">{{ v or '-' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </details>
+</section>
+{% endif %}
+
+{% if not day %}
+<p class="muted">No BFL data for this date.</p>
+{% else %}
+
+<details class="edit-box">
+  <summary>Fix date (OCR misread)</summary>
+  <form method="post" action="/bfl/day/{{ date }}/change-date" class="inline-form">
+    <label>Move all rows to:
+      <input name="new_date" type="date" value="{{ date }}" required>
+    </label>
+    <button type="submit" class="btn">Apply</button>
+  </form>
+</details>
+
+<section class="panel">
+  <h2>Workout ({{ day.exercises | length }} exercises, {{ day.workouts | length }} sets)</h2>
+  {% if not day.exercises %}<p class="muted">No weight-training exercises on this day.</p>{% endif %}
+  {% for ex in day.exercises %}
+  <article class="exercise">
+    <header>
+      <h3>
+        {% if ex.is_main %}<span class="main-badge" title="Main 5-set pyramid">★</span>{% endif %}
+        {{ ex.exercise_name }}
+        {% if ex.muscle_group %}<small class="muscle">{{ ex.muscle_group }}</small>{% endif %}
+      </h3>
+      <details class="edit-sub">
+        <summary>Rename</summary>
+        <form method="post" action="/bfl/workout/{{ ex.sets[0].id }}/rename" class="inline-form">
+          <input name="new_name" type="text" value="{{ ex.exercise_name }}" required>
+          <label><input type="checkbox" name="cascade" value="true" checked> cascade to all {{ ex.sets | length }} sets</label>
+          <button type="submit" class="btn">Rename</button>
+        </form>
+      </details>
+    </header>
+    <table class="sets">
+      <thead><tr><th>Set</th><th>Reps</th><th>Weight (kg)</th><th>Intensity</th><th>↑</th></tr></thead>
+      <tbody>
+        {% for s in ex.sets %}
+        <tr>
+          <td>{{ s.set_number }}</td>
+          <td>{{ s.reps if s.reps is not none else "-" }}</td>
+          <td>{{ "%.1f" | format(s.weight_kg) if s.weight_kg is not none else "-" }}</td>
+          <td>{{ s.intensity_level if s.intensity_level is not none else "-" }}</td>
+          <td>{% if s.up_arrow %}↑{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </article>
+  {% endfor %}
+</section>
+
+{% if day.aerobic or day.runs %}
+<section class="panel">
+  <h2>Aerobic</h2>
+  {% for a in day.aerobic %}
+  <div class="aerobic">
+    {% if a.notes_meta %}
+    <p>
+      <strong>{{ (a.activity_type or "activity") | capitalize }}</strong>
+      {% if a.total_minutes %} · {{ a.total_minutes }} min{% endif %}
+      {% if a.notes_meta.distance_m %} · {{ (a.notes_meta.distance_m / 1000) | round(2) }} km{% endif %}
+      {% if a.notes_meta.avg_hr %} · avg HR {{ a.notes_meta.avg_hr | round | int }} bpm{% endif %}
+      {% if a.notes_meta.max_hr %} · max HR {{ a.notes_meta.max_hr | round | int }} bpm{% endif %}
+    </p>
+    <p class="muted small">
+      Source: {{ a.notes_meta.source or "apple_health" }}{% if a.notes_meta.apple_health_workout_uuid %} (<code>{{ a.notes_meta.apple_health_workout_uuid }}</code>){% endif %}.
+    </p>
+    {% else %}
+    <p><strong>{{ a.activity_type or "run" }}</strong> · {{ a.total_minutes or "?" }} min
+      {% if a.notes %}<em>- {{ a.notes }}</em>{% endif %}
+    </p>
+    {% endif %}
+    {% if a.actual_intensities %}
+    <div class="intensity-chart">
+      {% for v in a.actual_intensities %}
+      <div class="bar" style="height: {{ (v or 0) * 10 }}%" title="min {{ loop.index0 }}: {{ v }}/10"></div>
+      {% endfor %}
+    </div>
+    <p class="muted small">Per-minute intensity, 0-10 scale. {{ a.actual_intensities | length }} samples.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% for r in day.runs %}
+  <div class="aerobic">
+    <p>
+      <strong>{{ r.notes or "Run" }}</strong>
+      {% if r.elapsed_seconds %} · {{ (r.elapsed_seconds / 60) | round | int }} min{% endif %}
+      {% if r.distance_m %} · {{ (r.distance_m / 1000) | round(2) }} km{% endif %}
+      {% if r.avg_pace_seconds_per_km %} · {{ (r.avg_pace_seconds_per_km // 60) | int }}:{{ '%02d' % ((r.avg_pace_seconds_per_km % 60) | int) }}/km{% endif %}
+      {% if r.avg_hr %} · avg HR {{ r.avg_hr | round | int }} bpm{% endif %}
+      {% if r.max_hr %} · max HR {{ r.max_hr | round | int }} bpm{% endif %}
+    </p>
+    <p class="muted small">
+      Source: {{ r.source or "apple_health" }}{% if r.apple_health_workout_uuid %} (<code>{{ r.apple_health_workout_uuid }}</code>){% endif %}.
+      {% if r.oura_pull_status %}Oura HR status: {{ r.oura_pull_status }}.{% endif %}
+    </p>
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2>Diet ({{ day.meals | length }} meals{% if day.total_water_cups %} · {{ day.total_water_cups }} water ticks{% endif %})</h2>
+  {% if not day.meals %}<p class="muted">No meals logged for this day.</p>{% endif %}
+  {% for m in day.meals %}
+  <article class="meal {% if m.photo_matched %}has-photo{% endif %}">
+    <header>
+      <h4>Meal {{ m.meal_num }} · {{ m.time_actual or "no time" }}</h4>
+      <span class="portions">{{ m.protein_portions or "?" }}P / {{ m.carb_portions or "?" }}C</span>
+    </header>
+    <p>{{ m.description }}</p>
+
+    {% if m.food_photo_path %}
+      <img class="meal-photo" loading="lazy"
+           src="/bfl/photo/{{ m.food_photo_path.split('/')[-1].rsplit('.', 1)[0] }}"
+           alt="meal {{ m.meal_num }} photo">
+    {% else %}
+      <p class="muted small">No photo matched.</p>
+    {% endif %}
+
+    {% if m.macros_source %}
+    <div class="macros-block">
+      <p class="macros-headline">
+        <strong>{{ m.auth_kcal | round(0) | int if m.auth_kcal is not none else "?" }} kcal</strong> ·
+        {{ m.auth_protein_g | round(1) if m.auth_protein_g is not none else "?" }}g P ·
+        {{ m.auth_carbs_g | round(1) if m.auth_carbs_g is not none else "?" }}g C ·
+        {{ m.auth_fat_g | round(1) if m.auth_fat_g is not none else "?" }}g F
+        <span class="macros-source-badge macros-source-{{ m.macros_source }}">{{ m.macros_source }}</span>
+      </p>
+      <table class="macros-compare">
+        <thead>
+          <tr><th></th><th>kcal</th><th>protein g</th><th>carbs g</th><th>fat g</th></tr>
+        </thead>
+        <tbody>
+          {% if m.est_calories is not none %}
+          <tr class="{% if m.macros_source == 'vision' %}row-auth{% endif %}">
+            <th>vision</th>
+            <td>{{ m.est_calories }}</td><td>{{ m.est_protein_g }}</td>
+            <td>{{ m.est_carbs_g }}</td><td>{{ m.est_fat_g }}</td>
+          </tr>
+          {% endif %}
+          {% if m.fdc_kcal is not none %}
+          <tr class="{% if m.macros_source == 'fdc' %}row-auth{% endif %}">
+            <th>fdc {% if m.fdc_match_coverage is not none %}<small>({{ (m.fdc_match_coverage * 100) | round(0) | int }}% match)</small>{% endif %}</th>
+            <td>{{ m.fdc_kcal | round(0) | int }}</td><td>{{ m.fdc_protein_g | round(1) }}</td>
+            <td>{{ m.fdc_carbs_g | round(1) }}</td><td>{{ m.fdc_fat_g | round(1) }}</td>
+          </tr>
+          {% endif %}
+          {% if m.manual_kcal is not none or m.manual_protein_g is not none or m.manual_carbs_g is not none or m.manual_fat_g is not none %}
+          <tr class="{% if m.macros_source == 'manual' %}row-auth{% endif %}">
+            <th>manual</th>
+            <td>{{ m.manual_kcal | round(0) | int if m.manual_kcal is not none else "-" }}</td>
+            <td>{{ m.manual_protein_g | round(1) if m.manual_protein_g is not none else "-" }}</td>
+            <td>{{ m.manual_carbs_g | round(1) if m.manual_carbs_g is not none else "-" }}</td>
+            <td>{{ m.manual_fat_g | round(1) if m.manual_fat_g is not none else "-" }}</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+      {% if m.manual_macros_notes %}<p class="muted small">Manual note: <em>{{ m.manual_macros_notes }}</em></p>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if m.fdc_items %}
+    <details class="macros-items">
+      <summary>Per-item FDC breakdown ({{ m.fdc_items | length }} items)</summary>
+      <table class="item-table">
+        <thead>
+          <tr><th>Item</th><th>g</th><th>FDC match</th><th>kcal</th><th>P</th><th>C</th><th>F</th></tr>
+        </thead>
+        <tbody>
+        {% for it in m.fdc_items %}
+          <tr>
+            <td>{{ it.item_name }}</td>
+            <td>{{ it.portion_g | round(0) | int if it.portion_g is not none else "?" }}</td>
+            <td class="fdc-desc">
+              {% if it.fdc_id %}
+                <small>[{{ it.fdc_data_type }}]</small> {{ it.fdc_description }}
+              {% else %}
+                <em class="muted">no match</em>
+              {% endif %}
+            </td>
+            <td>{{ it.est_kcal | round(0) | int if it.est_kcal is not none else "-" }}</td>
+            <td>{{ it.est_protein_g | round(1) if it.est_protein_g is not none else "-" }}</td>
+            <td>{{ it.est_carbs_g | round(1) if it.est_carbs_g is not none else "-" }}</td>
+            <td>{{ it.est_fat_g | round(1) if it.est_fat_g is not none else "-" }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </details>
+    {% endif %}
+
+    <details class="edit-sub" {% if not m.macros_source %}open{% endif %}>
+      <summary>Edit macros{% if m.macros_source %} (override {{ m.macros_source }}){% endif %}</summary>
+      <form method="post" action="/bfl/meal/{{ m.id }}/edit-macros" class="inline-form macros-form">
+        {# Prefill priority: explicit manual override, else authoritative (fdc or vision), else empty. #}
+        <label>kcal <input name="kcal" type="number" step="1" value="{{ m.manual_kcal if m.manual_kcal is not none else (m.auth_kcal | round(0) | int if m.auth_kcal is not none else '') }}"></label>
+        <label>protein g <input name="protein_g" type="number" step="0.1" value="{{ m.manual_protein_g if m.manual_protein_g is not none else (m.auth_protein_g | round(1) if m.auth_protein_g is not none else '') }}"></label>
+        <label>carbs g <input name="carbs_g" type="number" step="0.1" value="{{ m.manual_carbs_g if m.manual_carbs_g is not none else (m.auth_carbs_g | round(1) if m.auth_carbs_g is not none else '') }}"></label>
+        <label>fat g <input name="fat_g" type="number" step="0.1" value="{{ m.manual_fat_g if m.manual_fat_g is not none else (m.auth_fat_g | round(1) if m.auth_fat_g is not none else '') }}"></label>
+        <label class="wide">note <input name="notes" type="text" value="{{ m.manual_macros_notes or '' }}" placeholder="optional - why the correction"></label>
+        <button type="submit" class="btn">Save</button>
+        {% if m.manual_macros_at %}
+        <button type="submit" name="clear" value="1" class="btn subtle" title="wipe manual override, fall back to FDC/vision">Clear</button>
+        {% endif %}
+      </form>
+    </details>
+
+    {% if m.food_photo_path %}
+    <div class="photo-actions">
+      <form method="post" action="/bfl/meal/{{ m.id }}/requeue-enrichment" class="inline-form">
+        <button type="submit" class="btn subtle" title="re-run FDC lookup on the current photo's items">Re-run FDC enrichment</button>
+      </form>
+      <form method="post" action="/bfl/meal/{{ m.id }}/unmatch-photo" class="inline-form"
+            onsubmit="return confirm('Unmatch photo and clear FDC enrichment? Vision macros kept.');">
+        <button type="submit" class="btn subtle">Replace photo (unmatch)</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <details class="edit-sub">
+      <summary>{% if m.food_photo_path %}Swap photo{% else %}Match food photo{% endif %}</summary>
+      <form method="post" action="/bfl/meal/{{ m.id }}/match-photo" class="inline-form">
+        {% if unmatched_extractions %}
+        <label>Pick an unmatched extraction:
+          <select name="food_photo_basename">
+            <option value="">- select -</option>
+            {% for u in unmatched_extractions %}
+            <option value="{{ u.basename }}">
+              {{ u.basename }} · {{ u.item_names | join(", ") | truncate(60) }}{% if u.vision_kcal %} · ~{{ u.vision_kcal }} kcal{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </label>
+        {% endif %}
+        <label>…or enter basename:
+          <input name="food_photo_basename" type="text" placeholder="IMG_8449">
+        </label>
+        <label class="small"><input type="checkbox" name="autoenrich" value="1" checked> auto-run FDC enrichment</label>
+        <button type="submit" class="btn">Match</button>
+      </form>
+    </details>
+  </article>
+  {% endfor %}
+</section>
+
+{% endif %}
+{% endblock %}

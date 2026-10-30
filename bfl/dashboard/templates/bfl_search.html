@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% set active_section = "/bfl" %}
+{% block title %}Search: {{ q }} · BFL{% endblock %}
+
+{% block topbar %}
+<div class="topbar-inner">
+  <h1>Search results for "{{ q }}"</h1>
+  <form action="/bfl/search" method="get" class="search-form">
+    <input name="q" type="search" placeholder="search exercise or meal…" value="{{ q }}">
+  </form>
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "_bfl_styles.html" %}
+{% if error %}<section class="panel"><p class="fail">{{ error }}</p></section>{% endif %}
+<section class="panel">
+  <h2>Workouts ({{ workouts | length }})</h2>
+  {% if not workouts %}<p class="muted">No matching exercises.</p>{% endif %}
+  {% for r in workouts %}
+  <div class="search-row">
+    <a href="/bfl/day/{{ r.date }}">{{ r.date }}</a>
+    <span>{{ r.exercise_name }}</span>
+    <span class="muted small">set {{ r.set_number }} · {{ r.reps or "?" }} × {{ "%.1f" | format(r.weight_kg) if r.weight_kg else "bw" }} kg · int {{ r.intensity_level or "?" }}</span>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="panel">
+  <h2>Meals ({{ meals | length }})</h2>
+  {% if not meals %}<p class="muted">No matching meals.</p>{% endif %}
+  {% for r in meals %}
+  <div class="search-row">
+    <a href="/bfl/day/{{ r.date }}">{{ r.date }}</a>
+    <span>{{ r.description }}</span>
+    <span class="muted small">meal {{ r.meal_num }}{% if r.time_actual %} · {{ r.time_actual }}{% endif %}</span>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}
