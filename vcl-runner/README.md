@@ -96,6 +96,14 @@ Two ways in, one handler (`triggers/run-fos.sh`):
   limited to `DISCORD_PRIMARY_CHANNEL_ID`. With that unset it matches no
   channel and never fires.
 
+The handler finds its install the way the chassis does: `CUSTOMER_HOME`, then
+its own place under `<install>/vendored-plugins/vcl-runner/`, then
+`~/.behalfbot`, then `/app/customer`. A chat session on the host often has no
+`CUSTOMER_HOME`, and the halt flags and the agent key must still be the
+install's own. With no install found it does not run. Run it where the
+heartbeat runs: when that is the container and the session is on the host,
+through `docker exec` (the skill has the line).
+
 The handler does nothing while `scheduled-tasks/halt.json` or
 `conservation-mode.json` is on, and says so: queued jobs are meant to wait
 those out. A flag file it cannot read counts as on. A tick running alongside

@@ -22,6 +22,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import pathlib
 import stat
 import subprocess
@@ -780,6 +781,49 @@ class RunnerTest(unittest.TestCase):
         with FakeHub([packet("x", ["a"])], key=KEY) as fake:
             self.assertTrue(self.run_fos(fake).startswith("Not run: "))
             self.assertEqual(fake.requests, [])
+
+    def installed_run_fos(self, fake: FakeHub, **extra) -> str:
+        """The handler as fetch-plugins.sh installs it, called from a session with no CUSTOMER_HOME."""
+        installed = self.home / "vendored-plugins" / "vcl-runner"
+        if not installed.exists():
+            shutil.copytree(PLUGIN_DIR, installed, ignore=shutil.ignore_patterns("__pycache__"))
+        env = self.gate_env(fake, **extra)
+        for name in ("CUSTOMER_HOME", "CHASSIS_HOME", "FOUNDER_OS_AGENT_KEY", "FOUNDER_OS_AGENT_BASE_URL"):
+            env.pop(name, None)
+        # Never this machine's own install: HOME is an empty folder.
+        env["HOME"] = str(self.bin)
+        proc = subprocess.run(["bash", str(installed / "triggers" / "run-fos.sh")], capture_output=True,
+                              text=True, env=env, timeout=60)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertNotIn(KEY, proc.stdout + proc.stderr)
+        return proc.stdout.strip()
+
+    def test_run_fos_finds_the_install_from_its_own_path_and_honors_its_halt(self):
+        self.set_flag("halt.json", '{"enabled": true}')
+        with FakeHub([packet("x", ["a"])], key=KEY) as fake:
+            (self.home / ".env").write_text(f"FOUNDER_OS_AGENT_KEY={KEY}\nFOUNDER_OS_AGENT_BASE_URL={fake.url}\n")
+            line = self.installed_run_fos(fake)
+            self.assertTrue(line.startswith("Not run: this BehalfBot is halted"), line)
+            self.assertEqual(fake.requests, [])
+
+    def test_run_fos_finds_the_key_in_the_install_env_file_with_no_home_variable(self):
+        with FakeHub([packet("x", ["a"])], key=KEY) as fake:
+            (self.home / ".env").write_text(f"FOUNDER_OS_AGENT_KEY={KEY}\nFOUNDER_OS_AGENT_BASE_URL={fake.url}\n")
+            self.assertEqual(self.installed_run_fos(fake), "Ran 1 job: 1 posted back to the Hub.")
+            self.assertEqual(fake.requests[0]["_auth"], f"Bearer {KEY}")
+
+    @unittest.skipIf(pathlib.Path("/app/customer").is_dir(), "inside a BehalfBot container the default install exists")
+    def test_run_fos_refuses_when_it_cannot_find_the_install(self):
+        with FakeHub([packet("x", ["a"])], key=KEY) as fake:
+            env = self.gate_env(fake)
+            for name in ("CUSTOMER_HOME", "CHASSIS_HOME"):
+                env.pop(name, None)
+            env["HOME"] = str(self.bin)
+            proc = subprocess.run(["bash", str(RUN_FOS)], capture_output=True, text=True, env=env, timeout=60)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertTrue(proc.stdout.startswith("Not run: this BehalfBot's install folder was not found"), proc.stdout)
+            self.assertEqual(fake.requests, [])
+        self.assertEqual(self.claude_calls(), [])
 
     def test_manifest_declares_the_run_fos_trigger_and_skill(self):
         manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))

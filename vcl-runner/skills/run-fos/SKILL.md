@@ -25,16 +25,28 @@ explanation of what it would have done.
 ## What to do
 
 1. Acknowledge with a reaction, not a message.
-2. Run the handler in the background. A tick can take several minutes: it
-   stops claiming new jobs after 10 minutes and each step can take 5.
+2. Run the handler in the background, **on the install, where the heartbeat
+   runs**. A tick can take several minutes: it stops claiming new jobs after
+   10 minutes and each step can take 5.
+
+   From the install's root folder (the one holding `HEARTBEATS.md` and
+   `vendored-plugins/`):
 
    ```
-   bash "$CUSTOMER_HOME/vendored-plugins/vcl-runner/triggers/run-fos.sh"
+   bash vendored-plugins/vcl-runner/triggers/run-fos.sh
    ```
 
-   If the plugin lives somewhere else on this install, the handler is
-   `triggers/run-fos.sh` in the plugin's own directory, two levels above this
-   file.
+   If this session is on the host and the heartbeat runs in the BehalfBot
+   container, run it in the container, the same way:
+
+   ```
+   docker exec behalfbot bash -c 'bash "$CUSTOMER_HOME/vendored-plugins/vcl-runner/triggers/run-fos.sh"'
+   ```
+
+   The handler finds the install from its own location, so it reads that
+   install's halt flags and agent key even when `CUSTOMER_HOME` is not set in
+   this session. It is `triggers/run-fos.sh` in the plugin's own directory,
+   two levels above this file, if the plugin lives somewhere else.
 
    Use plain `bash`, not a login shell (`bash -l`). A login shell resets PATH
    and can drop the directory `claude` is installed in, and then every step

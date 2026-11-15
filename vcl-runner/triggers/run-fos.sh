@@ -17,13 +17,35 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
-HOME_DIR="${CUSTOMER_HOME:-${CHASSIS_HOME:-}}"
+
+install_root() {
+  # The install this handler belongs to, the way the chassis resolves it
+  # (_env.sh): the environment, then this file's own place under
+  # <install>/vendored-plugins/<plugin>/, then the two default locations.
+  # A chat session on the host often has neither variable set.
+  if [ -n "${CUSTOMER_HOME:-}" ]; then printf '%s' "$CUSTOMER_HOME"; return 0; fi
+  if [ -n "${CHASSIS_HOME:-}" ]; then printf '%s' "$CHASSIS_HOME"; return 0; fi
+  case "$PLUGIN_ROOT" in
+    */vendored-plugins/*) (cd "$PLUGIN_ROOT/../.." && pwd); return 0 ;;
+  esac
+  if [ -d "${HOME:-}/.behalfbot" ]; then printf '%s' "$HOME/.behalfbot"; return 0; fi
+  if [ -d /app/customer ]; then printf '%s' /app/customer; return 0; fi
+  return 1
+}
+
+# Without the install root the halt flags and the agent key cannot be read, so
+# nothing runs: a stop control that cannot be checked counts as on.
+if ! HOME_DIR="$(install_root)" || [ -z "$HOME_DIR" ] || [ ! -d "$HOME_DIR" ]; then
+  echo "Not run: this BehalfBot's install folder was not found. Run it on the install, where the heartbeat runs."
+  exit 0
+fi
+export CUSTOMER_HOME="$HOME_DIR"
 
 flag_on() {
   # $1 flag file under scheduled-tasks/. True when it says "enabled": true.
   # A flag that cannot be read counts as on: a stop control fails closed.
   local f="$HOME_DIR/scheduled-tasks/$1"
-  [ -n "$HOME_DIR" ] && [ -f "$f" ] || return 1
+  [ -f "$f" ] || return 1
   python3 - "$f" <<'PY'
 import json, sys
 try:
