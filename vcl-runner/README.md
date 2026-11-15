@@ -76,6 +76,43 @@ default, so `every 2m` means every 15 minutes unless the install sets
 `DISPATCHER_INTERVAL_SECONDS=120`. The Hub shows when the runner last checked
 in, so the student can see a slow tick.
 
+## Run it now ("run fos")
+
+Work queued in the Hub waits for the next heartbeat tick, up to 15 minutes on
+the default dispatcher interval. The owner can start it at once by sending
+their BehalfBot `run fos` (or `check the fos runner`). It runs the same tick
+once, on their own install, with their own agent key, and replies with one
+line: what ran, "Nothing queued in the Hub", or what they have to fix.
+
+Two ways in, one handler (`triggers/run-fos.sh`):
+
+- **The `run-fos` skill** (`skills/run-fos/SKILL.md`). The chassis links
+  plugin skills into `.claude/skills/` on bootstrap and on every container
+  start, so the owner's chat session picks it up with no setup. The skill
+  carries the owner-only rule.
+- **The `run-fos` trigger** in `contracts.triggers`, for installs that run
+  the chassis trigger dispatcher (`merge-plugin-triggers.sh`, then
+  `dispatch-trigger.sh`). The dispatcher passes no sender, so the trigger is
+  limited to `DISCORD_PRIMARY_CHANNEL_ID`. With that unset it matches no
+  channel and never fires.
+
+The handler finds its install the way the chassis does: `CUSTOMER_HOME`, then
+its own place under `<install>/vendored-plugins/vcl-runner/`, then
+`~/.behalfbot`, then `/app/customer`. A chat session on the host often has no
+`CUSTOMER_HOME`, and the halt flags and the agent key must still be the
+install's own. With no install found it does not run. Run it where the
+heartbeat runs: when that is the container and the session is on the host,
+through `docker exec` (the skill has the line).
+
+The handler does nothing while `scheduled-tasks/halt.json` or
+`conservation-mode.json` is on, and says so: queued jobs are meant to wait
+those out. A flag file it cannot read counts as on. A tick running alongside
+the heartbeat is safe, because the Hub leases each job to one claimer.
+
+```
+bash triggers/run-fos.sh        # prints one line, exits 0
+```
+
 A tick stops claiming new jobs after `FOUNDER_OS_RUNNER_TICK_BUDGET` seconds
 (600), so other heartbeats are not kept waiting, and each claude call times out
 after `FOUNDER_OS_RUNNER_STEP_TIMEOUT` seconds (300). A step that fails with a
@@ -176,6 +213,8 @@ bin/vcl-runner                    CLI: setup, tick
 vcl_runner/                       claim Hub jobs, run them through claude -p (or rmapi), post results
 vcl_runner/annotations.py         read highlights and handwriting off a reMarkable document (tablet_pull)
 scripts/gather-vcl-runner.sh      the heartbeat gate (JSON on stdout, work done here)
+triggers/run-fos.sh               "run fos": the same tick now, one line for the owner
+skills/run-fos/SKILL.md           tells the owner's session when and how to run it
 scheduled-tasks/                  the heartbeat's prompt template
 tests/test_vcl_runner.py          offline suite: fake Hub on 127.0.0.1, fake claude and rmapi
 tests/rm_fixtures.py              a synthetic .rmdoc written with rmscene's own writer
