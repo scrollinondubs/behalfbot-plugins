@@ -21,6 +21,7 @@ import datetime as dt
 import importlib.util
 import json
 import os
+import re
 import pathlib
 import stat
 import subprocess
@@ -33,6 +34,8 @@ TESTS = pathlib.Path(__file__).resolve().parent
 PLUGIN_DIR = TESTS.parent
 GATHER = PLUGIN_DIR / "scripts" / "gather-vcl-runner.sh"
 CLI = PLUGIN_DIR / "bin" / "vcl-runner"
+RUN_FOS = PLUGIN_DIR / "triggers" / "run-fos.sh"
+MANIFEST = PLUGIN_DIR / "openclaw.plugin.json"
 sys.path.insert(0, str(PLUGIN_DIR))
 sys.path.insert(0, str(TESTS))
 
@@ -215,7 +218,7 @@ class RunnerTest(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_gate(self, fake: FakeHub, mode: str = "ok", **extra) -> tuple[dict, subprocess.CompletedProcess]:
+    def gate_env(self, fake: FakeHub, mode: str = "ok", **extra) -> dict:
         env = {k: v for k, v in os.environ.items()
                if not k.startswith("FOUNDER_OS_") and k not in ("CUSTOMER_HOME", "CHASSIS_HOME")}
         env.update({"PATH": f"{self.bin}{os.pathsep}{env.get('PATH', '')}", "CUSTOMER_HOME": str(self.home),
@@ -224,6 +227,26 @@ class RunnerTest(unittest.TestCase):
                     "RMAPI_BIN": str(self.bin / "rmapi"), "FAKE_RMAPI_LOG": str(self.rmapi_log),
                     "ANTHROPIC_API_KEY": "YOUR_API_KEY", "FOUNDER_OS_RUNNER_RETRY_BACKOFF": "0"})
         env.update(extra)
+        return env
+
+    def run_fos(self, fake: FakeHub, mode: str = "ok", **extra) -> str:
+        """The "run fos" handler: one plain line for the owner, exit 0, the key never in it."""
+        proc = subprocess.run(["bash", str(RUN_FOS)], capture_output=True, text=True,
+                              env=self.gate_env(fake, mode, **extra), timeout=60)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertNotIn(KEY, proc.stdout + proc.stderr)
+        lines = proc.stdout.strip().splitlines()
+        self.assertEqual(len(lines), 1, f"run fos must print one line, got {proc.stdout!r}")
+        self.assertNotIn("\u2014", lines[0])
+        return lines[0]
+
+    def set_flag(self, name: str, content: str) -> None:
+        flags = self.home / "scheduled-tasks"
+        flags.mkdir(exist_ok=True)
+        (flags / name).write_text(content, encoding="utf-8")
+
+    def run_gate(self, fake: FakeHub, mode: str = "ok", **extra) -> tuple[dict, subprocess.CompletedProcess]:
+        env = self.gate_env(fake, mode, **extra)
         proc = subprocess.run(["bash", str(GATHER)], capture_output=True, text=True, env=env, timeout=60)
         self.assertEqual(proc.returncode, 0, proc.stderr)
         lines = proc.stdout.strip().splitlines()
@@ -712,6 +735,68 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(summary["count"], 0)
         self.assertTrue(summary["error"])
         self.assertIn("Hub unreachable", summary["reason"])
+
+    def test_run_fos_claims_queued_work_now_and_says_what_ran(self):
+        with FakeHub([packet("now", ["a"]), packet("then", ["b"])], key=KEY) as fake:
+            line = self.run_fos(fake)
+        self.assertEqual(line, "Ran 2 jobs: 2 posted back to the Hub.")
+        self.assertEqual(len(self.claude_calls()), 2)
+        self.assertEqual(fake.requests[0]["_auth"], f"Bearer {KEY}")
+
+    def test_run_fos_with_nothing_queued(self):
+        with FakeHub([], key=KEY) as fake:
+            self.assertEqual(self.run_fos(fake), "Nothing queued in the Hub.")
+        self.assertEqual(self.claude_calls(), [])
+
+    def test_run_fos_without_a_key_says_how_to_set_one(self):
+        with FakeHub([packet("x", ["a"])], key=KEY) as fake:
+            line = self.run_fos(fake, FOUNDER_OS_AGENT_KEY="")
+        self.assertIn("no agent key yet", line)
+        self.assertEqual(fake.requests, [])
+
+    def test_run_fos_says_when_the_owner_has_to_act(self):
+        with FakeHub([packet("x", ["a"])], key="vcl_fos_someOtherKey0000000000000000") as fake:
+            line = self.run_fos(fake)
+        self.assertTrue(line.startswith("The runner needs you: "), line)
+        self.assertIn("rejected the agent key", line)
+
+    def test_run_fos_does_not_run_while_halted_or_conserving(self):
+        on = '{"enabled": true, "enabled_at": "2026-11-15T00:00:00Z", "reason": "test"}'
+        for flag, word in (("halt.json", "halted"), ("conservation-mode.json", "conservation mode")):
+            with self.subTest(flag=flag), FakeHub([packet("x", ["a"])], key=KEY) as fake:
+                self.set_flag(flag, on)
+                line = self.run_fos(fake)
+                self.assertTrue(line.startswith("Not run: "), line)
+                self.assertIn(word, line)
+                self.assertEqual(fake.requests, [])
+                self.set_flag(flag, '{"enabled": false}')
+        self.assertEqual(self.claude_calls(), [])
+        # Both flags present and off: it runs.
+        with FakeHub([packet("x", ["a"])], key=KEY) as fake:
+            self.assertEqual(self.run_fos(fake), "Ran 1 job: 1 posted back to the Hub.")
+
+    def test_run_fos_treats_a_flag_it_cannot_read_as_on(self):
+        self.set_flag("halt.json", "{not json")
+        with FakeHub([packet("x", ["a"])], key=KEY) as fake:
+            self.assertTrue(self.run_fos(fake).startswith("Not run: "))
+            self.assertEqual(fake.requests, [])
+
+    def test_manifest_declares_the_run_fos_trigger_and_skill(self):
+        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        (trigger,) = manifest["contracts"]["triggers"]
+        self.assertEqual(manifest["contracts"]["skills"], ["run-fos"])
+        self.assertTrue((PLUGIN_DIR / "skills" / "run-fos" / "SKILL.md").is_file())
+        self.assertTrue(os.access(RUN_FOS, os.X_OK))
+        self.assertTrue(trigger["handler"].endswith("/vcl-runner/triggers/run-fos.sh"))
+        # Never any channel: an install with no primary channel set matches nothing.
+        self.assertEqual(trigger["channel_filter"], "${DISCORD_PRIMARY_CHANNEL_ID}")
+        # The dispatcher matches with re.search, ignoring case.
+        fires = re.compile(trigger["keyword_regex"], re.IGNORECASE)
+        for said in ("run fos", "Run FOS", "  run fos.", "RUN FOS!", "check the fos runner"):
+            self.assertTrue(fires.search(said), said)
+        for said in ("don't run fos yet", "run fos tomorrow", "can you run fos", "run fossil", "runfos",
+                     "what does run fos do?"):
+            self.assertFalse(fires.search(said), said)
 
     def test_no_key_is_a_quiet_no_op(self):
         with FakeHub([packet("x", ["a"])], key=KEY) as fake:
