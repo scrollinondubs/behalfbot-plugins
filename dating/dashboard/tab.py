@@ -16,8 +16,10 @@ Postgres or psycopg missing renders the page with an error notice, never a 500.
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import pathlib
+import re
 import shutil
 import time
 
@@ -71,6 +73,10 @@ def processed() -> pathlib.Path:
 
 def taste_refs() -> pathlib.Path:
     return _dir("DATING_TASTE_REFS_DIR", "data", "dating", "taste-refs")
+
+
+def sessions_root() -> pathlib.Path:
+    return _dir("DATING_SESSIONS_DIR", "data", "dating", "sessions")
 
 
 IMAGE_EXTS = (".png", ".jpg", ".jpeg")
@@ -380,3 +386,72 @@ def screenshot(basename: str):
     if p is None:
         raise HTTPException(404, f"screenshot not found for {basename}")
     return FileResponse(str(p))
+
+
+# ───────── session gallery ─────────
+# A swipe session snapshots its screenshots into sessions_root()/<id>/ (plus an
+# optional manifest.json giving their order and labels), so the gallery keeps
+# working after /rate moves the inbox copies. No Postgres needed.
+
+SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+
+
+def _session_dir(session_id: str) -> pathlib.Path:
+    if not SESSION_ID_RE.match(session_id) or ".." in session_id:
+        raise HTTPException(400, "invalid session id")
+    d = sessions_root() / session_id
+    if not d.is_dir():
+        raise HTTPException(404, "session not found")
+    return d
+
+
+def _label(file: str, entry: dict) -> dict:
+    parsed = ds.parse_screenshot_name(file) or {}
+    name = entry.get("name") or parsed.get("name")
+    age = entry.get("age", parsed.get("age"))
+    return {
+        "file": file,
+        "name": name or pathlib.Path(file).stem,
+        "age": age if age not in (None, "", "unk") else None,
+        "platform": entry.get("platform") or parsed.get("platform") or "",
+        "action": entry.get("action") or parsed.get("action") or "",
+    }
+
+
+def session_items(d: pathlib.Path) -> list[dict]:
+    """Manifest order first, then any other images in name order. Manifest
+    entries whose file is missing are dropped."""
+    images = {f.name for f in d.iterdir()
+              if f.is_file() and f.suffix.lower() in IMAGE_EXTS and not f.name.startswith(".")}
+    entries: list[dict] = []
+    try:
+        manifest = json.loads((d / "manifest.json").read_text())
+        entries = [e for e in manifest.get("items", []) if isinstance(e, dict)]
+    except (OSError, ValueError, AttributeError):
+        pass
+    items, seen = [], set()
+    for e in entries:
+        f = str(e.get("file") or "")
+        if f in images and f not in seen:
+            seen.add(f)
+            items.append(_label(f, e))
+    for f in sorted(images - seen):
+        items.append(_label(f, {}))
+    return items
+
+
+@router.get("/session/{session_id}", response_class=HTMLResponse)
+def session_gallery(request: Request, session_id: str):
+    d = _session_dir(session_id)
+    return _render(request, "dating_session.html",
+                   {"session_id": session_id, "items": session_items(d)})
+
+
+@router.get("/session/{session_id}/img/{filename}")
+def session_image(session_id: str, filename: str):
+    d = _session_dir(session_id)
+    _safe_basename(filename)
+    p = d / filename
+    if p.suffix.lower() not in IMAGE_EXTS or not p.is_file():
+        raise HTTPException(404, "image not found")
+    return FileResponse(str(p), headers={"Cache-Control": "private, max-age=86400"})

@@ -139,5 +139,68 @@ class TabImportTest(unittest.TestCase):
         self.assertTrue(hasattr(tab, "router"))
 
 
+@unittest.skipUnless(importlib.util.find_spec("fastapi"), "fastapi not installed")
+class SessionGalleryTest(unittest.TestCase):
+    def setUp(self):
+        from fastapi import HTTPException
+        self.HTTPException = HTTPException
+        self.tab = _load("t_dating_tab_gallery", "dashboard/tab.py")
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = pathlib.Path(self.tmp.name)
+        self.env = mock.patch.dict(os.environ, {"DATING_SESSIONS_DIR": str(self.root)})
+        self.env.start()
+        self.sess = self.root / "2030-01-02-slot1-123"
+        self.sess.mkdir()
+        for n in ("Ana_31_Hinge_2030-01-02_like.png", "Bea_unk_Tinder_2030-01-02_pass.jpg",
+                  "loose.png", "notes.txt"):
+            (self.sess / n).write_bytes(b"x")
+
+    def tearDown(self):
+        self.env.stop()
+        self.tmp.cleanup()
+
+    def test_manifest_order_then_leftovers_with_labels(self):
+        (self.sess / "manifest.json").write_text(json.dumps({"items": [
+            {"file": "Bea_unk_Tinder_2030-01-02_pass.jpg"},
+            {"file": "gone.png", "name": "Gone"},
+            {"file": "Ana_31_Hinge_2030-01-02_like.png", "name": "Ana Maria"},
+        ]}))
+        items = self.tab.session_items(self.sess)
+        self.assertEqual([i["file"] for i in items], [
+            "Bea_unk_Tinder_2030-01-02_pass.jpg", "Ana_31_Hinge_2030-01-02_like.png", "loose.png"])
+        bea, ana, loose = items
+        self.assertEqual((bea["name"], bea["age"], bea["platform"], bea["action"]),
+                         ("Bea", None, "Tinder", "pass"))
+        self.assertEqual((ana["name"], ana["age"]), ("Ana Maria", 31))
+        self.assertEqual((loose["name"], loose["platform"]), ("loose", ""))
+
+    def test_no_manifest_lists_images_by_name(self):
+        names = [i["name"] for i in self.tab.session_items(self.sess)]
+        self.assertEqual(names, ["Ana", "Bea", "loose"])
+
+    def test_bad_manifest_is_ignored(self):
+        (self.sess / "manifest.json").write_text("{not json")
+        self.assertEqual(len(self.tab.session_items(self.sess)), 3)
+
+    def test_session_id_is_validated(self):
+        for bad in ("../etc", ".hidden", "a/b", "a..b", ""):
+            with self.assertRaises(self.HTTPException) as cm:
+                self.tab._session_dir(bad)
+            self.assertEqual(cm.exception.status_code, 400, bad)
+        with self.assertRaises(self.HTTPException) as cm:
+            self.tab._session_dir("2030-01-02-nope")
+        self.assertEqual(cm.exception.status_code, 404)
+
+    def test_image_route_serves_only_images_in_the_session(self):
+        sid = self.sess.name
+        resp = self.tab.session_image(sid, "Ana_31_Hinge_2030-01-02_like.png")
+        self.assertEqual(pathlib.Path(resp.path), self.sess / "Ana_31_Hinge_2030-01-02_like.png")
+        for bad, code in (("notes.txt", 404), ("manifest.json", 404), ("..", 400),
+                          (".DS_Store", 400), ("missing.png", 404)):
+            with self.assertRaises(self.HTTPException) as cm:
+                self.tab.session_image(sid, bad)
+            self.assertEqual(cm.exception.status_code, code, bad)
+
+
 if __name__ == "__main__":
     unittest.main()

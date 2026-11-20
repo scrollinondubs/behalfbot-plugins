@@ -247,6 +247,7 @@
           "rhl_picks_dir": { "type": "string", "description": "Env DATING_RHL_PICKS_DIR. Same tree dating-reconcile.py reads; agent likes the installer passes on land in its pass/ folder for curation.", "default": "${CUSTOMER_HOME}/rhl-picks" },
           "rhl_processed_dir": { "type": "string", "description": "Env DATING_RHL_PROCESSED_DIR. Rated screenshots move here.", "default": "${CUSTOMER_HOME}/rhl-processed" },
           "taste_refs_dir": { "type": "string", "description": "Env DATING_TASTE_REFS_DIR. False negatives are copied into its positive/ folder.", "default": "${CUSTOMER_HOME}/data/dating/taste-refs" },
+          "sessions_dir": { "type": "string", "description": "Env DATING_SESSIONS_DIR. One folder per swipe session (screenshots plus an optional manifest.json), shown as a swipeable gallery at /dating/session/<id>.", "default": "${CUSTOMER_HOME}/data/dating/sessions" },
           "adb_serial": { "type": "string", "description": "Env DATING_ADB_SERIAL. Device the emulator panel checks.", "default": "emulator-5554" },
           "emulator_log": { "type": "string", "description": "Env DATING_EMULATOR_LOG. Emulator stdout log scanned for gfxstream errors; the row is skipped when unset." },
           "emulator_log_dir": { "type": "string", "description": "Env DATING_EMULATOR_LOG_DIR. Where the recovery hook writes dating-emulator-recovery.log.", "default": "${CUSTOMER_HOME}/logs/scheduled" },
