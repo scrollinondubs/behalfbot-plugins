@@ -16,7 +16,15 @@ When the chassis dashboard is running, this plugin adds a **Dating** tab at
 | `/dating` | Keyboard-driven review of swipe screenshots (L like, S super-like, X/P pass, N no opinion, U back, arrow keys skip). Each rating is stored and the screenshot is moved the way `dating-reconcile.py` moves a hand-sorted pick. |
 | `/dating/lost` | Profiles the agent passed on that you rated like or super-like. Mark each one recovered or lost. |
 | `/dating/reviewed` | Latest rating per profile. Changing a bucket re-syncs the lost list. |
+| `/dating/session/<id>` | One swipe session as a full-screen gallery: arrow keys or swipe to move, thumbnail strip, name/age/platform labels. Reads `DATING_SESSIONS_DIR/<id>/`; no database needed. |
 | DevOps panel | ADB device state, time since the recovery hook last restarted the AVD, gfxstream error canary, swipe heartbeat freshness, AVD snapshot size. |
+
+A session gallery folder holds the session's screenshots and, optionally, a
+`manifest.json` of the form `{"items": [{"file": "...", "name": "...", "age": 31,
+"platform": "Hinge", "action": "like"}]}`. Manifest order wins; images it does not
+list follow in name order. Missing labels are parsed from the screenshot filename
+contract (`Name_Age_Platform_YYYY-MM-DD_action.png`), else the filename is shown.
+Serve the dashboard on a private network only: the gallery has no auth of its own.
 
 ### Setup
 
@@ -32,6 +40,7 @@ When the chassis dashboard is running, this plugin adds a **Dating** tab at
 | `DATING_RHL_PICKS_DIR` | Hand-sort tree, shared with `dating-reconcile.py` [`<home>/rhl-picks`] |
 | `DATING_RHL_PROCESSED_DIR` | Rated screenshots move here [`<home>/rhl-processed`] |
 | `DATING_TASTE_REFS_DIR` | False negatives are copied into `positive/` [`<home>/data/dating/taste-refs`] |
+| `DATING_SESSIONS_DIR` | One folder per session for the gallery [`<home>/data/dating/sessions`] |
 | `DATING_ADB_SERIAL` | Device the panel checks [`emulator-5554`] |
 | `DATING_AVD_NAME` | AVD whose snapshot dir is sized [`Dating_Pixel`] |
 | `DATING_EMULATOR_LOG_DIR` | Recovery hook log dir [`<home>/logs/scheduled`] |
