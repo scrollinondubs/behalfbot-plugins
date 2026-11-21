@@ -43,7 +43,7 @@ sys.path.insert(0, str(TESTS))
 from fake_hub import FakeHub  # noqa: E402
 
 from vcl_runner import annotations, claude_argv, save_key  # noqa: E402
-from vcl_runner.runner import doc_version  # noqa: E402
+from vcl_runner.runner import doc_version, tablet_times  # noqa: E402
 
 HAVE_RMSCENE = importlib.util.find_spec("rmscene") is not None
 NEEDS_RMSCENE = unittest.skipUnless(HAVE_RMSCENE, "rmscene is not installed (the BehalfBot image has it)")
@@ -135,6 +135,11 @@ FAKE_RMAPI = textwrap.dedent("""\
         print(json.dumps({"ID": "0a1b", "Name": os.path.basename(args[2]), "Version": 3,
                           "ModifiedClient": os.environ.get("FAKE_RMAPI_VERSION", "2026-10-25T15:00:00Z"),
                           "Type": "DocumentType"}, indent=2))
+    if args[1] == "ls" and os.environ.get("FAKE_RMAPI_TREE"):
+        # rmapi syncs the tablet's tree into its cache on every run.
+        with open(os.environ["FAKE_RMAPI_TREE"], "rb") as src, open(os.environ["RMAPI_TREE_CACHE"], "wb") as dst:
+            dst.write(src.read())
+        print("[d] FounderOS")
     if args[1] == "get":
         name = os.path.basename(args[2]) + ".rmdoc"
         with open(os.environ["FAKE_RMAPI_DOC"], "rb") as src, open(name, "wb") as dst:
@@ -535,15 +540,131 @@ class RunnerTest(unittest.TestCase):
         self.assertIn("malformed task packet", fake.results()[0]["body"]["error"])
         self.assertEqual(self.rmapi_calls(), [])
 
+    # --- the tablet check -------------------------------------------------------
+
+    def tree(self, *entries: tuple) -> str:
+        """An rmapi tree cache: (id, name, parent, kind, lastModified ms, extra metadata)."""
+        docs = []
+        for doc_id, name, parent, kind, modified, extra in entries:
+            meta = {"visibleName": name, "parent": parent, "type": kind, "lastModified": str(modified),
+                    "deleted": False, **extra}
+            docs.append({"DocumentID": doc_id, "Hash": "0" * 64, "Files": [], "Metadata": meta})
+        path = pathlib.Path(self.tmp.name) / "tree.json"
+        path.write_text(json.dumps({"Hash": "0" * 64, "Generation": 1, "SchemaVersion": 4, "Docs": docs,
+                                    "CacheVersion": 3}), encoding="utf-8")
+        return str(path)
+
+    def check_env(self, tree: str) -> dict:
+        return {"FAKE_RMAPI_TREE": tree, "RMAPI_TREE_CACHE": str(pathlib.Path(self.tmp.name) / "tree.cache"),
+                "FAKE_RMAPI_VERSION": "2026-11-21T10:15:30Z"}
+
+    TABLET = (
+        ("f1", "FounderOS", "", "CollectionType", 1, {}),
+        ("f2", "Kite School", "f1", "CollectionType", 1, {}),
+        ("d1", "Thread A", "f2", "DocumentType", 1795256130250, {}),
+        ("d2", "Thread B", "f2", "DocumentType", 1795000000000, {}),
+        ("d3", "Thread C", "f2", "DocumentType", 1795300000000, {"deleted": True}),
+        ("d4", "Thread D", "trash", "DocumentType", 1795300000000, {}),
+        ("d5", "Private diary", "", "DocumentType", 1795300000000, {}),
+    )
+    CHECK_DOCS = [
+        {"send_id": "s1", "doc_path": "/FounderOS/Kite School/Thread A"},
+        {"send_id": "s2", "doc_path": "/FounderOS/Kite School/Thread B"},
+        {"send_id": "s3", "doc_path": "/FounderOS/Kite School/Thread C"},
+        {"send_id": "s4", "doc_path": "/FounderOS/Kite School/Thread D"},
+        {"send_id": "s5", "doc_path": "/FounderOS/Kite School/Never synced"},
+    ]
+
+    def test_tablet_check_lists_once_and_the_pulls_it_queues_run_in_the_same_tick(self):
+        def queue(body):
+            job = pull_packet("auto-1", since="2026-11-21T10:15:30Z")
+            job["tablet"]["doc_path"] = "/FounderOS/Kite School/Thread A"
+            fake.jobs.append(job)
+        with FakeHub(key=KEY, check_docs=self.CHECK_DOCS, check_reply={"seen": 2, "queued": 1},
+                     on_check=queue) as fake:
+            summary, proc = self.run_gate(fake, **self.check_env(self.tree(*self.TABLET)))
+        self.assertEqual([c["argv"] for c in self.rmapi_calls()],
+                         [["-ni", "ls", "/"], ["-ni", "stat", "/FounderOS/Kite School/Thread A"]],
+                         "one listing per tick, then the pull's own stat")
+        posts = fake.check_posts()
+        self.assertEqual(len(posts), 1)
+        self.assertEqual(posts[0]["body"], {"docs": [
+            {"send_id": "s1", "modified": "2026-11-21T10:15:30.250Z"},
+            {"send_id": "s2", "modified": "2026-11-18T11:06:40.000Z"},
+        ]}, "deleted, trashed and unsynced documents are left out")
+        self.assertNotIn("Private diary", json.dumps(fake.requests) + proc.stderr,
+                         "nothing the Hub did not ask about leaves the install")
+        self.assertEqual((summary["tablet_check"], summary["auto_pulls"]), ("done", 1))
+        self.assertEqual((summary["jobs"], summary["posted"]), (1, 1))
+        self.assertEqual(fake.results()[0]["body"]["unchanged"], True)
+        self.assertNotIn(KEY, proc.stdout + proc.stderr)
+
+    def test_tablet_check_with_nothing_sent_makes_no_rmapi_call(self):
+        with FakeHub([packet("j1", ["a"])], key=KEY, check_docs=[]) as fake:
+            summary, _ = self.run_gate(fake, **self.check_env(self.tree(*self.TABLET)))
+        self.assertEqual(self.rmapi_calls(), [])
+        self.assertEqual(fake.check_posts(), [])
+        self.assertEqual(summary["posted"], 1)
+
+    def test_a_hub_without_the_tablet_check_runs_jobs_as_before(self):
+        with FakeHub([packet("j1", ["a"])], key=KEY) as fake:
+            summary, _ = self.run_gate(fake, **self.check_env(self.tree(*self.TABLET)))
+        self.assertEqual(self.rmapi_calls(), [])
+        self.assertNotIn("tablet_check", summary)
+        self.assertEqual((summary["count"], summary["posted"]), (0, 1))
+
+    def test_a_failed_listing_never_stops_the_jobs(self):
+        with FakeHub([packet("j1", ["a"])], key=KEY, check_docs=self.CHECK_DOCS) as fake:
+            summary, proc = self.run_gate(fake, "ok", FAKE_RMAPI_MODE="not-paired",
+                                          **self.check_env(self.tree(*self.TABLET)))
+        self.assertEqual([c["argv"] for c in self.rmapi_calls()], [["-ni", "ls", "/"]])
+        self.assertEqual(fake.check_posts(), [])
+        self.assertEqual((summary["count"], summary["tablet_check"], summary["posted"]),
+                         (0, "rmapi failed", 1))
+        self.assertIn("tablet check skipped: rmapi not paired", proc.stderr)
+
+    def test_a_cache_this_run_did_not_write_is_not_trusted(self):
+        env = self.check_env(self.tree(*self.TABLET))
+        env.pop("FAKE_RMAPI_TREE")
+        stale = pathlib.Path(env["RMAPI_TREE_CACHE"])
+        stale.write_text(pathlib.Path(self.tree(*self.TABLET)).read_text(encoding="utf-8"), encoding="utf-8")
+        old = stale.stat().st_mtime - 3600
+        os.utime(stale, (old, old))
+        with FakeHub([packet("j1", ["a"])], key=KEY, check_docs=self.CHECK_DOCS) as fake:
+            summary, _ = self.run_gate(fake, **env)
+        self.assertEqual(fake.check_posts(), [])
+        self.assertEqual((summary["tablet_check"], summary["posted"]), ("cache unreadable", 1))
+
+    def test_tablet_times_reads_paths_and_skips_what_is_gone(self):
+        times = tablet_times(self.tree(
+            *self.TABLET,
+            ("d6", "Thread A", "f2", "DocumentType", 1795256199000, {}),
+            ("d7", "Orphan", "missing-folder", "DocumentType", 1795256199000, {}),
+            ("d8", "Thread E", "f2", "DocumentType", "not a number", {}),
+        ), {d["doc_path"] for d in self.CHECK_DOCS} | {"/Orphan", "/FounderOS/Kite School/Thread E"})
+        self.assertEqual(times, {"/FounderOS/Kite School/Thread A": 1795256199000,
+                                 "/FounderOS/Kite School/Thread B": 1795000000000},
+                         "a duplicate name takes the newest; an orphan or a bad time is left out")
+        missing = str(pathlib.Path(self.tmp.name) / "nope.json")
+        self.assertIsNone(tablet_times(missing, {"/a"}))
+        odd = pathlib.Path(self.tmp.name) / "odd.json"
+        odd.write_text(json.dumps({"Docs": {"not": "a list"}}), encoding="utf-8")
+        self.assertIsNone(tablet_times(str(odd), {"/a"}))
+        odd.write_text(json.dumps({"Docs": [{"id": "x"}]}), encoding="utf-8")
+        self.assertIsNone(tablet_times(str(odd), {"/a"}), "entries without the known fields: an unknown shape")
+
     def test_204_is_a_quiet_no_op(self):
         with FakeHub([], key=KEY) as fake:
             summary, _ = self.run_gate(fake)
         self.assertEqual(summary["count"], 0)
         self.assertEqual(summary["jobs"], 0)
         self.assertEqual(summary["reason"], "nothing queued")
-        self.assertEqual([r["method"] for r in fake.requests], ["GET"])
-        self.assertEqual(fake.requests[0]["_auth"], f"Bearer {KEY}")
-        self.assertTrue(fake.requests[0]["_ua"].startswith("behalfbot-vcl-runner/"))
+        # The tablet check (404 from a Hub without it), then jobs/next.
+        self.assertEqual([r["method"] for r in fake.requests], ["GET", "GET"])
+        for r in fake.requests:
+            self.assertEqual(r["_auth"], f"Bearer {KEY}")
+            self.assertTrue(r["_ua"].startswith("behalfbot-vcl-runner/"))
+        self.assertEqual(self.rmapi_calls(), [], "no documents to check, no rmapi call")
         self.assertEqual(self.claude_calls(), [])
 
     def test_multi_step_packet_posts_every_output_in_order(self):
@@ -695,7 +816,7 @@ class RunnerTest(unittest.TestCase):
             summary, _ = self.run_gate(fake)
         self.assertEqual(summary["jobs"], 3)
         self.assertEqual(len(fake.jobs), 2, "two jobs left queued for the next tick")
-        self.assertEqual(sum(1 for r in fake.requests if r["method"] == "GET"), 3)
+        self.assertEqual(fake.next_calls(), 3)
 
     def test_lease_near_posts_error_and_stops_the_tick(self):
         jobs = [packet("late", ["a"], lease_minutes=0.5), packet("next", ["b"])]

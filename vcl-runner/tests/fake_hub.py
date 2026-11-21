@@ -7,8 +7,11 @@ result POST gets (200 by default). `files` maps a path to the bytes a GET on it
 serves, for tablet_send downloads; `redirects` maps a path to a 302 Location.
 A POST under /api/founder-os/agent/tablet-pulls/ is a tablet_pull upload: its
 raw bytes go to `uploads`, and `upload_status` maps a path prefix to the status
-it gets (200 with {"status": "imported"} by default). Every request is
-recorded with its Authorization header and parsed body.
+it gets (200 with {"status": "imported"} by default). `check_docs` is what GET
+agent/tablet-check answers ({"docs": [...]}); None, the default, answers 404 as a
+Hub from before the check does. A POST to it gets `check_reply` and calls
+`on_check` with the body, which can queue the pulls the check asked for. Every
+request is recorded with its Authorization header and parsed body.
 """
 from __future__ import annotations
 
@@ -19,11 +22,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 NEXT = "/api/founder-os/agent/jobs/next"
 RESULT_PREFIX = "/api/founder-os/agent/jobs/"
 UPLOAD_PREFIX = "/api/founder-os/agent/tablet-pulls/"
+CHECK = "/api/founder-os/agent/tablet-check"
 
 
 class FakeHub:
     def __init__(self, jobs=None, *, key="", result_status=None, next_status=None, files=None,
-                 redirects=None, upload_status=None):
+                 redirects=None, upload_status=None, check_docs=None, check_reply=None, on_check=None):
         self.jobs = list(jobs or [])
         self.files = dict(files or {})
         self.redirects = dict(redirects or {})
@@ -31,6 +35,9 @@ class FakeHub:
         self.result_status = dict(result_status or {})
         self.next_status = next_status
         self.upload_status = dict(upload_status or {})
+        self.check_docs = check_docs
+        self.check_reply = check_reply if check_reply is not None else {"seen": 0, "queued": 0}
+        self.on_check = on_check
         self.uploads: list[dict] = []
         self.requests: list[dict] = []
         fake = self
@@ -74,6 +81,10 @@ class FakeHub:
                     self.send_header("Content-Length", "0")
                     self.end_headers()
                     return
+                if self.path == CHECK and fake.check_docs is not None:
+                    if not self._authorised():
+                        return self._send(401, {"error": "bad key"})
+                    return self._send(200, {"docs": fake.check_docs})
                 if self.path != NEXT:
                     return self._send(404, {"error": "not found"})
                 if not self._authorised():
@@ -97,6 +108,12 @@ class FakeHub:
                     return self._send(status, {"status": "imported"} if status == 200 else {"error": "scripted"})
                 body = json.loads(raw or b"null")
                 self._record(body)
+                if self.path == CHECK and fake.check_docs is not None:
+                    if not self._authorised():
+                        return self._send(401, {"error": "bad key"})
+                    if fake.on_check:
+                        fake.on_check(body)
+                    return self._send(200, fake.check_reply)
                 if not (self.path.startswith(RESULT_PREFIX) and self.path.endswith("/result")):
                     return self._send(404, {"error": "not found"})
                 if not self._authorised():
@@ -110,6 +127,12 @@ class FakeHub:
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         self.url = f"http://127.0.0.1:{self.server.server_address[1]}"
         self._thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+
+    def check_posts(self) -> list[dict]:
+        return [r for r in self.requests if r["method"] == "POST" and r["path"] == CHECK]
+
+    def next_calls(self) -> int:
+        return sum(1 for r in self.requests if r["method"] == "GET" and r["path"] == NEXT)
 
     def results(self) -> list[dict]:
         return [r for r in self.requests if r["method"] == "POST" and r["path"].endswith("/result")]

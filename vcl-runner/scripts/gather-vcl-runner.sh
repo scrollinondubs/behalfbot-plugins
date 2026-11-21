@@ -7,7 +7,7 @@
 # step through the local `claude -p` on the student's own Claude login, and
 # posts the results back. The dispatcher's own model fires only when count > 0,
 # which means the student has to act: the Hub rejected the agent key, or the
-# claude CLI is missing. A tick with nothing queued is one HTTP request and
+# claude CLI is missing. A tick with nothing queued is two HTTP requests and
 # zero tokens.
 #
 # stdout contract: JSON only, {"count": N, ...}. Every exit path echoes valid

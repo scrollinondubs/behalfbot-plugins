@@ -11,7 +11,7 @@ queues the job instead. A heartbeat on the install claims it
 (`GET /api/founder-os/agent/jobs/next`), runs every step through the local
 `claude -p` with the job's skill as the system prompt, and posts the raw
 answers back (`POST /api/founder-os/agent/jobs/:id/result`). Up to three jobs
-per tick. Nothing queued costs one HTTP request and zero tokens.
+per tick. Nothing queued costs two HTTP requests (the tablet check and the claim) and zero tokens.
 
 The model gets no tools. Every call is:
 
@@ -200,6 +200,27 @@ Pages the student added on the tablet carry the PDF page before them and an
 `{"error": "..."}` with `rmapi not found`, `rmapi not paired`,
 `pull failed: ...` (the document is gone, or rmscene is missing). Uploads go
 only to the Hub's own origin, with the agent key; each is at most 4 MB.
+
+### Spotting new annotations (the tablet check)
+
+Before it claims any job, each tick asks the Hub which documents it sent
+(`GET /api/founder-os/agent/tablet-check`: the student's reMarkable sends of
+the last 30 days still on the tablet). When there are any, it runs
+
+```
+rmapi -ni ls /                   # one listing: rmapi syncs the tablet's tree
+```
+
+once, reads when each of those documents last changed from rmapi's tree cache
+(`tree.cache` in the user cache directory, or `RMAPI_TREE_CACHE`), and posts
+the times back. The Hub queues a `tablet_pull` for each document written on
+since its last pull, and the claim loop takes them in the same tick. Only the
+documents the Hub named leave the install; a document in the trash, marked
+deleted or not found is left out. A Hub without the route answers 404 and the
+tick goes on as before. When rmapi fails, or the cache is missing, older than
+the listing or not the shape rmapi writes, the check is skipped for this tick
+and the jobs still run. A check the Hub never hears about falls back to its
+six-hourly ask per document.
 
 rmscene is in the BehalfBot image (`rmscene>=0.6,<1`). On an install without
 it, run `pip install 'rmscene>=0.6,<1'` for the account that runs the
