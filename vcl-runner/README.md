@@ -124,6 +124,15 @@ shows with a Retry. A step that would start within a minute of the 20-minute
 lease ending posts an error instead of racing it. A 409 (the lease moved on)
 is dropped quietly.
 
+A result post waits up to 90 seconds (`FOUNDER_OS_RUNNER_RESULT_TIMEOUT`),
+past the Hub's 60-second function limit, because the Hub may answer late
+after it has already saved the work. With no answer the runner posts the same
+result once more after the retry backoff: the Hub answers a phase it already
+took with 200 and `replay: true` (409 once it has moved on), so the repeat
+never lands the work twice. If that post goes unanswered too, the tick stops
+and reports `count: 1` with `undelivered: 1`: the work ran here but the Hub
+never took it, so the job shows as in progress until its lease runs out.
+
 Each output the runner posts carries a `usage` object with what Claude Code
 reported for that step: input, output, cache-read and cache-write tokens summed
 over every model it ran, the model names, and its `total_cost_usd`. The Hub

@@ -727,6 +727,37 @@ class RunnerTest(unittest.TestCase):
         self.assertIn("claude CLI not found", fake.results()[0]["body"]["error"])
         self.assertEqual(len(fake.jobs), 1)
 
+    def test_a_slow_result_is_posted_again_and_the_tick_goes_on(self):
+        # The Hub saves the first post but answers after the runner stopped
+        # waiting; the repeat is answered as a replay and the next job still runs.
+        with FakeHub([packet("slow", ["a"]), packet("next", ["b"])], key=KEY,
+                     result_delay={"slow": [3]}) as fake:
+            summary, proc = self.run_gate(fake, FOUNDER_OS_RUNNER_RESULT_TIMEOUT="1")
+        self.assertEqual(summary["count"], 0)
+        self.assertEqual(summary["posted"], 2)
+        self.assertEqual(summary["undelivered"], 0)
+        self.assertEqual([r["path"].split("/")[-2] for r in fake.results()], ["slow", "slow", "next"])
+        self.assertEqual(fake.results()[0]["body"], fake.results()[1]["body"])
+        self.assertIn("posting it again", proc.stderr)
+        self.assertIn("(already taken)", proc.stderr)
+        self.assertEqual(len(self.claude_calls()), 2)
+
+    def test_a_result_the_hub_never_answers_is_an_alert(self):
+        with FakeHub([packet("stuck", ["a"]), packet("later", ["b"])], key=KEY,
+                     result_delay={"stuck": [3, 3]}) as fake:
+            summary, _ = self.run_gate(fake, FOUNDER_OS_RUNNER_RESULT_TIMEOUT="1")
+        self.assertEqual(summary["count"], 1)
+        self.assertTrue(summary["error"])
+        self.assertEqual(summary["undelivered"], 1)
+        self.assertIn("did not take a finished job's result", summary["reason"])
+        self.assertEqual(len(fake.results()), 2)
+        self.assertEqual(len(fake.jobs), 1)
+
+    def test_the_result_post_waits_past_the_hub_function_limit(self):
+        from vcl_runner import runner
+        self.assertGreater(runner.RESULT_TIMEOUT, 60)
+        self.assertEqual(runner.HTTP_TIMEOUT, 30)
+
     def test_unreachable_hub_is_not_an_alert(self):
         with FakeHub([], key=KEY) as fake:
             url = fake.url
