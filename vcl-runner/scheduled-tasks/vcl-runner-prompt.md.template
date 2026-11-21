@@ -1,9 +1,10 @@
 # VCL runner prompt
 
 Executed by the heartbeat dispatcher only when `gather-vcl-runner.sh`
-returned a nonzero count. That happens for two reasons, both of which need the
-student to do something: the Hub rejected the agent key, or the `claude` CLI is
-missing on this machine. Every other tick, including one that ran jobs, costs
+returned a nonzero count. That happens for three reasons, each of which needs
+someone to look: the Hub rejected the agent key, the `claude` CLI is missing on
+this machine, or a finished job's result was posted twice and the Hub answered
+neither. Every other tick, including one that ran jobs, costs
 zero tokens here and this prompt never runs.
 
 Placeholders (`${ASSISTANT_NAME}`, `${PRINCIPAL_NAME}`, `${PRINCIPAL_FIRST_NAME}`)
@@ -30,6 +31,12 @@ do not call the Hub yourself.
   `vcl-runner setup` and paste it when asked.
 - **claude CLI not found.** Claude Code is not installed, or not on the PATH the
   heartbeat runs with. Fix: install Claude Code, run `claude` once and log in.
+- **The Hub did not take a finished job's result** (`reason` mentions "did not
+  take a finished job's result"). The work ran on this machine but the Hub
+  never answered the post, so the job shows as in progress until its lease
+  runs out, then runs again. Nothing to fix on this machine; if it repeats
+  across ticks, the Hub's result route is failing and the Hub's owner should
+  check its logs.
 - Anything else: quote the reason in one line.
 
 Add one line either way: until this is fixed, the jobs wait in the Hub

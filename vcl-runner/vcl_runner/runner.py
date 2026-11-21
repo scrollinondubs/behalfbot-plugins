@@ -52,6 +52,7 @@ ENV_CLAUDE = "FOUNDER_OS_RUNNER_CLAUDE"
 ENV_STEP_TIMEOUT = "FOUNDER_OS_RUNNER_STEP_TIMEOUT"
 ENV_TICK_BUDGET = "FOUNDER_OS_RUNNER_TICK_BUDGET"
 ENV_RETRY_BACKOFF = "FOUNDER_OS_RUNNER_RETRY_BACKOFF"
+ENV_RESULT_TIMEOUT = "FOUNDER_OS_RUNNER_RESULT_TIMEOUT"
 DEFAULT_BASE_URL = "https://vibecodelisboa.com"
 KEY_PREFIX = "vcl_fos_"
 NEXT_PATH = "/api/founder-os/agent/jobs/next"
@@ -67,6 +68,10 @@ RETRY_BACKOFF = 25
 # A retry with less time than this left is not worth starting.
 MIN_RETRY_TIMEOUT = 30
 HTTP_TIMEOUT = 30
+# The Hub's result route may run for its whole 60s function limit before it
+# answers, after it has already saved the work. Waiting less than that reads
+# a saved result as a lost one.
+RESULT_TIMEOUT = 90
 MAX_ERROR_CHARS = 300
 LOOPBACK = {"localhost", "127.0.0.1", "::1"}
 # urllib's default User-Agent is refused by Cloudflare.
@@ -161,7 +166,8 @@ class HubClient:
         self._key = key
         self.timeout = timeout
 
-    def _request(self, method: str, path: str, body: dict | None = None) -> tuple[int, dict | None]:
+    def _request(self, method: str, path: str, body: dict | None = None,
+                 timeout: float | None = None) -> tuple[int, dict | None]:
         data = None if body is None else json.dumps(body).encode("utf-8")
         headers = {"Authorization": f"Bearer {self._key}", "User-Agent": USER_AGENT,
                    "Accept": "application/json"}
@@ -169,7 +175,7 @@ class HubClient:
             headers["Content-Type"] = "application/json"
         req = urllib.request.Request(self.base_url + path, data=data, method=method, headers=headers)
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with urllib.request.urlopen(req, timeout=timeout or self.timeout) as resp:
                 status, raw = resp.status, resp.read()
         except urllib.error.HTTPError as exc:
             status, raw = exc.code, exc.read() or b""
@@ -244,7 +250,8 @@ class HubClient:
         return packet
 
     def post_result(self, job_id: str, body: dict) -> tuple[int, dict | None]:
-        return self._request("POST", RESULT_PATH.format(id=urllib.parse.quote(job_id, safe="")), body)
+        path = RESULT_PATH.format(id=urllib.parse.quote(job_id, safe=""))
+        return self._request("POST", path, body, timeout=_int_env(ENV_RESULT_TIMEOUT, RESULT_TIMEOUT))
 
 
 def claude_argv(claude_bin: str, system: str, model: str | None) -> list[str]:
@@ -681,15 +688,34 @@ def run_pull(client: HubClient, packet: dict, *, rmapi_bin: str,
     return body, False
 
 
+def deliver(client: HubClient, job_id: str, body: dict,
+            sleep: Callable[[float], None] = time.sleep) -> tuple[int, dict | None]:
+    """Post a finished job's result, and post it again once if the Hub did not
+    answer. The Hub may have saved the first post anyway; it answers a repeat
+    of a phase it already took with 200 and replay set, and a 409 when it moved
+    on, so the second post never lands the work twice. HubUnreachable when
+    both posts went unanswered."""
+    try:
+        return client.post_result(job_id, body)
+    except HubUnreachable as exc:
+        log(f"job {job_id}: no answer to the result ({exc}), posting it again")
+    sleep(_backoff())
+    return client.post_result(job_id, body)
+
+
 def tick(client: HubClient | None = None, *, max_jobs: int = MAX_JOBS,
-         clock: Callable[[], float] = time.time) -> dict:
+         clock: Callable[[], float] = time.time,
+         sleep: Callable[[float], None] = time.sleep) -> dict:
     """One heartbeat. Always returns the gate summary, never raises.
 
-    count is the number of things the student has to act on: a rejected key or
-    a missing claude CLI. Everything else (nothing queued, a lost lease, a
-    failed step the Hub already shows on the thread, the Hub being briefly
-    unreachable) is count 0."""
-    summary = {"count": 0, "jobs": 0, "posted": 0, "dropped": 0, "failed_steps": 0, "reason": ""}
+    count is the number of things someone has to act on: a rejected key, a
+    missing claude CLI, or work that ran here and whose result the Hub never
+    took (undelivered), which leaves the job showing as in progress until its
+    lease runs out. Everything else (nothing queued, a lost lease, a failed
+    step the Hub already shows on the thread, the Hub being briefly
+    unreachable before any work ran) is count 0."""
+    summary = {"count": 0, "jobs": 0, "posted": 0, "dropped": 0, "failed_steps": 0, "undelivered": 0,
+               "reason": ""}
     if client is None:
         key = os.environ.get(ENV_KEY, "").strip()
         if not key:
@@ -755,10 +781,18 @@ def tick(client: HubClient | None = None, *, max_jobs: int = MAX_JOBS,
             if "error" in body:
                 summary["failed_steps"] += 1
                 log(f"job {packet['id']}: posting error")
-            status, reply = client.post_result(packet["id"], body)
+            try:
+                status, reply = deliver(client, packet["id"], body, sleep)
+            except HubUnreachable as exc:
+                summary["undelivered"] += 1
+                summary.update(count=1, error=True,
+                               reason=f"the Hub did not take a finished job's result twice ({exc}); "
+                                      "the job shows as in progress until its lease runs out, then runs again")
+                break
             if status == 200:
                 summary["posted"] += 1
-                log(f"job {packet['id']}: HTTP 200 {(reply or {}).get('status', '')}")
+                replay = " (already taken)" if (reply or {}).get("replay") else ""
+                log(f"job {packet['id']}: HTTP 200 {(reply or {}).get('status', '')}{replay}")
             elif status in (404, 409):
                 summary["dropped"] += 1
                 log(f"job {packet['id']}: HTTP {status}, dropped (lease lost, phase moved, or not this founder's job)")

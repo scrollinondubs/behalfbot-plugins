@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 NEXT = "/api/founder-os/agent/jobs/next"
@@ -23,7 +24,7 @@ UPLOAD_PREFIX = "/api/founder-os/agent/tablet-pulls/"
 
 class FakeHub:
     def __init__(self, jobs=None, *, key="", result_status=None, next_status=None, files=None,
-                 redirects=None, upload_status=None):
+                 redirects=None, upload_status=None, result_delay=None):
         self.jobs = list(jobs or [])
         self.files = dict(files or {})
         self.redirects = dict(redirects or {})
@@ -31,6 +32,11 @@ class FakeHub:
         self.result_status = dict(result_status or {})
         self.next_status = next_status
         self.upload_status = dict(upload_status or {})
+        # job id -> seconds to hold each result post before answering, one
+        # entry per post (a slow Hub result route); posts past the list answer at once.
+        self.result_delay = {k: list(v) for k, v in (result_delay or {}).items()}
+        # Job ids whose result was saved, whether or not the runner heard back.
+        self.taken: set[str] = set()
         self.uploads: list[dict] = []
         self.requests: list[dict] = []
         fake = self
@@ -103,9 +109,19 @@ class FakeHub:
                     return self._send(401, {"error": "bad key"})
                 job_id = self.path[len(RESULT_PREFIX):-len("/result")]
                 status = fake.result_status.get(job_id, 200)
-                if status == 200:
-                    return self._send(200, {"status": "failed" if "error" in body else "done"})
-                return self._send(status, {"error": "scripted"})
+                if status != 200:
+                    return self._send(status, {"error": "scripted"})
+                answer = {"status": "failed" if "error" in body else "done"}
+                if job_id in fake.taken:
+                    answer["replay"] = True
+                fake.taken.add(job_id)
+                delays = fake.result_delay.get(job_id)
+                if delays:
+                    time.sleep(delays.pop(0))
+                try:
+                    return self._send(200, answer)
+                except (BrokenPipeError, ConnectionResetError):
+                    return None
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         self.url = f"http://127.0.0.1:{self.server.server_address[1]}"
