@@ -26,9 +26,10 @@ highlighted text with the result. annotations.py does the reading.
 
 Before claiming, each tick checks the tablet: the Hub names the documents it
 sent (GET agent/tablet-check), one `rmapi ls /` refreshes rmapi's copy of the
-tablet's tree, and the runner posts when each named document last changed. The
-Hub queues a tablet_pull for each written on since its last pull, and the claim
-loop below takes them in the same tick. A Hub without the route (404) or with
+tablet's tree, and the runner posts when each named document last changed and
+whether the student tagged it "read". The Hub queues a tablet_pull for each
+written on since its last pull, marks the notes of a "read" one assimilated,
+and the claim loop below takes the pulls in the same tick. A Hub without the route (404) or with
 nothing sent costs one request and no rmapi call; a failed check never stops
 the jobs.
 
@@ -103,6 +104,9 @@ MAX_CHECK_DOCS = 500
 # this much before is not from this run.
 CACHE_FRESH_SLACK = 5
 MAX_TREE_DEPTH = 64
+# The tablet tag that marks a document's threads assimilated on the Hub. Tags are
+# case-sensitive on the tablet; read, Read and READ all count.
+READ_TAG = "read"
 # Vercel takes about 4.5 MB of request body.
 MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 MAX_PULL_PAGES = 40
@@ -744,12 +748,34 @@ def tree_cache_path() -> str:
     return os.path.join(base, "rmapi", "tree.cache")
 
 
+def _read_tagged(content) -> bool:
+    """Is "read" (any case) among a document's tags? rmapi keeps them in the
+    cached .content as [{"name": ..., "timestamp": ...}]. No content or no tags
+    is simply untagged."""
+    tags = content.get("tags") if isinstance(content, dict) else None
+    if not isinstance(tags, list):
+        return False
+    for tag in tags:
+        name = tag.get("name") if isinstance(tag, dict) else tag
+        if isinstance(name, str) and name.strip().casefold() == READ_TAG:
+            return True
+    return False
+
+
 def tablet_times(cache_path: str, wanted: set[str]) -> dict[str, int] | None:
+    """When the tablet last changed each document in `wanted`: tablet_docs
+    without the tags."""
+    docs = tablet_docs(cache_path, wanted)
+    return None if docs is None else {path: ms for path, (ms, _) in docs.items()}
+
+
+def tablet_docs(cache_path: str, wanted: set[str]) -> dict[str, tuple[int, bool]] | None:
     """When the tablet last changed each document in `wanted` (path, as rmapi
-    names it: /Folder/Name), in epoch ms, from rmapi's tree cache. A document
-    in the trash or marked deleted is left out, as is one not found. None when
-    the cache is missing or not the shape rmapi 0.0.3x writes. Only paths in
-    `wanted` are returned: nothing else on the tablet leaves this function."""
+    names it: /Folder/Name), in epoch ms, and whether it is tagged "read", from
+    rmapi's tree cache. A document in the trash or marked deleted is left out,
+    as is one not found. None when the cache is missing or not the shape rmapi
+    0.0.3x writes. Only paths in `wanted` are returned: nothing else on the
+    tablet, its tags included, leaves this function."""
     try:
         with open(cache_path, "r", encoding="utf-8") as fh:
             tree = json.load(fh)
@@ -759,9 +785,11 @@ def tablet_times(cache_path: str, wanted: set[str]) -> dict[str, int] | None:
     if not isinstance(entries, list):
         return None
     meta = {}
+    content = {}
     for e in entries:
         if isinstance(e, dict) and isinstance(e.get("DocumentID"), str) and isinstance(e.get("Metadata"), dict):
             meta[e["DocumentID"]] = e["Metadata"]
+            content[e["DocumentID"]] = e.get("Content")
     if entries and not meta:
         return None
 
@@ -781,7 +809,7 @@ def tablet_times(cache_path: str, wanted: set[str]) -> dict[str, int] | None:
             cur = parent
         return None
 
-    times: dict[str, int] = {}
+    docs: dict[str, tuple[int, bool]] = {}
     for doc_id, m in meta.items():
         if m.get("type") != "DocumentType":
             continue
@@ -793,8 +821,9 @@ def tablet_times(cache_path: str, wanted: set[str]) -> dict[str, int] | None:
         except (TypeError, ValueError):
             continue
         if ms > 0:
-            times[path] = max(times.get(path, 0), ms)
-    return times
+            seen_ms, seen_read = docs.get(path, (0, False))
+            docs[path] = (max(seen_ms, ms), seen_read or _read_tagged(content[doc_id]))
+    return docs
 
 
 def _iso_ms(ms: int) -> str:
@@ -825,12 +854,19 @@ def check_tablet(client: HubClient, *, rmapi_bin: str) -> dict:
         fresh = os.path.getmtime(cache) >= started - CACHE_FRESH_SLACK
     except OSError:
         fresh = False
-    times = tablet_times(cache, {d["doc_path"] for d in docs}) if fresh else None
-    if times is None:
+    found = tablet_docs(cache, {d["doc_path"] for d in docs}) if fresh else None
+    if found is None:
         log("tablet check skipped: rmapi's tree cache is missing, stale or unreadable")
         return {"tablet_check": "cache unreadable"}
-    report = [{"send_id": d["send_id"], "modified": _iso_ms(times[d["doc_path"]])}
-              for d in docs if d["doc_path"] in times]
+    report = []
+    for d in docs:
+        if d["doc_path"] not in found:
+            continue
+        ms, read = found[d["doc_path"]]
+        entry = {"send_id": d["send_id"], "modified": _iso_ms(ms)}
+        if read:
+            entry["read"] = True
+        report.append(entry)
     log(f"tablet check: {len(report)} of {len(docs)} document(s) found on the tablet")
     if not report:
         return {"tablet_check": "none found", "auto_pulls": 0}
@@ -842,11 +878,15 @@ def check_tablet(client: HubClient, *, rmapi_bin: str) -> dict:
     if status != 200:
         log(f"tablet check: unexpected HTTP {status}")
         return {"tablet_check": f"HTTP {status}"}
-    queued = (reply or {}).get("queued")
-    queued = queued if isinstance(queued, int) and not isinstance(queued, bool) else 0
-    if queued:
-        log(f"tablet check: {queued} automatic pull(s) queued")
-    return {"tablet_check": "done", "auto_pulls": queued}
+    counts = {}
+    for name in ("queued", "assimilated"):
+        n = (reply or {}).get(name)
+        counts[name] = n if isinstance(n, int) and not isinstance(n, bool) else 0
+    if counts["queued"]:
+        log(f"tablet check: {counts['queued']} automatic pull(s) queued")
+    if counts["assimilated"]:
+        log(f"tablet check: {counts['assimilated']} thread(s) marked assimilated from the read tag")
+    return {"tablet_check": "done", "auto_pulls": counts["queued"], "assimilated": counts["assimilated"]}
 
 
 def tick(client: HubClient | None = None, *, max_jobs: int = MAX_JOBS,
