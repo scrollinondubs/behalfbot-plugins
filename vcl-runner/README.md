@@ -223,9 +223,17 @@ rmapi -ni ls /                   # one listing: rmapi syncs the tablet's tree
 once, reads when each of those documents last changed from rmapi's tree cache
 (`tree.cache` in the user cache directory, or `RMAPI_TREE_CACHE`), and posts
 the times back. The Hub queues a `tablet_pull` for each document written on
-since its last pull, and the claim loop takes them in the same tick. Only the
-documents the Hub named leave the install; a document in the trash, marked
-deleted or not found is left out. A Hub without the route answers 404 and the
+since its last pull, and the claim loop takes them in the same tick.
+
+The same cache holds each document's tags. A document the student tagged
+`read` on the tablet (any case: read, Read, READ) goes with `"read": true`, and
+the Hub marks the notes of its threads assimilated, as if the student had
+clicked Mark assimilated on each. The Hub does that once per document: taking
+the tag off later changes nothing, and an Undo on the Hub sticks. A Hub from
+before the tag ignores the field.
+
+Only the documents the Hub named leave the install, and of their tags only
+`read`; a document in the trash, marked deleted or not found is left out. A Hub without the route answers 404 and the
 tick goes on as before. When rmapi fails, or the cache is missing, older than
 the listing or not the shape rmapi writes, the check is skipped for this tick
 and the jobs still run. A check the Hub never hears about falls back to its
