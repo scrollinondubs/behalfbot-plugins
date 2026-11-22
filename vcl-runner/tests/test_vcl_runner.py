@@ -43,7 +43,7 @@ sys.path.insert(0, str(TESTS))
 from fake_hub import FakeHub  # noqa: E402
 
 from vcl_runner import annotations, claude_argv, save_key  # noqa: E402
-from vcl_runner.runner import doc_version, tablet_times  # noqa: E402
+from vcl_runner.runner import doc_version, tablet_docs, tablet_times  # noqa: E402
 
 HAVE_RMSCENE = importlib.util.find_spec("rmscene") is not None
 NEEDS_RMSCENE = unittest.skipUnless(HAVE_RMSCENE, "rmscene is not installed (the BehalfBot image has it)")
@@ -543,12 +543,16 @@ class RunnerTest(unittest.TestCase):
     # --- the tablet check -------------------------------------------------------
 
     def tree(self, *entries: tuple) -> str:
-        """An rmapi tree cache: (id, name, parent, kind, lastModified ms, extra metadata)."""
+        """An rmapi tree cache: (id, name, parent, kind, lastModified ms, extra metadata[, tags])."""
         docs = []
-        for doc_id, name, parent, kind, modified, extra in entries:
+        for doc_id, name, parent, kind, modified, extra, *tags in entries:
             meta = {"visibleName": name, "parent": parent, "type": kind, "lastModified": str(modified),
                     "deleted": False, **extra}
-            docs.append({"DocumentID": doc_id, "Hash": "0" * 64, "Files": [], "Metadata": meta})
+            doc = {"DocumentID": doc_id, "Hash": "0" * 64, "Files": [], "Metadata": meta}
+            if tags:
+                doc["Content"] = {"fileType": "pdf", "tags": [{"name": t, "timestamp": 1795341923434}
+                                                             for t in tags[0]]}
+            docs.append(doc)
         path = pathlib.Path(self.tmp.name) / "tree.json"
         path.write_text(json.dumps({"Hash": "0" * 64, "Generation": 1, "SchemaVersion": 4, "Docs": docs,
                                     "CacheVersion": 3}), encoding="utf-8")
@@ -599,6 +603,38 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(fake.results()[0]["body"]["unchanged"], True)
         self.assertNotIn(KEY, proc.stdout + proc.stderr)
 
+    def test_tablet_check_reports_the_read_tag_on_named_documents_only(self):
+        tablet = (
+            *self.TABLET[:2],
+            ("d1", "Thread A", "f2", "DocumentType", 1795256130250, {}, ["Read"]),
+            ("d2", "Thread B", "f2", "DocumentType", 1795000000000, {}, ["Business", "reading"]),
+            ("d6", "Thread F", "f2", "DocumentType", 1795000000000, {}, ["READ"]),
+            ("d7", "Private notebook", "", "DocumentType", 1795300000000, {}, ["read"]),
+        )
+        named = [*self.CHECK_DOCS[:2], {"send_id": "s6", "doc_path": "/FounderOS/Kite School/Thread F"}]
+        with FakeHub(key=KEY, check_docs=named,
+                     check_reply={"seen": 3, "queued": 0, "assimilated": 2}) as fake:
+            summary, proc = self.run_gate(fake, **self.check_env(self.tree(*tablet)))
+        self.assertEqual([c["argv"] for c in self.rmapi_calls()], [["-ni", "ls", "/"]],
+                         "the tags come from the same listing: no second rmapi call")
+        self.assertEqual(fake.check_posts()[0]["body"], {"docs": [
+            {"send_id": "s1", "modified": "2026-11-21T10:15:30.250Z", "read": True},
+            {"send_id": "s2", "modified": "2026-11-18T11:06:40.000Z"},
+            {"send_id": "s6", "modified": "2026-11-18T11:06:40.000Z", "read": True},
+        ]}, "read in any case counts; other tags and untagged documents send no read")
+        self.assertNotIn("Private notebook", json.dumps(fake.requests) + proc.stderr,
+                         "a tagged document the Hub did not name never leaves the install")
+        self.assertEqual((summary["tablet_check"], summary["assimilated"]), ("done", 2))
+        self.assertIn("2 thread(s) marked assimilated", proc.stderr)
+
+    def test_an_older_hub_reply_without_assimilated_reads_as_none(self):
+        tablet = (*self.TABLET[:2], ("d1", "Thread A", "f2", "DocumentType", 1795256130250, {}, ["read"]))
+        with FakeHub(key=KEY, check_docs=self.CHECK_DOCS[:1], check_reply={"seen": 1, "queued": 0}) as fake:
+            summary, _ = self.run_gate(fake, **self.check_env(self.tree(*tablet)))
+        self.assertEqual(fake.check_posts()[0]["body"]["docs"][0]["read"], True)
+        self.assertEqual((summary["tablet_check"], summary["auto_pulls"], summary["assimilated"]),
+                         ("done", 0, 0))
+
     def test_tablet_check_with_nothing_sent_makes_no_rmapi_call(self):
         with FakeHub([packet("j1", ["a"])], key=KEY, check_docs=[]) as fake:
             summary, _ = self.run_gate(fake, **self.check_env(self.tree(*self.TABLET)))
@@ -647,11 +683,36 @@ class RunnerTest(unittest.TestCase):
                          "a duplicate name takes the newest; an orphan or a bad time is left out")
         missing = str(pathlib.Path(self.tmp.name) / "nope.json")
         self.assertIsNone(tablet_times(missing, {"/a"}))
+        self.assertIsNone(tablet_docs(missing, {"/a"}))
         odd = pathlib.Path(self.tmp.name) / "odd.json"
         odd.write_text(json.dumps({"Docs": {"not": "a list"}}), encoding="utf-8")
         self.assertIsNone(tablet_times(str(odd), {"/a"}))
         odd.write_text(json.dumps({"Docs": [{"id": "x"}]}), encoding="utf-8")
         self.assertIsNone(tablet_times(str(odd), {"/a"}), "entries without the known fields: an unknown shape")
+
+    def test_tablet_docs_reads_the_read_tag_and_tolerates_odd_content(self):
+        path = self.tree(
+            *self.TABLET[:2],
+            ("d1", "Thread A", "f2", "DocumentType", 1795256130250, {}, ["read"]),
+            ("d2", "Thread B", "f2", "DocumentType", 1795000000000, {}),
+            ("d6", "Thread A", "f2", "DocumentType", 1795256199000, {}),
+        )
+        tree = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+        tree["Docs"].append({"DocumentID": "d8", "Metadata": {
+            "visibleName": "Thread E", "parent": "f2", "type": "DocumentType", "lastModified": "1795000000000"},
+            "Content": {"tags": "read"}})
+        tree["Docs"].append({"DocumentID": "d9", "Metadata": {
+            "visibleName": "Thread G", "parent": "f2", "type": "DocumentType", "lastModified": "1795000000000"},
+            "Content": {"tags": [None, 7, {"name": None}, " read "]}})
+        pathlib.Path(path).write_text(json.dumps(tree), encoding="utf-8")
+        base = "/FounderOS/Kite School/"
+        docs = tablet_docs(path, {base + n for n in ("Thread A", "Thread B", "Thread E", "Thread G")})
+        self.assertEqual(docs, {
+            base + "Thread A": (1795256199000, True),
+            base + "Thread B": (1795000000000, False),
+            base + "Thread E": (1795000000000, False),
+            base + "Thread G": (1795000000000, True),
+        }, "a duplicate name is read when either copy is tagged; no Content or odd tags are untagged")
 
     def test_204_is_a_quiet_no_op(self):
         with FakeHub([], key=KEY) as fake:
