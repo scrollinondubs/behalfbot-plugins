@@ -24,6 +24,14 @@ off that document (`rmapi stat`, then `rmapi get` when it changed), sends the
 Hub one PNG per page with handwriting and the PDF it sits on, and posts the
 highlighted text with the result. annotations.py does the reading.
 
+Before claiming, each tick checks the tablet: the Hub names the documents it
+sent (GET agent/tablet-check), one `rmapi ls /` refreshes rmapi's copy of the
+tablet's tree, and the runner posts when each named document last changed. The
+Hub queues a tablet_pull for each written on since its last pull, and the claim
+loop below takes them in the same tick. A Hub without the route (404) or with
+nothing sent costs one request and no rmapi call; a failed check never stops
+the jobs.
+
 stdout is reserved for the one-line JSON summary the heartbeat gate prints;
 every log line goes to stderr and names only the base URL, job id, kind, phase
 and status codes.
@@ -57,6 +65,7 @@ DEFAULT_BASE_URL = "https://vibecodelisboa.com"
 KEY_PREFIX = "vcl_fos_"
 NEXT_PATH = "/api/founder-os/agent/jobs/next"
 RESULT_PATH = "/api/founder-os/agent/jobs/{id}/result"
+CHECK_PATH = "/api/founder-os/agent/tablet-check"
 MAX_JOBS = 3
 DEFAULT_STEP_TIMEOUT = 300
 DEFAULT_TICK_BUDGET = 600
@@ -87,6 +96,13 @@ TABLET_EXTENSIONS = (".pdf", ".epub")
 MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024
 RMAPI_TIMEOUT = 120
 PULL_KIND = "tablet_pull"
+# Where rmapi keeps its copy of the tablet's tree; overrides the platform default.
+ENV_TREE_CACHE = "RMAPI_TREE_CACHE"
+MAX_CHECK_DOCS = 500
+# rmapi rewrites its tree cache on every run. One older than the run started
+# this much before is not from this run.
+CACHE_FRESH_SLACK = 5
+MAX_TREE_DEPTH = 64
 # Vercel takes about 4.5 MB of request body.
 MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 MAX_PULL_PAGES = 40
@@ -252,6 +268,19 @@ class HubClient:
     def post_result(self, job_id: str, body: dict) -> tuple[int, dict | None]:
         path = RESULT_PATH.format(id=urllib.parse.quote(job_id, safe=""))
         return self._request("POST", path, body, timeout=_int_env(ENV_RESULT_TIMEOUT, RESULT_TIMEOUT))
+
+    def check_docs(self) -> list[dict] | None:
+        """The documents to look up on the tablet, or None when the Hub has no
+        tablet check (an older Hub answers 404)."""
+        status, body = self._request("GET", CHECK_PATH)
+        if status != 200 or body is None or not isinstance(body.get("docs"), list):
+            return None
+        return [d for d in body["docs"][:MAX_CHECK_DOCS]
+                if isinstance(d, dict) and isinstance(d.get("send_id"), str) and d["send_id"]
+                and isinstance(d.get("doc_path"), str) and d["doc_path"].startswith("/")]
+
+    def post_check(self, docs: list[dict]) -> tuple[int, dict | None]:
+        return self._request("POST", CHECK_PATH, {"docs": docs})
 
 
 def claude_argv(claude_bin: str, system: str, model: str | None) -> list[str]:
@@ -703,6 +732,123 @@ def deliver(client: HubClient, job_id: str, body: dict,
     return client.post_result(job_id, body)
 
 
+def tree_cache_path() -> str:
+    """rmapi's tree cache: os.UserCacheDir()/rmapi/tree.cache, as rmapi itself resolves it."""
+    override = os.environ.get(ENV_TREE_CACHE, "").strip()
+    if override:
+        return override
+    if sys.platform == "darwin":
+        base = os.path.expanduser("~/Library/Caches")
+    else:
+        base = os.environ.get("XDG_CACHE_HOME", "").strip() or os.path.expanduser("~/.cache")
+    return os.path.join(base, "rmapi", "tree.cache")
+
+
+def tablet_times(cache_path: str, wanted: set[str]) -> dict[str, int] | None:
+    """When the tablet last changed each document in `wanted` (path, as rmapi
+    names it: /Folder/Name), in epoch ms, from rmapi's tree cache. A document
+    in the trash or marked deleted is left out, as is one not found. None when
+    the cache is missing or not the shape rmapi 0.0.3x writes. Only paths in
+    `wanted` are returned: nothing else on the tablet leaves this function."""
+    try:
+        with open(cache_path, "r", encoding="utf-8") as fh:
+            tree = json.load(fh)
+    except (OSError, ValueError):
+        return None
+    entries = tree.get("Docs") if isinstance(tree, dict) else None
+    if not isinstance(entries, list):
+        return None
+    meta = {}
+    for e in entries:
+        if isinstance(e, dict) and isinstance(e.get("DocumentID"), str) and isinstance(e.get("Metadata"), dict):
+            meta[e["DocumentID"]] = e["Metadata"]
+    if entries and not meta:
+        return None
+
+    def path_of(doc_id: str) -> str | None:
+        names = []
+        cur = doc_id
+        for _ in range(MAX_TREE_DEPTH):
+            m = meta.get(cur)
+            if m is None or m.get("deleted") is True or not isinstance(m.get("visibleName"), str):
+                return None
+            names.append(m["visibleName"])
+            parent = m.get("parent")
+            if parent == "trash":
+                return None
+            if not parent:
+                return "/" + "/".join(reversed(names))
+            cur = parent
+        return None
+
+    times: dict[str, int] = {}
+    for doc_id, m in meta.items():
+        if m.get("type") != "DocumentType":
+            continue
+        path = path_of(doc_id)
+        if path is None or path not in wanted:
+            continue
+        try:
+            ms = int(m.get("lastModified"))
+        except (TypeError, ValueError):
+            continue
+        if ms > 0:
+            times[path] = max(times.get(path, 0), ms)
+    return times
+
+
+def _iso_ms(ms: int) -> str:
+    return dt.datetime.fromtimestamp(ms / 1000, tz=dt.timezone.utc).isoformat(timespec="milliseconds") \
+        .replace("+00:00", "Z")
+
+
+def check_tablet(client: HubClient, *, rmapi_bin: str) -> dict:
+    """One tablet check: at most one rmapi call. Returns what goes in the tick
+    summary. Never raises for rmapi, the cache or the Hub being briefly down,
+    so the jobs that follow still run; a rejected key still raises."""
+    try:
+        docs = client.check_docs()
+    except HubUnreachable as exc:
+        log(f"tablet check skipped: {exc}")
+        return {}
+    if not docs:
+        return {}
+    # The file's mtime is wall-clock time, so this is too.
+    started = time.time()
+    try:
+        run_rmapi(rmapi_bin, ["ls", "/"], RMAPI_TIMEOUT, failure="check failed")
+    except TabletFailed as exc:
+        log(f"tablet check skipped: {exc}")
+        return {"tablet_check": "rmapi failed"}
+    cache = tree_cache_path()
+    try:
+        fresh = os.path.getmtime(cache) >= started - CACHE_FRESH_SLACK
+    except OSError:
+        fresh = False
+    times = tablet_times(cache, {d["doc_path"] for d in docs}) if fresh else None
+    if times is None:
+        log("tablet check skipped: rmapi's tree cache is missing, stale or unreadable")
+        return {"tablet_check": "cache unreadable"}
+    report = [{"send_id": d["send_id"], "modified": _iso_ms(times[d["doc_path"]])}
+              for d in docs if d["doc_path"] in times]
+    log(f"tablet check: {len(report)} of {len(docs)} document(s) found on the tablet")
+    if not report:
+        return {"tablet_check": "none found", "auto_pulls": 0}
+    try:
+        status, reply = client.post_check(report)
+    except HubUnreachable as exc:
+        log(f"tablet check not posted: {exc}")
+        return {"tablet_check": "not posted"}
+    if status != 200:
+        log(f"tablet check: unexpected HTTP {status}")
+        return {"tablet_check": f"HTTP {status}"}
+    queued = (reply or {}).get("queued")
+    queued = queued if isinstance(queued, int) and not isinstance(queued, bool) else 0
+    if queued:
+        log(f"tablet check: {queued} automatic pull(s) queued")
+    return {"tablet_check": "done", "auto_pulls": queued}
+
+
 def tick(client: HubClient | None = None, *, max_jobs: int = MAX_JOBS,
          clock: Callable[[], float] = time.time,
          sleep: Callable[[float], None] = time.sleep) -> dict:
@@ -733,6 +879,7 @@ def tick(client: HubClient | None = None, *, max_jobs: int = MAX_JOBS,
     rmapi_bin = os.environ.get(ENV_RMAPI, "").strip() or "rmapi"
     started = clock()
     try:
+        summary.update(check_tablet(client, rmapi_bin=rmapi_bin))
         while summary["jobs"] < max_jobs:
             if clock() - started >= budget:
                 summary["reason"] = f"tick budget of {budget}s spent; the rest waits for the next tick"

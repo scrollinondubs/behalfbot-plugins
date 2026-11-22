@@ -2,7 +2,7 @@
   "id": "behalfbot-vcl-runner",
   "name": "Behalf.bot - VCL runner",
   "description": "Runs a student's queued Vibecode Lisboa Hub jobs on their own install, through the local `claude -p` on their own Claude plan, instead of on an API key. A heartbeat claims each job from the Hub, runs every step with no tools in an empty directory, and posts the raw answers back; the Hub builds every prompt and checks every answer. Ships no course content: the skill and prompts arrive with each job. A tablet_send job skips claude and uploads a reading file the Hub built to the student's reMarkable with rmapi; a tablet_pull job reads the student's highlights and handwriting back off it for the Hub. Ships a \"run fos\" skill and trigger: the owner says it and the runner ticks now instead of on the next heartbeat.",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -55,7 +55,7 @@
   },
   "activation": {
     "onStartup": false,
-    "_note": "The one scheduled job is the vcl-runner heartbeat, and it is opt-in twice: it must be added to the install's HEARTBEATS.md (block in README.md), and it does nothing until `vcl-runner setup` has stored an agent key. The gate does the work itself: with nothing queued it is one HTTP request and zero tokens, and the dispatcher's own model fires only when the key is rejected or the claude CLI is missing."
+    "_note": "The one scheduled job is the vcl-runner heartbeat, and it is opt-in twice: it must be added to the install's HEARTBEATS.md (block in README.md), and it does nothing until `vcl-runner setup` has stored an agent key. The gate does the work itself: with nothing queued it is two HTTP requests and zero tokens, and the dispatcher's own model fires only when the key is rejected or the claude CLI is missing."
   },
   "dependencies": {
     "system": [
@@ -87,15 +87,17 @@
       "agent_base_url (https://vibecodelisboa.com by default) - GET /api/founder-os/agent/jobs/next and POST /api/founder-os/agent/jobs/:id/result on each heartbeat tick, only when an agent key is set",
       "agent_base_url again for a tablet_send job - GET the job's file_url, refused unless it is on the same scheme, host and port as agent_base_url",
       "agent_base_url again for a tablet_pull job - POST the document's PDF and one PNG per handwritten page to the job's document_url and pages_url, refused unless they are on the same scheme, host and port as agent_base_url",
-      "the reMarkable cloud, through rmapi, for tablet_send and tablet_pull jobs only"
+      "agent_base_url again for the tablet check - GET /api/founder-os/agent/tablet-check for the documents the Hub sent, and POST when each of those changed on the tablet; never anything about other documents on the tablet",
+      "the reMarkable cloud, through rmapi, for tablet_send and tablet_pull jobs, and one `rmapi ls /` per tick for the tablet check when the Hub names documents to check"
     ],
     "credentials": "FOUNDER_OS_AGENT_KEY, read from the environment only and sent only as the Bearer header to agent_base_url (a tablet_send file_url or a tablet_pull upload URL on any other origin is refused before any request, and a redirect off that origin is followed without the key). Never logged, never passed to the claude or rmapi child process. rmapi keeps its own reMarkable token in its own config file; the runner never reads it. The runner never reads ~/.claude, the keychain or any OAuth credential: it starts the claude CLI the student already logged into, with ANTHROPIC_API_KEY removed from the child's environment so the work bills the student's Claude plan.",
-    "subprocesses": "claude -p --output-format json --tools \"\" --strict-mcp-config --setting-sources \"\" --disable-slash-commands --no-session-persistence --append-system-prompt <skill> [--model <model>], prompt on stdin, in an empty temporary directory. No tools and no MCP servers. For a tablet_send job only: rmapi -ni mkdir <folder> and rmapi -ni put <file> <folder>, stdin closed, so an unpaired rmapi exits instead of waiting for a code. For a tablet_pull job only: rmapi -ni stat <doc_path> and rmapi -ni get <doc_path> (in a temporary directory), stdin closed. The run fos handler (triggers/run-fos.sh) starts scripts/gather-vcl-runner.sh once, the same gate the heartbeat runs.",
+    "subprocesses": "claude -p --output-format json --tools \"\" --strict-mcp-config --setting-sources \"\" --disable-slash-commands --no-session-persistence --append-system-prompt <skill> [--model <model>], prompt on stdin, in an empty temporary directory. No tools and no MCP servers. For a tablet_send job only: rmapi -ni mkdir <folder> and rmapi -ni put <file> <folder>, stdin closed, so an unpaired rmapi exits instead of waiting for a code. For a tablet_pull job only: rmapi -ni stat <doc_path> and rmapi -ni get <doc_path> (in a temporary directory), stdin closed. For the tablet check, at most once per tick and only when the Hub names documents: rmapi -ni ls /, stdin closed, its output discarded. The run fos handler (triggers/run-fos.sh) starts scripts/gather-vcl-runner.sh once, the same gate the heartbeat runs.",
     "filesystem": [
       "${CUSTOMER_HOME}/.env (and .env.baked when present) - written by `vcl-runner setup` only, mode 0600",
       "a temporary empty directory per claude call, removed afterwards",
       "a temporary directory holding the downloaded file for a tablet_send job, removed afterwards",
       "a temporary directory holding the downloaded document for a tablet_pull job, removed afterwards",
+      "rmapi's tree cache (<user cache dir>/rmapi/tree.cache, or RMAPI_TREE_CACHE) - read only, for the tablet check, right after `rmapi ls /` rewrote it; only the documents the Hub named are taken from it",
       "${CUSTOMER_HOME}/scheduled-tasks/halt.json and conservation-mode.json - read by the run fos handler only, to refuse while either is on"
     ]
   }
