@@ -1,0 +1,7 @@
+{
+  "id": "behalfbot-saas-exit",
+  "name": "Behalf.bot - SaaS exit",
+  "description": "Playbook for leaving a hosted SaaS (course, membership, storefront, newsletter) for a self-hosted parity app the agent builds.",
+  "version": "0.1.0",
+  "skills": ["./skills"]
+}
