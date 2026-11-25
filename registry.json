@@ -81,6 +81,12 @@
       "min_chassis_version": "0.2.0"
     },
     {
+      "name": "saas-exit",
+      "path": "saas-exit",
+      "description": "Playbook skill for leaving a hosted SaaS - course and membership platforms, storefronts, newsletters - for a self-hosted parity app the agent builds. Covers the renewal deadline, a buyer-weighted inventory, finding originals before scraping, verified media capture, verbatim text capture, exports, a cutover checklist (redirects, codes, affiliates, automations, payments, access, DNS), and a reference-led design process. Docs only, no dependencies. Includes vendor notes for Podia.",
+      "min_chassis_version": "0.2.0"
+    },
+    {
       "name": "vcl-runner",
       "path": "vcl-runner",
       "description": "Runs a student's queued Vibecode Lisboa Hub jobs on their own install, through the local `claude -p` on their own Claude plan instead of an API key. A heartbeat claims each job, runs every step with no tools in an empty directory, and posts the raw answers back; the Hub builds the prompts and checks the answers. Ships no course content.",

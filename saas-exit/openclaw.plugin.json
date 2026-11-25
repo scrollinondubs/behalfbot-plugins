@@ -1,0 +1,42 @@
+{
+  "id": "behalfbot-saas-exit",
+  "name": "Behalf.bot - SaaS exit",
+  "description": "Playbook for helping the owner leave a hosted SaaS (course and membership platforms such as Podia, Kajabi, Teachable or Thinkific, storefronts, newsletters) for a self-hosted parity app the agent builds. Deadline first, inventory by buyers, originals before scraping, verified media capture, verbatim text capture, exports, a cutover checklist, and a reference-led design process. Docs only: no scripts, no dependencies, read-only on the old platform until cutover.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Master switch. When false the skill does not trigger.",
+        "default": true
+      }
+    },
+    "required": ["enabled"]
+  },
+  "contracts": {
+    "tools": [],
+    "skills": ["saas-exit"],
+    "triggers": [],
+    "hooks": []
+  },
+  "activation": {
+    "onStartup": false,
+    "_note": "On-demand. Invoked when the owner wants to leave a SaaS platform or asks the agent to rebuild one. No scheduled jobs."
+  },
+  "dependencies": {
+    "system": [
+      {
+        "name": "browser automation",
+        "install": "provided by the chassis (autopilot)",
+        "_explanation": "Soft dependency. Used read-only to walk the old platform and capture page text and links. Without it the owner pastes or exports text by hand and the playbook still holds."
+      },
+      {
+        "name": "shared file storage",
+        "install": "provided by the install (for example a Google Drive connector)",
+        "_explanation": "Soft dependency. The owner drops downloaded media into one folder per product and the agent pulls and verifies it. Any shared folder the agent can read works."
+      }
+    ]
+  }
+}
